@@ -1442,14 +1442,17 @@ int CPlayerOne::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
             m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] POAGetImageData error :  " << POAGetErrorString(ret) << std::endl;
             m_sLogFile.flush();
 #endif
+            free(imgBuffer);
             return ERR_RXTIMEOUT;
         }
     }
 
     // shift data
-    buf = (uint16_t *)imgBuffer;
-    for(int i=0; i<sizeReadFromCam/2; i++)
-        buf[i] = buf[i]<<m_nNbBitToShift;
+    if(m_nNbBitToShift) {
+        buf = (uint16_t *)imgBuffer;
+        for(int i=0; i<sizeReadFromCam/2; i++)
+            buf[i] = buf[i]<<m_nNbBitToShift;
+    }
 
     if(imgBuffer != frameBuffer) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
