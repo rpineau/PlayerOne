@@ -100,8 +100,6 @@ int CPlayerOne::Connect(int nCameraID)
     POASensorModeInfo sensorModeInfo;
     long nMin, nMax;
 
-    // POA_CONTROL_CAPS    Caps;
-
     if(nCameraID)
         m_nCameraID = nCameraID;
     else {
