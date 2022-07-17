@@ -98,6 +98,10 @@ public:
     void        getOffset(long &nMin, long &nMax, long &nValue);
     int         setOffset(long nBlackLevel);
 
+    void        getUSBBandwidth(long &nMin, long &nMax, long &nValue);
+    int         setUSBBandwidth(long nBandwidth, bool bIsAuto = POA_FALSE);
+
+
     int         setROI(int nLeft, int nTop, int nWidth, int nHeight);
     int         clearROI(void);
 
@@ -132,7 +136,6 @@ protected:
     int                     m_nNbGainValue;
 
     long                    m_nGain;
-    long                    m_nExposureMs;
     long                    m_nWbR;
     bool                    m_bR_Auto;
     long                    m_nWbG;
@@ -179,6 +182,16 @@ protected:
     int                     m_nReqROITop;
     int                     m_nReqROIWidth;
     int                     m_nReqROIHeight;
+
+    // special gain and offset data
+    int                     m_nOffsetHighestDR;
+    int                     m_nOffsetUnityGain;
+    int                     m_nGainLowestRN;
+    int                     m_nOffsetLowestRN;
+    int                     m_nHCGain;
+
+
+    bool                    m_bTempertureSupported;
 
     POAConfig               m_confIDGuideDir;
 #ifdef PLUGIN_DEBUG
