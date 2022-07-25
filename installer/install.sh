@@ -45,7 +45,7 @@ app_owner=`/usr/bin/stat -c "%u" "$TheSkyX_Path" | xargs id -n -u`
 if [ ! -z "$app_owner" ]; then
 	chown $app_owner "$TheSkyX_Path/Resources/Common/Miscellaneous Files/cameralist PlayerOne.txt"
 	chown $app_owner "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/PlayerOneCamera.ui"
-	chown $app_owner "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/PlayerOneCamSelect.ui.ui"
+	chown $app_owner "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/PlayerOneCamSelect.ui"
 	chown $app_owner "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/libPlayerOne.so"
 fi
 chmod  755 "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/libPlayerOne.so"
