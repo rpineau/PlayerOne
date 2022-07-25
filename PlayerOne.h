@@ -171,6 +171,7 @@ protected:
     int                     m_nNbBitToShift;
     
     CStopWatch              m_ExposureTimer;
+    CStopWatch              m_ImageDownloadTimer;
     double                  m_dCaptureLenght;
     
     int                     m_nROILeft;

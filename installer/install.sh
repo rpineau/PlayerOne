@@ -35,19 +35,19 @@ else
 fi
 
 
-cp "./cameralist SVBony.txt" "$TheSkyX_Path/Resources/Common/Miscellaneous Files/"
-cp "./SVBonyCamera.ui" "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/"
-cp "./SVBonyCamSelect.ui" "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/"
-cp "./libSVBony.so" "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/"
-sudo cp -f "./90-ckusb.rules" "/etc/udev/rules.d/"
+cp "./cameralist PlayerOne.txt" "$TheSkyX_Path/Resources/Common/Miscellaneous Files/"
+cp "./PlayerOneCamera.ui" "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/"
+cp "./PlayerOneCamSelect.ui" "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/"
+cp "./libPlayerOne.so" "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/"
+sudo cp -f "./player_one_astronomy.rules" "/etc/udev/rules.d/"
 
 app_owner=`/usr/bin/stat -c "%u" "$TheSkyX_Path" | xargs id -n -u`
 if [ ! -z "$app_owner" ]; then
-	chown $app_owner "$TheSkyX_Path/Resources/Common/Miscellaneous Files/cameralist SVBony.txt"
-	chown $app_owner "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/SVBonyCamera.ui"
-	chown $app_owner "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/SVBonyCamSelect.ui"
-	chown $app_owner "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/libSVBony.so"
+	chown $app_owner "$TheSkyX_Path/Resources/Common/Miscellaneous Files/cameralist PlayerOne.txt"
+	chown $app_owner "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/PlayerOneCamera.ui"
+	chown $app_owner "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/PlayerOneCamSelect.ui.ui"
+	chown $app_owner "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/libPlayerOne.so"
 fi
-chmod  755 "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/libSVBony.so"
+chmod  755 "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/libPlayerOne.so"
 sudo systemctl restart udev
 
