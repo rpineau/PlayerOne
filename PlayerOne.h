@@ -27,8 +27,6 @@
 #endif
 
 #include "../../licensedinterfaces/sberrorx.h"
-#include "../../licensedinterfaces/loggerinterface.h"
-#include "../../licensedinterfaces/sleeperinterface.h"
 
 #include "PlayerOneCamera.h"
 #include "StopWatch.h"
