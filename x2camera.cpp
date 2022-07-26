@@ -551,7 +551,6 @@ int X2Camera::CCQueryTemperature(double& dCurTemp, double& dCurPower, char* lpsz
     dCurTemp = m_dCurTemp;
 	dCurPower = m_dCurPower;
     dCurSetPoint = m_dCurSetPoint;
-    bCurEnabled = false;
 
     return nErr;
 }

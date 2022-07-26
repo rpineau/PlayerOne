@@ -631,10 +631,38 @@ void CPlayerOne::abortCapture(void)
 int CPlayerOne::getTemperture(double &dTemp, double &dPower, double &dSetPoint, bool &bEnabled)
 {
     int nErr = PLUGIN_OK;
+    POAErrors ret;
+    POAConfigValue minValue, maxValue, confValue;
+    POABool bAuto;
 
+    ret = getConfigValue(POA_TEMPERATURE, confValue, minValue, maxValue, bAuto);
 
-    if(m_cameraProperty.isHasCooler) {
+    if(ret == POA_OK) {
+        dTemp = confValue.floatValue;
+        if(m_cameraProperty.isHasCooler) {
+            ret = getConfigValue(POA_TARGET_TEMP, confValue, minValue, maxValue, bAuto);
+            if(ret == POA_OK)
+                dPower = double(confValue.intValue);
+            else
+                dPower = 0;
 
+            ret = getConfigValue(POA_COOLER_POWER, confValue, minValue, maxValue, bAuto);
+            if(ret == POA_OK)
+                dSetPoint = double(confValue.intValue);
+            else
+                dSetPoint = dTemp;
+
+            ret = getConfigValue(POA_COOLER, confValue, minValue, maxValue, bAuto);
+            if(ret == POA_OK)
+                bEnabled = bool(confValue.boolValue);
+            else
+                bEnabled = false;
+        }
+        else {
+            dPower = 0;
+            dSetPoint = dTemp;
+            bEnabled = false;
+        }
     }
     else {
         dTemp = -100;
@@ -676,8 +704,6 @@ int CPlayerOne::setCoolerTemperature(bool bOn, double dTemp)
 #endif
             nErr = ERR_CMDFAILED;
         }
-
-
     }
     return nErr;
 }
