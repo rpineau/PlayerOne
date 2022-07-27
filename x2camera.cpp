@@ -209,6 +209,11 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
     int nCurrentSensorMode;
     bool bBinPixelSumMode;
     int i = 0;
+    int nOffsetHighestDR;
+    int nOffsetUnityGain;
+    int nGainLowestRN;
+    int nOffsetLowestRN;
+    int nHCGain;
 
     if (NULL == ui)
         return ERR_POINTER;
@@ -331,6 +336,26 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
         else {
             dx->setCurrentIndex("PixelBinMode", bBinPixelSumMode?0:1);
         }
+        m_Camera.getUserfulValues(nOffsetHighestDR, nOffsetUnityGain, nGainLowestRN, nOffsetLowestRN, nHCGain);
+        ssTmp<< "Gain at HCG Mode(High Conversion Gain) : " << nHCGain;
+        dx->setText("HCG_value", ssTmp.str().c_str());
+        std::stringstream().swap(ssTmp);
+
+        ssTmp<< "Gain at lowest read noise : " << nGainLowestRN;
+        dx->setText("gainLowestReadNoise", ssTmp.str().c_str());
+        std::stringstream().swap(ssTmp);
+
+        ssTmp<< "Offset at highest dynamic range : " << nOffsetHighestDR;
+        dx->setText("offsetHDR", ssTmp.str().c_str());
+        std::stringstream().swap(ssTmp);
+
+        ssTmp<< "Offset at unity gain : " << nOffsetUnityGain;
+        dx->setText("offsetUnity", ssTmp.str().c_str());
+        std::stringstream().swap(ssTmp);
+
+        ssTmp<< "Offset at lowest read noise  : " << nOffsetLowestRN;
+        dx->setText("offsetLowestReadNoise", ssTmp.str().c_str());
+        std::stringstream().swap(ssTmp);
     }
     else {
         dx->setEnabled("Gain", false);
@@ -349,26 +374,21 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
 
     //Retreive values from the user interface
     if (bPressedOK) {
-        /*
-        if(dx->isEnabled("SpeedMode")) {
-            nCtrlVal = dx->currentIndex("SpeedMode");
-            nErr = m_Camera.setSpeedMode((long)nCtrlVal);
-            if(!nErr)
-                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_SPEED_MODE, nCtrlVal);
-        }
-         */
 
         m_Camera.setUserConf(true);
         m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_USER_CONF, 1);
 
-        if(dx->isEnabled("Gain")) {
-            dx->propertyInt("Gain", "value", nCtrlVal);
-            nErr = m_Camera.setGain((long)nCtrlVal);
-            if(!nErr) {
-                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_GAIN, nCtrlVal);
-                m_Camera.rebuildGainList();
-            }
+        dx->propertyInt("Gain", "value", nCtrlVal);
+        nErr = m_Camera.setGain((long)nCtrlVal);
+        if(!nErr) {
+            m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_GAIN, nCtrlVal);
+            m_Camera.rebuildGainList();
         }
+
+        dx->propertyInt("Offset", "value", nCtrlVal);
+        nErr = m_Camera.setOffset((long)nCtrlVal);
+        if(!nErr)
+            m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_OFFSET, nCtrlVal);
 
         if(dx->isEnabled("WB_R")) {
             dx->propertyInt("WB_R", "value", nCtrlVal);
@@ -399,19 +419,29 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
                 m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_B_AUTO, bIsAuto?1:0);
             }
         }
-        if(dx->isEnabled("Flip")) {
-            nCtrlVal = dx->currentIndex("Flip");
-            nErr = m_Camera.setFlip((long)nCtrlVal);
+
+        nCtrlVal = dx->currentIndex("Flip");
+        nErr = m_Camera.setFlip((long)nCtrlVal);
+        if(!nErr)
+            m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_FLIP, nCtrlVal);
+
+        if(dx->isEnabled("SensorMode")) {
+            nCtrlVal = dx->currentIndex("SensorMode");
+            nErr = m_Camera.setSensorMode(nCtrlVal);
             if(!nErr)
-                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_FLIP, nCtrlVal);
+                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_SENSOR_MODE, nCtrlVal);
         }
 
-        if(dx->isEnabled("Offset")) {
-            dx->propertyInt("Offset", "value", nCtrlVal);
-            nErr = m_Camera.setOffset((long)nCtrlVal);
-            if(!nErr)
-                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_OFFSET, nCtrlVal);
-        }
+        dx->propertyInt("USBBandwidth", "value", nCtrlVal);
+        nErr = m_Camera.setUSBBandwidth((long)nCtrlVal);
+        if(!nErr)
+            m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_USB_BANDWIDTH, nCtrlVal);
+
+        nCtrlVal = dx->currentIndex("PixelBinMode");
+        nErr = m_Camera.setPixelBinMode((nCtrlVal==0)); // true = Sum mode, False = Average mode
+        if(!nErr)
+            m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_SENSOR_MODE, nCtrlVal);
+
     }
 
     return nErr;

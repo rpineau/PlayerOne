@@ -46,7 +46,7 @@ class AddFITSKeyInterface;
 #define KEY_FLIP                    "Flip"
 #define KEY_SENSOR_MODE             "SensorMode"
 #define KEY_OFFSET                  "Offset"
-#define USB_BANDWIDTH               "USBBandwidth"
+#define KEY_USB_BANDWIDTH           "USBBandwidth"
 #define PIXEL_BIN_MODE              "PixelBinMode"
 
 

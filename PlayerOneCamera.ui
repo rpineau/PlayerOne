@@ -473,7 +473,7 @@
        <string>Offset at unity gain : XXXX</string>
       </property>
      </widget>
-     <widget class="QLabel" name="gainLowestReadNoice">
+     <widget class="QLabel" name="gainLowestReadNoise">
       <property name="geometry">
        <rect>
         <x>72</x>
@@ -486,7 +486,7 @@
        <string>Gain at lowest read noise : XXXXX</string>
       </property>
      </widget>
-     <widget class="QLabel" name="offsetLowestReadNoice">
+     <widget class="QLabel" name="offsetLowestReadNoise">
       <property name="geometry">
        <rect>
         <x>72</x>
@@ -496,7 +496,7 @@
        </rect>
       </property>
       <property name="text">
-       <string>Offset at lowest read noise   : XXXX</string>
+       <string>Offset at lowest read noise  : XXXX</string>
       </property>
      </widget>
      <widget class="QLabel" name="HCG_value">
@@ -515,10 +515,10 @@
      <widget class="QLabel" name="RwbRange">
       <property name="geometry">
        <rect>
-        <x>336</x>
+        <x>328</x>
         <y>168</y>
         <width>112</width>
-        <height>16</height>
+        <height>20</height>
        </rect>
       </property>
       <property name="text">
@@ -528,10 +528,10 @@
      <widget class="QLabel" name="GwbRange">
       <property name="geometry">
        <rect>
-        <x>336</x>
+        <x>328</x>
         <y>200</y>
         <width>112</width>
-        <height>16</height>
+        <height>20</height>
        </rect>
       </property>
       <property name="text">
@@ -541,10 +541,10 @@
      <widget class="QLabel" name="BwbRange">
       <property name="geometry">
        <rect>
-        <x>336</x>
+        <x>328</x>
         <y>232</y>
         <width>112</width>
-        <height>16</height>
+        <height>20</height>
        </rect>
       </property>
       <property name="text">

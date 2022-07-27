@@ -31,7 +31,7 @@
 #include "PlayerOneCamera.h"
 #include "StopWatch.h"
 
-// #define PLUGIN_DEBUG    3
+#define PLUGIN_DEBUG    3
 
 #define PLUGIN_VERSION      1.04
 #define BUFFER_LEN 128
@@ -43,6 +43,7 @@ typedef struct _camera_info {
     char    model[BUFFER_LEN];
 } camera_info_t;
 
+enum Plugin_Flip_Mode { FLIP_NONE, FLIP_HORI, FLIP_VERT, FLIP_BOTH};
 
 class CPlayerOne {
 public:
@@ -121,6 +122,7 @@ public:
     int         getPixelBinMode(bool &bSumMode);
     int         setPixelBinMode(bool bSumMode);
 
+    void        getUserfulValues(int &nOffsetHighestDR, int &nOffsetUnityGain, int &nGainLowestRN, int &nOffsetLowestRN, int &nHCGain);
 
 #ifdef PLUGIN_DEBUG
     void log(std::string sLogEntry);

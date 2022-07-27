@@ -322,7 +322,7 @@ int CPlayerOne::Connect(int nCameraID)
     POAGetSensorModeCount(m_nCameraID, &m_nSensorModeCount);
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] sensor mode count : " << nSensorModeCount << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] sensor mode count : " << m_nSensorModeCount << std::endl;
     m_sLogFile.flush();
 #endif
     // if the camera supports it, in general, there are at least two sensor modes[Normal, LowNoise, ...]
@@ -332,8 +332,8 @@ int CPlayerOne::Connect(int nCameraID)
             continue;
         m_sensorModeInfo.push_back(sensorMode);
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] sensor mode " << i << " name : " << sensorModeInfo.name << std::endl;
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] sensor mode " << i << " desc : " << sensorModeInfo.desc << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] sensor mode " << i << " name : " << sensorMode.name << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] sensor mode " << i << " desc : " << sensorMode.desc << std::endl;
         m_sLogFile.flush();
 #endif
     }
@@ -586,6 +586,8 @@ int CPlayerOne::getSensorModeList(std::vector<std::string> &sModes, int &curentM
     int nErr = PLUGIN_OK;
     POAErrors ret;
 
+    if(!m_nSensorModeCount) // sensor mode no supported by camera
+        return -1;
 
     ret = POAGetSensorMode(m_nCameraID, &curentModeIndex);
     if(ret) {
@@ -593,12 +595,17 @@ int CPlayerOne::getSensorModeList(std::vector<std::string> &sModes, int &curentM
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getSensorMode] Error getting current sensor mode." << std::endl;
         m_sLogFile.flush();
 #endif
-        return ERR_CMDFAILED;
+        return -1;
     }
     sModes.clear();
     for (POASensorModeInfo mode : m_sensorModeInfo) {
         sModes.push_back(mode.name);
     }
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getCurentSensorMode] Current Sensor mode is " << sModes.at(curentModeIndex) << std::endl;
+    m_sLogFile.flush();
+#endif
+
     return nErr;
 }
 
@@ -607,12 +614,16 @@ int CPlayerOne::setSensorMode(int nModeIndex)
     int nErr = PLUGIN_OK;
     POAErrors ret;
 
+    if(!m_nSensorModeCount) // sensor mode no supported by camera
+        return ERR_COMMANDNOTSUPPORTED;
+
     ret = POASetSensorMode(m_nCameraID, nModeIndex);
     if(ret) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getSensorMode] Error setting sensor mode, Error = " << POAGetErrorString(ret) << std::endl;
         m_sLogFile.flush();
 #endif
+        nErr = ERR_CMDFAILED;
     }
 
     return nErr;
@@ -635,7 +646,13 @@ int CPlayerOne::getPixelBinMode(bool &bSumMode)
     }
 
     // POA_TRUE is sum and POA_FALSE is average,
-    bSumMode = bool(confValue.boolValue);
+    bSumMode = (confValue.boolValue == POA_TRUE)?true:false;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getPixelBinMode] Pixel bin mode confValue.boolValue =  " << (confValue.boolValue==POA_TRUE?"POA_TRUE":"POA_FALSE") << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getPixelBinMode] Pixel bin mode set to " << (bSumMode?"Sum":"Average") << std::endl;
+    m_sLogFile.flush();
+#endif
 
     return nErr;
 }
@@ -665,6 +682,15 @@ int CPlayerOne::setPixelBinMode(bool bSumMode)
     }
 
     return nErr;
+}
+
+void CPlayerOne::getUserfulValues(int &nOffsetHighestDR, int &nOffsetUnityGain, int &nGainLowestRN, int &nOffsetLowestRN, int &nHCGain)
+{
+    nOffsetHighestDR = m_nOffsetHighestDR;
+    nOffsetUnityGain = m_nOffsetUnityGain;
+    nGainLowestRN = m_nGainLowestRN;
+    nOffsetLowestRN = m_nOffsetLowestRN;
+    nHCGain = m_nHCGain;
 }
 
 
@@ -1167,7 +1193,7 @@ int CPlayerOne::getFlip(long &nMin, long &nMax, long &nValue)
     if(confValue.boolValue == POA_TRUE) {
         nMin = minValue.boolValue?1:0;
         nMax = maxValue.boolValue?1:0;;
-        nValue = POA_FLIP_NONE;
+        nValue = FLIP_NONE;
     }
 
     ret = getConfigValue(POA_FLIP_HORI, confValue, minValue, maxValue, bAuto);
@@ -1181,7 +1207,7 @@ int CPlayerOne::getFlip(long &nMin, long &nMax, long &nValue)
     if(confValue.boolValue == POA_TRUE) {
         nMin = minValue.boolValue?1:0;
         nMax = maxValue.boolValue?1:0;;
-        nValue = POA_FLIP_HORI;
+        nValue = FLIP_HORI;
     }
 
     ret = getConfigValue(POA_FLIP_VERT, confValue, minValue, maxValue, bAuto);
@@ -1195,7 +1221,7 @@ int CPlayerOne::getFlip(long &nMin, long &nMax, long &nValue)
     if(confValue.boolValue == POA_TRUE) {
         nMin = minValue.boolValue?1:0;
         nMax = maxValue.boolValue?1:0;;
-        nValue = POA_FLIP_VERT;
+        nValue = FLIP_VERT;
     }
 
     ret = getConfigValue(POA_FLIP_BOTH, confValue, minValue, maxValue, bAuto);
@@ -1209,14 +1235,16 @@ int CPlayerOne::getFlip(long &nMin, long &nMax, long &nValue)
     if(confValue.boolValue == POA_TRUE) {
         nMin = minValue.boolValue?1:0;
         nMax = maxValue.boolValue?1:0;;
-        nValue = POA_FLIP_BOTH;
+        nValue = FLIP_BOTH;
     }
 
+    m_nFlip = nValue;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFlip] Flip mode is " << nValue << std::endl;
     m_sLogFile.flush();
 #endif
+
     return 0;
 }
 
@@ -1234,16 +1262,16 @@ int CPlayerOne::setFlip(long nFlip)
     m_sLogFile.flush();
 #endif
     switch(nFlip) {
-        case POA_FLIP_NONE :
+        case FLIP_NONE :
             ret = setConfigValue(POA_FLIP_NONE, confValue);
             break;
-        case POA_FLIP_HORI :
+        case FLIP_HORI :
             ret = setConfigValue(POA_FLIP_HORI, confValue);
             break;
-        case POA_FLIP_VERT :
+        case FLIP_VERT :
             ret = setConfigValue(POA_FLIP_VERT, confValue);
             break;
-        case POA_FLIP_BOTH :
+        case FLIP_BOTH :
             ret = setConfigValue(POA_FLIP_BOTH, confValue);
             break;
         default:
