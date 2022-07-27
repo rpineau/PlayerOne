@@ -32,16 +32,11 @@ class MutexInterface;
 class TickCountInterface;
 class AddFITSKeyInterface;
 
-//As far as a naming convention goes, X2 implementors could do a search and
-//replace in all files and change "X2Camera" to "CoolCompanyCamera"
-//where CoolCompany is your company name.  This is not a requirement.
-
 //For properties that need to be persistent
 #define KEY_X2CAM_ROOT              "PlayerOne"
 #define KEY_USER_CONF               "PlayerOne_User_Conf"
 #define KEY_GUID                    "PlayerOne_GUID"
 #define KEY_GAIN                    "Gain"
-#define KEY_GAIN_AUTO               "GainAuto"
 #define KEY_WHITE_BALANCE_R         "WB_R"
 #define KEY_WHITE_BALANCE_R_AUTO    "WB_R_Auto"
 #define KEY_WHITE_BALANCE_G         "WB_G"
@@ -49,21 +44,24 @@ class AddFITSKeyInterface;
 #define KEY_WHITE_BALANCE_B         "WB_B"
 #define KEY_WHITE_BALANCE_B_AUTO    "WB_B_Auto"
 #define KEY_FLIP                    "Flip"
-#define KEY_SPEED_MODE              "SpeedMode"
+#define KEY_SENSOR_MODE             "SensorMode"
 #define KEY_OFFSET                  "Offset"
+#define USB_BANDWIDTH               "USBBandwidth"
+#define PIXEL_BIN_MODE              "PixelBinMode"
 
 
 enum DIALOGS {SELECT, SETTINGS };
 
 
 // extra fit heard indexes
-enum EXTRA_FIT_STRING_SVB {
+enum EXTRA_FIT_STRING {
     F_BAYER = 0,
     F_BAYERPAT,
-    F_FLIP
+    F_FLIP,
+    F_SENSOR_MODE
 };
 
-enum EXTRA_FIT_INT_SVB {
+enum EXTRA_FIT_INT {
     F_GAIN = 0,
     F_EXPOSURE,
     F_WB_R,

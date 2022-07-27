@@ -83,20 +83,20 @@ public:
     void        getBayerPattern(std::string &sBayerPattern);
     void        getFlip(std::string &sFlipMode);
 
-    void        getGain(long &nMin, long &nMax, long &nValue);
+    int         getGain(long &nMin, long &nMax, long &nValue);
     int         setGain(long nGain);
-    void        getWB_R(long &nMin, long &nMax, long &nValue, bool &bIsAuto);
+    int         getWB_R(long &nMin, long &nMax, long &nValue, bool &bIsAuto);
     int         setWB_R(long nWB_R, bool bIsAuto = POA_FALSE);
-    void        getWB_G(long &nMin, long &nMax, long &nValue, bool &bIsAuto);
+    int         getWB_G(long &nMin, long &nMax, long &nValue, bool &bIsAuto);
     int         setWB_G(long nWB_G, bool bIsAuto = POA_FALSE);
-    void        getWB_B(long &nMin, long &nMax, long &nValue, bool &bIsAuto);
+    int         getWB_B(long &nMin, long &nMax, long &nValue, bool &bIsAuto);
     int         setWB_B(long nWB_B, bool bIsAuto = POA_FALSE);
-    void        getFlip(long &nMin, long &nMax, long &nValue);
+    int         getFlip(long &nMin, long &nMax, long &nValue);
     int         setFlip(long nFlip);
-    void        getOffset(long &nMin, long &nMax, long &nValue);
+    int         getOffset(long &nMin, long &nMax, long &nValue);
     int         setOffset(long nBlackLevel);
 
-    void        getUSBBandwidth(long &nMin, long &nMax, long &nValue);
+    int         getUSBBandwidth(long &nMin, long &nMax, long &nValue);
     int         setUSBBandwidth(long nBandwidth, bool bIsAuto = POA_FALSE);
 
 
@@ -113,6 +113,15 @@ public:
     int         getNbGainInList();
     std::string getGainFromListAtIndex(int nIndex);
     void        rebuildGainList();
+
+    int         getCurentSensorMode(std::string sSensorMode);
+    int         getSensorModeList(std::vector<std::string> &sModes, int &curentModeIndex);
+    int         setSensorMode(int nModeIndex);
+
+    int         getPixelBinMode(bool &bSumMode);
+    int         setPixelBinMode(bool bSumMode);
+
+
 #ifdef PLUGIN_DEBUG
     void log(std::string sLogEntry);
 #endif
@@ -127,6 +136,9 @@ protected:
 
     POACameraProperties     m_cameraProperty;
     POAImgFormat            m_nImageFormat;
+    std::vector<POASensorModeInfo>       m_sensorModeInfo;
+    int                     m_nSensorModeCount;
+
     int                     m_nControlNums;
     std::vector<POAConfigAttributes> m_ControlList;
 

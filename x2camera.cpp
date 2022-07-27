@@ -201,11 +201,15 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
     X2GUIInterface*                    ui = uiutil.X2UI();
     X2GUIExchangeInterface*            dx = NULL;
     long nVal, nMin, nMax;
-    long nSpeedMode = 0;
     int nCtrlVal;
     bool bIsAuto;
     bool bPressedOK = false;
-    
+    std::stringstream ssTmp;
+    std::vector<std::string> sModes;
+    int nCurrentSensorMode;
+    bool bBinPixelSumMode;
+    int i = 0;
+
     if (NULL == ui)
         return ERR_POINTER;
 
@@ -217,17 +221,32 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
 
 
     if(m_bLinked){
-        m_Camera.getGain(nMin, nMax, nVal);
-        if(nMax == -1)
+        nErr = m_Camera.getGain(nMin, nMax, nVal);
+        if(nErr == -1)
             dx->setEnabled("Gain", false);
         else {
             dx->setPropertyInt("Gain", "minimum", (int)nMin);
             dx->setPropertyInt("Gain", "maximum", (int)nMax);
             dx->setPropertyInt("Gain", "value", (int)nVal);
+            ssTmp << nMin << " to " << nMax;
+            dx->setText("gainRange", ssTmp.str().c_str());
+            std::stringstream().swap(ssTmp);
         }
 
-        m_Camera.getWB_R(nMin, nMax, nVal, bIsAuto);
-        if(nMax == -1)
+        nErr = m_Camera.getOffset(nMin, nMax, nVal);
+        if(nErr == -1)
+            dx->setEnabled("Offset", false);
+        else {
+            dx->setPropertyInt("Offset", "minimum", (int)nMin);
+            dx->setPropertyInt("Offset", "maximum", (int)nMax);
+            dx->setPropertyInt("Offset", "value", (int)nVal);
+            ssTmp << nMin << " to " << nMax;
+            dx->setText("offsetRange", ssTmp.str().c_str());
+            std::stringstream().swap(ssTmp);
+        }
+
+        nErr = m_Camera.getWB_R(nMin, nMax, nVal, bIsAuto);
+        if(nErr == -1)
             dx->setEnabled("WB_R", false);
         else {
             dx->setPropertyInt("WB_R", "minimum", (int)nMin);
@@ -237,10 +256,13 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
                 dx->setEnabled("WB_R", false);
                 dx->setChecked("checkBox_2", 1);
             }
+            ssTmp << nMin << " to " << nMax;
+            dx->setText("RwbRange", ssTmp.str().c_str());
+            std::stringstream().swap(ssTmp);
         }
 
-        m_Camera.getWB_G(nMin, nMax, nVal, bIsAuto);
-        if(nMax == -1)
+        nErr = m_Camera.getWB_G(nMin, nMax, nVal, bIsAuto);
+        if(nErr == -1)
             dx->setEnabled("WB_G", false);
         else {
             dx->setPropertyInt("WB_G", "minimum", (int)nMin);
@@ -250,10 +272,13 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
                 dx->setEnabled("WB_G", false);
                 dx->setChecked("checkBox_3", 1);
             }
+            ssTmp << nMin << " to " << nMax;
+            dx->setText("GwbRange", ssTmp.str().c_str());
+            std::stringstream().swap(ssTmp);
         }
 
-        m_Camera.getWB_B(nMin, nMax, nVal, bIsAuto);
-        if(nMax == -1)
+        nErr = m_Camera.getWB_B(nMin, nMax, nVal, bIsAuto);
+        if(nErr == -1)
             dx->setEnabled("WB_B", false);
         else {
             dx->setPropertyInt("WB_B", "minimum", (int)nMin);
@@ -263,33 +288,49 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
                 dx->setEnabled("WB_B", false);
                 dx->setChecked("checkBox_4", 1);
             }
+            ssTmp << nMin << " to " << nMax;
+            dx->setText("BwbRange", ssTmp.str().c_str());
+            std::stringstream().swap(ssTmp);
         }
 
-        m_Camera.getFlip(nMin, nMax, nVal);
-        if(nMax == -1)
+        nErr = m_Camera.getFlip(nMin, nMax, nVal);
+        if(nErr == -1)
             dx->setEnabled("Flip", false);
         else {
             dx->setCurrentIndex("Flip", (int)nVal);
         }
 
-/*        m_Camera.getSpeedMode(nMin, nMax, nSpeedMode);
-        if(nMax == -1)
-            dx->setEnabled("SpeedMode", false);
+        dx->invokeMethod("SensorMode","clear");
+        nErr = m_Camera.getSensorModeList(sModes, nCurrentSensorMode);
+        if(nErr == -1)
+            dx->setEnabled("SensorMode", false);
         else {
-            dx->setEnabled("SpeedMode", true); // disabled for now as not working.
-            dx->setCurrentIndex("SpeedMode", (int)nSpeedMode);
-        }
-*/
-
-        m_Camera.getOffset(nMin, nMax, nVal);
-        if(nMax == -1)
-            dx->setEnabled("Offset", false);
-        else {
-            dx->setPropertyInt("Offset", "minimum", (int)nMin);
-            dx->setPropertyInt("Offset", "maximum", (int)nMax);
-            dx->setPropertyInt("Offset", "value", (int)nVal);
+            if(nCurrentSensorMode) {
+                for (i=0; i< sModes.size(); i++){
+                    dx->comboBoxAppendString("SensorMode", sModes.at(i).c_str());
+                }
+                dx->setCurrentIndex("SensorMode",nCurrentSensorMode);
+            }
         }
 
+        nErr = m_Camera.getUSBBandwidth(nMin, nMax, nVal);
+        if(nErr == -1)
+            dx->setEnabled("USBBandwidth", false);
+        else {
+            dx->setPropertyInt("USBBandwidth", "minimum", (int)nMin);
+            dx->setPropertyInt("USBBandwidth", "maximum", (int)nMax);
+            dx->setPropertyInt("USBBandwidth", "value", (int)nVal);
+            ssTmp << nMin << " to " << nMax;
+            dx->setText("UsbBandwidthRange", ssTmp.str().c_str());
+            std::stringstream().swap(ssTmp);
+        }
+
+        nErr = m_Camera.getPixelBinMode(bBinPixelSumMode);
+        if(nErr == -1)
+            dx->setEnabled("PixelBinMode", false);
+        else {
+            dx->setCurrentIndex("PixelBinMode", bBinPixelSumMode?0:1);
+        }
     }
     else {
         dx->setEnabled("Gain", false);
@@ -945,7 +986,7 @@ int X2Camera::valueForDoubleField (int nIndex, BasicStringInterface &sFieldName,
 int X2Camera::countOfStringFields (int &nCount)
 {
     int nErr = SB_OK;
-    nCount = 3;
+    nCount = 4;
     return nErr;
 }
 
@@ -988,6 +1029,13 @@ int X2Camera::valueForStringField (int nIndex, BasicStringInterface &sFieldName,
         case F_FLIP :
             m_Camera.getFlip(sTmp);
             sFieldName = "FLIP";
+            sFieldComment = "";
+            sFieldValue = sTmp.c_str();
+            break;
+
+        case F_SENSOR_MODE :
+            m_Camera.getCurentSensorMode(sTmp);
+            sFieldName = "SENSOR_MODE";
             sFieldComment = "";
             sFieldValue = sTmp.c_str();
             break;

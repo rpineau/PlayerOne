@@ -23,7 +23,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>SVBony Camera Settings</string>
+   <string>PlayerOne Camera Settings</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_6">
    <item>
@@ -170,7 +170,7 @@
       <property name="geometry">
        <rect>
         <x>240</x>
-        <y>544</y>
+        <y>560</y>
         <width>81</width>
         <height>24</height>
        </rect>
@@ -183,7 +183,7 @@
       <property name="geometry">
        <rect>
         <x>152</x>
-        <y>544</y>
+        <y>560</y>
         <width>81</width>
         <height>24</height>
        </rect>
@@ -203,17 +203,7 @@
       </property>
       <item>
        <property name="text">
-        <string>Low</string>
-       </property>
-      </item>
-      <item>
-       <property name="text">
-        <string>Medium</string>
-       </property>
-      </item>
-      <item>
-       <property name="text">
-        <string>High</string>
+        <string>Low noise</string>
        </property>
       </item>
      </widget>
@@ -249,7 +239,7 @@
      <widget class="QLabel" name="label_logo">
       <property name="geometry">
        <rect>
-        <x>96</x>
+        <x>123</x>
         <y>8</y>
         <width>200</width>
         <height>78</height>
@@ -353,7 +343,7 @@
        <string>Auto</string>
       </property>
      </widget>
-     <widget class="QComboBox" name="BinMode">
+     <widget class="QComboBox" name="PixelBinMode">
       <property name="geometry">
        <rect>
         <x>160</x>
@@ -364,12 +354,12 @@
       </property>
       <item>
        <property name="text">
-        <string>Average</string>
+        <string>Sum</string>
        </property>
       </item>
       <item>
        <property name="text">
-        <string>Sum</string>
+        <string>Average</string>
        </property>
       </item>
      </widget>
@@ -389,7 +379,7 @@
        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
       </property>
      </widget>
-     <widget class="QLabel" name="label">
+     <widget class="QLabel" name="gainRange">
       <property name="geometry">
        <rect>
         <x>272</x>
@@ -402,7 +392,7 @@
        <string>0 to 780</string>
       </property>
      </widget>
-     <widget class="QLabel" name="label_3">
+     <widget class="QLabel" name="UsbBandwidthRange">
       <property name="geometry">
        <rect>
         <x>272</x>
@@ -418,9 +408,9 @@
      <widget class="QLabel" name="offsetHDR">
       <property name="geometry">
        <rect>
-        <x>24</x>
-        <y>464</y>
-        <width>256</width>
+        <x>72</x>
+        <y>472</y>
+        <width>320</width>
         <height>16</height>
        </rect>
       </property>
@@ -428,7 +418,7 @@
        <string>Offset at highest dynamic range : XXXXX</string>
       </property>
      </widget>
-     <widget class="QLabel" name="label_12">
+     <widget class="QLabel" name="offsetRange">
       <property name="geometry">
        <rect>
         <x>272</x>
@@ -473,9 +463,9 @@
      <widget class="QLabel" name="offsetUnity">
       <property name="geometry">
        <rect>
-        <x>24</x>
-        <y>488</y>
-        <width>256</width>
+        <x>72</x>
+        <y>496</y>
+        <width>320</width>
         <height>16</height>
        </rect>
       </property>
@@ -486,9 +476,9 @@
      <widget class="QLabel" name="gainLowestReadNoice">
       <property name="geometry">
        <rect>
-        <x>24</x>
-        <y>440</y>
-        <width>304</width>
+        <x>72</x>
+        <y>448</y>
+        <width>320</width>
         <height>16</height>
        </rect>
       </property>
@@ -499,9 +489,9 @@
      <widget class="QLabel" name="offsetLowestReadNoice">
       <property name="geometry">
        <rect>
-        <x>24</x>
-        <y>512</y>
-        <width>256</width>
+        <x>72</x>
+        <y>520</y>
+        <width>320</width>
         <height>16</height>
        </rect>
       </property>
@@ -512,9 +502,9 @@
      <widget class="QLabel" name="HCG_value">
       <property name="geometry">
        <rect>
-        <x>24</x>
-        <y>416</y>
-        <width>312</width>
+        <x>72</x>
+        <y>424</y>
+        <width>320</width>
         <height>16</height>
        </rect>
       </property>
@@ -522,7 +512,7 @@
        <string>Gain at HCG Mode(High Conversion Gain) : XXXXX</string>
       </property>
      </widget>
-     <widget class="QLabel" name="label_18">
+     <widget class="QLabel" name="RwbRange">
       <property name="geometry">
        <rect>
         <x>336</x>
@@ -535,7 +525,7 @@
        <string>-1200 to 1200</string>
       </property>
      </widget>
-     <widget class="QLabel" name="label_19">
+     <widget class="QLabel" name="GwbRange">
       <property name="geometry">
        <rect>
         <x>336</x>
@@ -548,7 +538,7 @@
        <string>-1200 to 1200</string>
       </property>
      </widget>
-     <widget class="QLabel" name="label_20">
+     <widget class="QLabel" name="BwbRange">
       <property name="geometry">
        <rect>
         <x>336</x>
@@ -559,6 +549,24 @@
       </property>
       <property name="text">
        <string>-1200 to 1200</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label">
+      <property name="geometry">
+       <rect>
+        <x>24</x>
+        <y>400</y>
+        <width>192</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <underline>true</underline>
+       </font>
+      </property>
+      <property name="text">
+       <string>Gain and Offset useful values : </string>
       </property>
      </widget>
     </widget>

@@ -35,7 +35,8 @@ CPlayerOne::CPlayerOne()
 
     m_nControlNums = -1;
     m_ControlList.clear();
-    
+    m_sensorModeInfo.clear();
+
     m_nGain = -1;
     m_nWbR = -1;
     m_nWbG = -1;
@@ -91,12 +92,10 @@ int CPlayerOne::Connect(int nCameraID)
 {
     int nErr = PLUGIN_OK;
     int i;
-    int nSensorModeCount;
 
     POAErrors ret;
-    POAConfigValue exposure_value;
     POAConfigAttributes Attribute;
-    POASensorModeInfo sensorModeInfo;
+    POASensorModeInfo sensorMode;
 
     long nMin, nMax;
 
@@ -320,15 +319,18 @@ int CPlayerOne::Connect(int nCameraID)
 
     ret = POASetImageFormat(m_nCameraID, m_nImageFormat);
 
-    POAGetSensorModeCount(m_nCameraID, &nSensorModeCount);
+    POAGetSensorModeCount(m_nCameraID, &m_nSensorModeCount);
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] sensor mode count : " << nSensorModeCount << std::endl;
     m_sLogFile.flush();
 #endif
     // if the camera supports it, in general, there are at least two sensor modes[Normal, LowNoise, ...]
-    for(i=0; i<nSensorModeCount; i++) {
-        POAGetSensorModeInfo(m_nCameraID, i, &sensorModeInfo);
+    for(i=0; i< m_nSensorModeCount; i++) {
+        ret = POAGetSensorModeInfo(m_nCameraID, i, &sensorMode);
+        if(!ret)
+            continue;
+        m_sensorModeInfo.push_back(sensorMode);
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] sensor mode " << i << " name : " << sensorModeInfo.name << std::endl;
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] sensor mode " << i << " desc : " << sensorModeInfo.desc << std::endl;
@@ -561,6 +563,111 @@ int CPlayerOne::getBinFromIndex(int nIndex)
     return m_SupportedBins[nIndex];        
 }
 
+int CPlayerOne::getCurentSensorMode(std::string sSensorMode)
+{
+    int nErr = PLUGIN_OK;
+    POAErrors ret;
+    int nModeIndex;
+
+    ret =  POAGetSensorMode(m_nCameraID, &nModeIndex);
+    if(ret) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getSensorMode] Error getting current sensor mode." << std::endl;
+        m_sLogFile.flush();
+#endif
+        return ERR_CMDFAILED;
+    }
+    sSensorMode = m_sensorModeInfo[nModeIndex].name;
+    return nErr;
+}
+
+int CPlayerOne::getSensorModeList(std::vector<std::string> &sModes, int &curentModeIndex)
+{
+    int nErr = PLUGIN_OK;
+    POAErrors ret;
+
+
+    ret = POAGetSensorMode(m_nCameraID, &curentModeIndex);
+    if(ret) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getSensorMode] Error getting current sensor mode." << std::endl;
+        m_sLogFile.flush();
+#endif
+        return ERR_CMDFAILED;
+    }
+    sModes.clear();
+    for (POASensorModeInfo mode : m_sensorModeInfo) {
+        sModes.push_back(mode.name);
+    }
+    return nErr;
+}
+
+int CPlayerOne::setSensorMode(int nModeIndex)
+{
+    int nErr = PLUGIN_OK;
+    POAErrors ret;
+
+    ret = POASetSensorMode(m_nCameraID, nModeIndex);
+    if(ret) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getSensorMode] Error setting sensor mode, Error = " << POAGetErrorString(ret) << std::endl;
+        m_sLogFile.flush();
+#endif
+    }
+
+    return nErr;
+}
+
+int CPlayerOne::getPixelBinMode(bool &bSumMode)
+{
+    int nErr = PLUGIN_OK;
+    POAErrors ret;
+    POAConfigValue minValue, maxValue, confValue;
+    POABool bAuto;
+
+    ret = getConfigValue(POA_PIXEL_BIN_SUM, confValue, minValue, maxValue, bAuto);
+    if(ret) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getPixelBinMode] Error getting camera plixel mode. Error= " << POAGetErrorString(ret) << std::endl;
+        m_sLogFile.flush();
+#endif
+        return ERR_CMDFAILED;
+    }
+
+    // POA_TRUE is sum and POA_FALSE is average,
+    bSumMode = bool(confValue.boolValue);
+
+    return nErr;
+}
+
+
+int CPlayerOne::setPixelBinMode(bool bSumMode)
+{
+    int nErr = PLUGIN_OK;
+    POAErrors ret;
+    POAConfigValue confValue;
+
+    // POA_TRUE is sum and POA_FALSE is average,
+    confValue.boolValue = bSumMode?POA_TRUE:POA_FALSE;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setPixelBinMode] Pixel bin mode set to " << (bSumMode?"Sum":"Average") << std::endl;
+    m_sLogFile.flush();
+#endif
+
+    ret = setConfigValue(POA_PIXEL_BIN_SUM, confValue, POA_FALSE);
+    if(ret != POA_OK) {
+        nErr = ERR_CMDFAILED;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setPixelBinMode] Error setting Pixel bin mode, Error = " << POAGetErrorString(ret) << std::endl;
+        m_sLogFile.flush();
+#endif
+    }
+
+    return nErr;
+}
+
+
 #pragma mark - Camera capture
 
 int CPlayerOne::startCaputure(double dTime)
@@ -582,7 +689,7 @@ int CPlayerOne::startCaputure(double dTime)
     ret = POAGetCameraState(m_nCameraID, &cameraState);
     if(ret) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [startCaputure] Error getting camera state." << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [startCaputure] Error getting camera state. Error= " << POAGetErrorString(ret) << std::endl;
         m_sLogFile.flush();
 #endif
         return ERR_CMDFAILED;
@@ -799,15 +906,15 @@ void CPlayerOne::getFlip(std::string &sFlipMode)
 }
 
 
-void CPlayerOne::getGain(long &nMin, long &nMax, long &nValue)
+int CPlayerOne::getGain(long &nMin, long &nMax, long &nValue)
 {
     POAErrors ret;
     POAConfigValue minValue, maxValue, confValue;
     POABool bAuto;
 
-    nMin = -1;
-    nMax = -1;
-    nValue = -1;
+    nMin = 0;
+    nMax = 0;
+    nValue = 0;
 
     ret = getConfigValue(POA_GAIN, confValue, minValue, maxValue, bAuto);
     if(ret) {
@@ -815,7 +922,7 @@ void CPlayerOne::getGain(long &nMin, long &nMax, long &nValue)
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getGain] Error getting gain, Error = " << POAGetErrorString(ret) << std::endl;
         m_sLogFile.flush();
 #endif
-        return;
+        return -1;
     }
 
     nMin = minValue.intValue;
@@ -826,7 +933,7 @@ void CPlayerOne::getGain(long &nMin, long &nMax, long &nValue)
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getGain] Gain is " << nValue << std::endl;
     m_sLogFile.flush();
 #endif
-
+    return 0;
 }
 
 int CPlayerOne::setGain(long nGain)
@@ -855,15 +962,15 @@ int CPlayerOne::setGain(long nGain)
 }
 
 
-void CPlayerOne::getWB_R(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
+int CPlayerOne::getWB_R(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
 {
     POAErrors ret;
     POAConfigValue minValue, maxValue, confValue;
     POABool bAuto;
 
-    nMin = -1;
-    nMax = -1;
-    nValue = -1;
+    nMin = 0;
+    nMax = 0;
+    nValue = 0;
 
     ret = getConfigValue(POA_WB_R, confValue, minValue, maxValue, bAuto);
     if(ret) {
@@ -871,7 +978,7 @@ void CPlayerOne::getWB_R(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getWB_R] Error getting WB_R, Error = " << POAGetErrorString(ret) << std::endl;
         m_sLogFile.flush();
 #endif
-        return;
+        return -1;
     }
     bIsAuto = (bool)bAuto;
     nMin = minValue.intValue;
@@ -885,6 +992,7 @@ void CPlayerOne::getWB_R(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getWB_R] bIsAuto is " << (bIsAuto?"True":"False") << std::endl;
     m_sLogFile.flush();
 #endif
+    return 0;
 }
 
 int CPlayerOne::setWB_R(long nWB_R, bool bIsAuto)
@@ -914,15 +1022,15 @@ int CPlayerOne::setWB_R(long nWB_R, bool bIsAuto)
     return nErr;
 }
 
-void CPlayerOne::getWB_G(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
+int CPlayerOne::getWB_G(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
 {
     POAErrors ret;
     POAConfigValue minValue, maxValue, confValue;
     POABool bAuto;
 
-    nMin = -1;
-    nMax = -1;
-    nValue = -1;
+    nMin = 0;
+    nMax = 0;
+    nValue = 0;
 
     ret = getConfigValue(POA_WB_G, confValue, minValue, maxValue, bAuto);
     if(ret) {
@@ -930,7 +1038,7 @@ void CPlayerOne::getWB_G(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getWB_G] Error getting WB_G, Error = " << POAGetErrorString(ret) << std::endl;
         m_sLogFile.flush();
 #endif
-        return;
+        return -1;
     }
     bIsAuto = (bool)bAuto;
     nMin = minValue.intValue;
@@ -944,6 +1052,7 @@ void CPlayerOne::getWB_G(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getWB_G] bIsAuto is " << (bIsAuto?"True":"False") << std::endl;
     m_sLogFile.flush();
 #endif
+    return 0;
 }
 
 int CPlayerOne::setWB_G(long nWB_G, bool bIsAuto)
@@ -973,15 +1082,15 @@ int CPlayerOne::setWB_G(long nWB_G, bool bIsAuto)
     return nErr;
 }
 
-void CPlayerOne::getWB_B(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
+int CPlayerOne::getWB_B(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
 {
     POAErrors ret;
     POAConfigValue minValue, maxValue, confValue;
     POABool bAuto;
 
-    nMin = -1;
-    nMax = -1;
-    nValue = -1;
+    nMin = 0;
+    nMax = 0;
+    nValue = 0;
 
     ret = getConfigValue(POA_WB_B, confValue, minValue, maxValue, bAuto);
     if(ret) {
@@ -989,7 +1098,7 @@ void CPlayerOne::getWB_B(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getWB_B] Error getting WB_B, Error = " << POAGetErrorString(ret) << std::endl;
         m_sLogFile.flush();
 #endif
-        return;
+        return -1;
     }
     bIsAuto = (bool)bAuto;
     nMin = minValue.intValue;
@@ -1003,7 +1112,7 @@ void CPlayerOne::getWB_B(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getWB_B] bIsAuto is " << (bIsAuto?"True":"False") << std::endl;
     m_sLogFile.flush();
 #endif
-
+    return 0;
 }
 
 int CPlayerOne::setWB_B(long nWB_B, bool bIsAuto)
@@ -1036,15 +1145,15 @@ int CPlayerOne::setWB_B(long nWB_B, bool bIsAuto)
 
 
 
-void CPlayerOne::getFlip(long &nMin, long &nMax, long &nValue)
+int CPlayerOne::getFlip(long &nMin, long &nMax, long &nValue)
 {
     POAErrors ret;
     POAConfigValue minValue, maxValue, confValue;
     POABool bAuto;
 
-    nMin = -1;
-    nMax = -1;
-    nValue = -1;
+    nMin = 0;
+    nMax = 0;
+    nValue = 0;
 
 
     ret = getConfigValue(POA_FLIP_NONE, confValue, minValue, maxValue, bAuto);
@@ -1053,7 +1162,7 @@ void CPlayerOne::getFlip(long &nMin, long &nMax, long &nValue)
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFlip] Error getting Flip mode, Error = " << POAGetErrorString(ret) << std::endl;
         m_sLogFile.flush();
 #endif
-        return;
+        return -1;
     }
     if(confValue.boolValue == POA_TRUE) {
         nMin = minValue.boolValue?1:0;
@@ -1067,7 +1176,7 @@ void CPlayerOne::getFlip(long &nMin, long &nMax, long &nValue)
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFlip] Error getting Flip mode, Error = " << POAGetErrorString(ret) << std::endl;
         m_sLogFile.flush();
 #endif
-        return;
+        return -1;
     }
     if(confValue.boolValue == POA_TRUE) {
         nMin = minValue.boolValue?1:0;
@@ -1081,7 +1190,7 @@ void CPlayerOne::getFlip(long &nMin, long &nMax, long &nValue)
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFlip] Error getting Flip mode, Error = " << POAGetErrorString(ret) << std::endl;
         m_sLogFile.flush();
 #endif
-        return;
+        return -1;
     }
     if(confValue.boolValue == POA_TRUE) {
         nMin = minValue.boolValue?1:0;
@@ -1095,7 +1204,7 @@ void CPlayerOne::getFlip(long &nMin, long &nMax, long &nValue)
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFlip] Error getting Flip mode, Error = " << POAGetErrorString(ret) << std::endl;
         m_sLogFile.flush();
 #endif
-        return;
+        return -1;
     }
     if(confValue.boolValue == POA_TRUE) {
         nMin = minValue.boolValue?1:0;
@@ -1108,6 +1217,7 @@ void CPlayerOne::getFlip(long &nMin, long &nMax, long &nValue)
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFlip] Flip mode is " << nValue << std::endl;
     m_sLogFile.flush();
 #endif
+    return 0;
 }
 
 int CPlayerOne::setFlip(long nFlip)
@@ -1151,15 +1261,15 @@ int CPlayerOne::setFlip(long nFlip)
 }
 
 
-void CPlayerOne::getOffset(long &nMin, long &nMax, long &nValue)
+int CPlayerOne::getOffset(long &nMin, long &nMax, long &nValue)
 {
     POAErrors ret;
     POAConfigValue minValue, maxValue, confValue;
     POABool bAuto;
 
-    nMin = -1;
-    nMax = -1;
-    nValue = -1;
+    nMin = 0;
+    nMax = 0;
+    nValue = 0;
 
     ret = getConfigValue(POA_OFFSET, confValue, minValue, maxValue, bAuto);
     if(ret) {
@@ -1167,7 +1277,7 @@ void CPlayerOne::getOffset(long &nMin, long &nMax, long &nValue)
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getOffset] Error getting Offset, Error = " << POAGetErrorString(ret) << std::endl;
         m_sLogFile.flush();
 #endif
-        return;
+        return -1;
     }
 
     nMin = minValue.intValue;
@@ -1178,6 +1288,7 @@ void CPlayerOne::getOffset(long &nMin, long &nMax, long &nValue)
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getOffset] Offset is " << nValue << std::endl;
     m_sLogFile.flush();
 #endif
+    return 0;
 }
 
 int CPlayerOne::setOffset(long nOffset)
@@ -1206,15 +1317,15 @@ int CPlayerOne::setOffset(long nOffset)
 }
 
 
-void CPlayerOne::getUSBBandwidth(long &nMin, long &nMax, long &nValue)
+int CPlayerOne::getUSBBandwidth(long &nMin, long &nMax, long &nValue)
 {
     POAErrors ret;
     POAConfigValue minValue, maxValue, confValue;
     POABool bAuto;
 
-    nMin = -1;
-    nMax = -1;
-    nValue = -1;
+    nMin = 0;
+    nMax = 0;
+    nValue = 0;
 
     ret = getConfigValue(POA_USB_BANDWIDTH_LIMIT, confValue, minValue, maxValue, bAuto);
     if(ret) {
@@ -1222,7 +1333,7 @@ void CPlayerOne::getUSBBandwidth(long &nMin, long &nMax, long &nValue)
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getWB_R] Error getting USB Bandwidth, Error = " << POAGetErrorString(ret) << std::endl;
         m_sLogFile.flush();
 #endif
-        return;
+        return -1;
     }
     nMin = minValue.intValue;
     nMax = maxValue.intValue;
@@ -1234,7 +1345,7 @@ void CPlayerOne::getUSBBandwidth(long &nMin, long &nMax, long &nValue)
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getUSBBandwidth] max is " << nMax << std::endl;
     m_sLogFile.flush();
 #endif
-
+    return 0;
 }
 
 int CPlayerOne::setUSBBandwidth(long nBandwidth, bool bIsAuto)
