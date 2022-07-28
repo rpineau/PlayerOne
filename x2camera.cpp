@@ -365,12 +365,30 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
     }
     else {
         dx->setEnabled("Gain", false);
+        dx->setText("gainRange","");
+
+        dx->setEnabled("Offset", false);
+        dx->setText("offsetRange","");
+
         dx->setEnabled("WB_R", false);
+        dx->setEnabled("checkBox_2", false);
+        dx->setText("RwbRange","");
+
+
         dx->setEnabled("WB_G", false);
+        dx->setEnabled("checkBox_3", false);
+        dx->setText("GwbRange","");
+
         dx->setEnabled("WB_B", false);
+        dx->setEnabled("checkBox_4", false);
+        dx->setText("BwbRange","");
+
         dx->setEnabled("Flip", false);
         dx->setEnabled("SpeedMode", false);
-        dx->setEnabled("Offset", false);
+
+        dx->setEnabled("USBBandwidth", false);
+        dx->setText("UsbBandwidthRange","");
+
     }
 
     m_nCurrentDialog = SETTINGS;
