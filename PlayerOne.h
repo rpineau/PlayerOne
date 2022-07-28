@@ -37,6 +37,8 @@
 #define BUFFER_LEN 128
 #define PLUGIN_OK   0
 #define MAX_NB_BIN  8
+#define VAL_NOT_AVAILABLE           0xDEADBEEF
+
 typedef struct _camera_info {
     int     cameraId;
     char    Sn[64];
@@ -98,7 +100,7 @@ public:
     int         setOffset(long nBlackLevel);
 
     int         getUSBBandwidth(long &nMin, long &nMax, long &nValue);
-    int         setUSBBandwidth(long nBandwidth, bool bIsAuto = POA_FALSE);
+    int         setUSBBandwidth(long nBandwidth);
 
 
     int         setROI(int nLeft, int nTop, int nWidth, int nHeight);
@@ -115,7 +117,7 @@ public:
     std::string getGainFromListAtIndex(int nIndex);
     void        rebuildGainList();
 
-    int         getCurentSensorMode(std::string sSensorMode);
+    int         getCurentSensorMode(std::string &sSensorMode, int &nModeIndex);
     int         getSensorModeList(std::vector<std::string> &sModes, int &curentModeIndex);
     int         setSensorMode(int nModeIndex);
 
@@ -139,6 +141,7 @@ protected:
     POACameraProperties     m_cameraProperty;
     POAImgFormat            m_nImageFormat;
     std::vector<POASensorModeInfo>       m_sensorModeInfo;
+    int                     m_nSensorModeIndex;
     int                     m_nSensorModeCount;
 
     int                     m_nControlNums;
@@ -158,6 +161,9 @@ protected:
     long                    m_nAutoExposureTarget;
     long                    m_nOffset;
 
+    bool                    m_bPixelBinMode;
+    long                    m_nUSBBandwidth;
+
     double                  m_dPixelSize;
     int                     m_nMaxWidth;
     int                     m_nMaxHeight;
@@ -176,7 +182,6 @@ protected:
     std::string             m_sCameraName;
     std::string             m_sCameraSerial;
     
-    char                    m_szCameraName[BUFFER_LEN];
     bool                    m_bDeviceIsUSB;
     bool                    m_bAbort;
     std::map<int,bool>      m_mAvailableFrameRate;
@@ -202,9 +207,6 @@ protected:
     int                     m_nGainLowestRN;
     int                     m_nOffsetLowestRN;
     int                     m_nHCGain;
-
-
-    bool                    m_bTempertureSupported;
 
     POAConfig               m_confIDGuideDir;
 #ifdef PLUGIN_DEBUG

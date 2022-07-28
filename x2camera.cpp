@@ -41,36 +41,42 @@ X2Camera::X2Camera( const char* pszSelection,
             m_Camera.getCameraIdFromSerial(m_nCameraID, std::string(m_szCameraSerial));
             m_Camera.setCameraSerial(std::string(m_szCameraSerial));
             m_Camera.setCameraId(m_nCameraID);
+
             nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_GAIN, 135);
             m_Camera.setGain((long)nValue);
 
-            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_R, 0);
+            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_OFFSET, 40);
+            m_Camera.setOffset((long)nValue);
+
+            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_R, VAL_NOT_AVAILABLE);
             bIsAuto =  (m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_R_AUTO, 0) == 0?false:true);
-            if(nValue!=-1)
+            if(nValue!=VAL_NOT_AVAILABLE)
                 m_Camera.setWB_R((long)nValue, bIsAuto);
 
-            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_G, 0);
+            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_G, VAL_NOT_AVAILABLE);
             bIsAuto =  (m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_G_AUTO, 0) == 0?false:true);
-            if(nValue!=-1)
+            if(nValue!=VAL_NOT_AVAILABLE)
                 m_Camera.setWB_G((long)nValue, bIsAuto);
 
-            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_B, 0);
+            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_B, VAL_NOT_AVAILABLE);
             bIsAuto =  (m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_B_AUTO, 0) == 0?false:true);
-            if(nValue!=-1)
+            if(nValue!=VAL_NOT_AVAILABLE)
                 m_Camera.setWB_B((long)nValue, bIsAuto);
 
             nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_FLIP, 0);
-            if(nValue!=-1)
-                m_Camera.setFlip((long)nValue);
+            m_Camera.setFlip((long)nValue);
 
-            //        nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_SPEED_MODE, 0);
-            //       if(nValue!=-1)
-            //            m_Camera.setSpeedMode(0); // m_Camera.setSpeedMode((long)nValue); // until set speed mode is fixed in SDK.
+            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_SENSOR_MODE, VAL_NOT_AVAILABLE);
+            if(nValue!=VAL_NOT_AVAILABLE)
+                m_Camera.setSensorMode(nValue);
 
-            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_OFFSET, 40);
-            if(nValue!=-1)
-                m_Camera.setOffset((long)nValue);
+            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_USB_BANDWIDTH, VAL_NOT_AVAILABLE);
+            if(nValue!=VAL_NOT_AVAILABLE)
+                m_Camera.setUSBBandwidth(long(nValue));
 
+            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, PIXEL_BIN_MODE, VAL_NOT_AVAILABLE);
+            if(nValue!=VAL_NOT_AVAILABLE)
+                m_Camera.setPixelBinMode((nValue==1)?true:false);
         }
         else {
             m_nCameraID = 0;
@@ -441,7 +447,6 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
         nErr = m_Camera.setPixelBinMode((nCtrlVal==0)); // true = Sum mode, False = Average mode
         if(!nErr)
             m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_SENSOR_MODE, nCtrlVal);
-
     }
 
     return nErr;
@@ -1024,7 +1029,8 @@ int X2Camera::valueForStringField (int nIndex, BasicStringInterface &sFieldName,
 {
     int nErr = SB_OK;
     std::string sTmp;
-    
+    int nModeIndex;
+
     X2MutexLocker ml(GetMutex());
     
     switch(nIndex) {
@@ -1064,7 +1070,7 @@ int X2Camera::valueForStringField (int nIndex, BasicStringInterface &sFieldName,
             break;
 
         case F_SENSOR_MODE :
-            m_Camera.getCurentSensorMode(sTmp);
+            m_Camera.getCurentSensorMode(sTmp, nModeIndex);
             sFieldName = "SENSOR_MODE";
             sFieldComment = "";
             sFieldValue = sTmp.c_str();

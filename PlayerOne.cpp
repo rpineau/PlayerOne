@@ -12,41 +12,62 @@ CPlayerOne::CPlayerOne()
 {
 
     m_bSetUserConf = false;
-    m_pframeBuffer = NULL;
-    m_bConnected = false;
-    m_nCameraID = 0;
-    m_bAbort = false;
-    m_nCurrentBin = 1;
-    m_nImageFormat = POA_RAW16;
-    m_nNbBitToShift = 0;
-    m_dCaptureLenght = 0;
-    m_nNbBin = 1;
-    m_SupportedBins[0] = 1;
 
+    m_nImageFormat = POA_RAW16;
+    m_sensorModeInfo.clear();
+    m_nSensorModeIndex = 0;
+    m_nSensorModeCount = 0;
+    m_nControlNums = 0;
+    m_ControlList.clear();
+    m_GainList.clear();
+    m_nNbGainValue = VAL_NOT_AVAILABLE;
+    m_nGain = VAL_NOT_AVAILABLE;
+    m_nWbR = VAL_NOT_AVAILABLE;
+    m_bR_Auto = false;;
+    m_nWbG = VAL_NOT_AVAILABLE;
+    m_bG_Auto = false;;
+    m_nWbB = VAL_NOT_AVAILABLE;
+    m_bB_Auto =false;
+    m_nFlip = POA_FLIP_NONE;
+    m_nAutoExposureTarget = 0;
+    m_nOffset = VAL_NOT_AVAILABLE;
+    m_bPixelBinMode = false;
+    m_nUSBBandwidth = 100;
+    m_dPixelSize = 0;
+    m_nMaxWidth = -1;
+    m_nMaxHeight = -1;
+    m_bIsColorCam = false;
+    m_nBayerPattern = POA_BAYER_BG;
+    m_nMaxBitDepth = 16;
+    m_nNbBin = 1;
+    m_nCurrentBin  = 1;
+    m_bHasRelayOutput = false;
+    m_bConnected = false;
+    m_pframeBuffer = nullptr;
+    m_nCameraID = 0;
+    m_sCameraName.clear();
+    m_sCameraSerial.clear();
+    m_bDeviceIsUSB = true;
+    m_bAbort = false;
+    m_mAvailableFrameRate.clear();
+    m_nNbBitToShift=0;
+    m_ExposureTimer.Reset();
+    m_ImageDownloadTimer.Reset();
+    m_dCaptureLenght = 0;
     m_nROILeft = -1;
     m_nROITop = -1;
-    m_nROIWidth = -1;
+    m_nROIWidth = 1;
     m_nROIHeight = -1;
-
     m_nReqROILeft = -1;
     m_nReqROITop = -1;
     m_nReqROIWidth = -1;
     m_nReqROIHeight = -1;
+    m_nOffsetHighestDR = VAL_NOT_AVAILABLE;
+    m_nOffsetUnityGain = VAL_NOT_AVAILABLE;
+    m_nGainLowestRN = VAL_NOT_AVAILABLE;
+    m_nOffsetLowestRN = VAL_NOT_AVAILABLE;
+    m_nHCGain = VAL_NOT_AVAILABLE;
 
-    m_nControlNums = -1;
-    m_ControlList.clear();
-    m_sensorModeInfo.clear();
-
-    m_nGain = -1;
-    m_nWbR = -1;
-    m_nWbG = -1;
-    m_nWbB = -1;
-    m_nFlip = -1;
-    m_nAutoExposureTarget = -1;
-    m_nOffset = -1;
-
-    
-    memset(m_szCameraName,0,BUFFER_LEN);
 #ifdef PLUGIN_DEBUG
 #if defined(SB_WIN_BUILD)
     m_sLogfilePath = getenv("HOMEDRIVE");
@@ -96,6 +117,7 @@ int CPlayerOne::Connect(int nCameraID)
     POAErrors ret;
     POAConfigAttributes Attribute;
     POASensorModeInfo sensorMode;
+    std::string sTmp;
 
     long nMin, nMax;
 
@@ -300,19 +322,25 @@ int CPlayerOne::Connect(int nCameraID)
     if(m_bSetUserConf) {
         // set default values
         setGain(m_nGain);
+        setOffset(m_nOffset);
         setWB_R(m_nWbR, m_bR_Auto);
         setWB_G(m_nWbG, m_bG_Auto);
         setWB_B(m_nWbB, m_bB_Auto);
         setFlip(m_nFlip);
-        setOffset(m_nOffset);
+        setSensorMode(m_nSensorModeIndex);
+        setUSBBandwidth(m_nUSBBandwidth);
+        setPixelBinMode(m_bPixelBinMode);
     }
     else {
         getGain(nMin, nMax , m_nGain);
+        getOffset(nMin, nMax, m_nOffset);
         getWB_R(nMin, nMax, m_nWbR, m_bR_Auto);
         getWB_G(nMin, nMax, m_nWbG, m_bG_Auto);
         getWB_B(nMin, nMax, m_nWbB, m_bB_Auto);
         getFlip(nMin, nMax, m_nFlip);
-        getOffset(nMin, nMax, m_nOffset);
+        getCurentSensorMode(sTmp, m_nSensorModeIndex);
+        getUSBBandwidth(nMin, nMax, m_nUSBBandwidth);
+        getPixelBinMode(m_bPixelBinMode);
     }
 
     rebuildGainList();
@@ -337,13 +365,12 @@ int CPlayerOne::Connect(int nCameraID)
         m_sLogFile.flush();
 #endif
     }
-    // POASetSensorMode(m_nCameraID, 1); // mode 1 is low noise... to be verified with a camera that supports this
+
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Connected" << std::endl;
     m_sLogFile.flush();
 #endif
 
-    setUSBBandwidth(50);
     return nErr;
 }
 
@@ -563,11 +590,10 @@ int CPlayerOne::getBinFromIndex(int nIndex)
     return m_SupportedBins[nIndex];        
 }
 
-int CPlayerOne::getCurentSensorMode(std::string sSensorMode)
+int CPlayerOne::getCurentSensorMode(std::string &sSensorMode, int &nModeIndex)
 {
     int nErr = PLUGIN_OK;
     POAErrors ret;
-    int nModeIndex;
 
     ret =  POAGetSensorMode(m_nCameraID, &nModeIndex);
     if(ret) {
@@ -614,13 +640,18 @@ int CPlayerOne::setSensorMode(int nModeIndex)
     int nErr = PLUGIN_OK;
     POAErrors ret;
 
+    m_nSensorModeIndex = nModeIndex;
+
+    if(!m_bConnected)
+        return ERR_NOLINK;
+
     if(!m_nSensorModeCount) // sensor mode no supported by camera
         return ERR_COMMANDNOTSUPPORTED;
 
-    ret = POASetSensorMode(m_nCameraID, nModeIndex);
+    ret = POASetSensorMode(m_nCameraID, m_nSensorModeIndex);
     if(ret) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getSensorMode] Error setting sensor mode, Error = " << POAGetErrorString(ret) << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setSensorMode] Error setting sensor mode, Error = " << POAGetErrorString(ret) << std::endl;
         m_sLogFile.flush();
 #endif
         nErr = ERR_CMDFAILED;
@@ -664,8 +695,11 @@ int CPlayerOne::setPixelBinMode(bool bSumMode)
     POAErrors ret;
     POAConfigValue confValue;
 
+    m_bPixelBinMode = bSumMode;
+
+    if(m_bConnected)
     // POA_TRUE is sum and POA_FALSE is average,
-    confValue.boolValue = bSumMode?POA_TRUE:POA_FALSE;
+    confValue.boolValue = m_bPixelBinMode?POA_TRUE:POA_FALSE;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setPixelBinMode] Pixel bin mode set to " << (bSumMode?"Sum":"Average") << std::endl;
@@ -822,7 +856,7 @@ int CPlayerOne::setCoolerTemperature(bool bOn, double dTemp)
         ret = setConfigValue(POA_TARGET_TEMP, confValue);
         if(ret != POA_OK) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setGain] Error setting temperature, Error = " << POAGetErrorString(ret) << std::endl;
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setCoolerTemperature] Error setting temperature, Error = " << POAGetErrorString(ret) << std::endl;
             m_sLogFile.flush();
 #endif
             nErr = ERR_CMDFAILED;
@@ -832,7 +866,7 @@ int CPlayerOne::setCoolerTemperature(bool bOn, double dTemp)
         ret = setConfigValue(POA_COOLER, confValue);
         if(ret != POA_OK) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setGain] Error setting cooler, Error = " << POAGetErrorString(ret) << std::endl;
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setCoolerTemperature] Error setting cooler, Error = " << POAGetErrorString(ret) << std::endl;
             m_sLogFile.flush();
 #endif
             nErr = ERR_CMDFAILED;
@@ -968,8 +1002,11 @@ int CPlayerOne::setGain(long nGain)
     POAErrors ret;
     POAConfigValue confValue;
 
-    confValue.intValue = nGain;
     m_nGain = nGain;
+    if(!m_bConnected)
+        return nErr;
+    
+    confValue.intValue = m_nGain;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setGain] Setting Gain to " << m_nGain << std::endl;
@@ -1027,9 +1064,13 @@ int CPlayerOne::setWB_R(long nWB_R, bool bIsAuto)
     POAErrors ret;
     POAConfigValue confValue;
 
-    confValue.intValue = nWB_R;
     m_nWbR = nWB_R;
     m_bR_Auto = bIsAuto;
+
+    if(!m_bConnected)
+        return nErr;
+
+    confValue.intValue = nWB_R;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setWB_R] WB_R set to " << m_nWbR << std::endl;
@@ -1087,9 +1128,13 @@ int CPlayerOne::setWB_G(long nWB_G, bool bIsAuto)
     POAErrors ret;
     POAConfigValue confValue;
 
-    confValue.intValue = nWB_G;
     m_nWbG = nWB_G;
     m_bG_Auto = bIsAuto;
+
+    if(!m_bConnected)
+        return nErr;
+
+    confValue.intValue = m_nWbG;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setWB_G] WB_R set to " << m_nWbG << std::endl;
@@ -1147,9 +1192,13 @@ int CPlayerOne::setWB_B(long nWB_B, bool bIsAuto)
     POAErrors ret;
     POAConfigValue confValue;
 
-    confValue.intValue = nWB_B;
     m_nWbB = nWB_B;
     m_bB_Auto = bIsAuto;
+
+    if(!m_bConnected)
+        return nErr;
+
+    confValue.intValue = m_nWbB;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setWB_B] WB_B set to " << m_nWbG << std::endl;
@@ -1254,8 +1303,12 @@ int CPlayerOne::setFlip(long nFlip)
     POAErrors ret;
     POAConfigValue confValue;
 
-    confValue.intValue = nFlip;
     m_nFlip = nFlip;
+
+    if(!m_bConnected)
+        return nErr;
+
+    confValue.intValue = m_nFlip;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setFlip] Flip set to " << m_nFlip << std::endl;
@@ -1325,11 +1378,15 @@ int CPlayerOne::setOffset(long nOffset)
     POAErrors ret;
     POAConfigValue confValue;
 
-    confValue.intValue = nOffset;
     m_nOffset = nOffset;
 
+    if(!m_bConnected)
+        return nErr;
+
+    confValue.intValue = m_nOffset;
+
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setOffset] black offset set to " << nOffset << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setOffset] black offset set to " << m_nOffset << std::endl;
     m_sLogFile.flush();
 #endif
     
@@ -1376,16 +1433,21 @@ int CPlayerOne::getUSBBandwidth(long &nMin, long &nMax, long &nValue)
     return 0;
 }
 
-int CPlayerOne::setUSBBandwidth(long nBandwidth, bool bIsAuto)
+int CPlayerOne::setUSBBandwidth(long nBandwidth)
 {
     int nErr = PLUGIN_OK;
     POAErrors ret;
     POAConfigValue confValue;
 
-    confValue.intValue = nBandwidth;
+    m_nUSBBandwidth = nBandwidth;
+
+    if(!m_bConnected)
+        return nErr;
+
+    confValue.intValue = m_nUSBBandwidth;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setWB_R] USB Bandwidth set to " << nBandwidth << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setUSBBandwidth] USB Bandwidth set to " << m_nUSBBandwidth << std::endl;
     m_sLogFile.flush();
 #endif
 
@@ -1393,15 +1455,12 @@ int CPlayerOne::setUSBBandwidth(long nBandwidth, bool bIsAuto)
     if(ret != POA_OK) {
         nErr = ERR_CMDFAILED;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setWB_R] Error setting USB Bandwidth, Error = " << POAGetErrorString(ret) << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setUSBBandwidth] Error setting USB Bandwidth, Error = " << POAGetErrorString(ret) << std::endl;
         m_sLogFile.flush();
 #endif
     }
     return nErr;
-
-
 }
-
 
 
 POAErrors CPlayerOne::setConfigValue(POAConfig confID , POAConfigValue confValue,  POABool bAuto)
