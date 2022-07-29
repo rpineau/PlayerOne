@@ -42,11 +42,16 @@ X2Camera::X2Camera( const char* pszSelection,
             m_Camera.setCameraSerial(std::string(m_szCameraSerial));
             m_Camera.setCameraId(m_nCameraID);
 
-            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_GAIN, 135);
-            m_Camera.setGain((long)nValue);
-
-            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_OFFSET, 40);
-            m_Camera.setOffset((long)nValue);
+            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_GAIN, VAL_NOT_AVAILABLE);
+            if(nValue!=VAL_NOT_AVAILABLE)
+                m_Camera.setGain((long)nValue);
+            else {
+                m_Camera.setUserConf(false); // better not set any bad value and read defaults from camera
+                return;
+            }
+            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_OFFSET, VAL_NOT_AVAILABLE);
+            if(nValue!=VAL_NOT_AVAILABLE)
+                m_Camera.setOffset((long)nValue);
 
             nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_R, VAL_NOT_AVAILABLE);
             bIsAuto =  (m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_R_AUTO, 0) == 0?false:true);
@@ -233,7 +238,7 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
 
     if(m_bLinked){
         nErr = m_Camera.getGain(nMin, nMax, nVal);
-        if(nErr == -1)
+        if(nErr == VAL_NOT_AVAILABLE)
             dx->setEnabled("Gain", false);
         else {
             dx->setPropertyInt("Gain", "minimum", (int)nMin);
@@ -245,7 +250,7 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
         }
 
         nErr = m_Camera.getOffset(nMin, nMax, nVal);
-        if(nErr == -1)
+        if(nErr == VAL_NOT_AVAILABLE)
             dx->setEnabled("Offset", false);
         else {
             dx->setPropertyInt("Offset", "minimum", (int)nMin);
@@ -257,7 +262,7 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
         }
 
         nErr = m_Camera.getWB_R(nMin, nMax, nVal, bIsAuto);
-        if(nErr == -1)
+        if(nErr == VAL_NOT_AVAILABLE)
             dx->setEnabled("WB_R", false);
         else {
             dx->setPropertyInt("WB_R", "minimum", (int)nMin);
@@ -273,7 +278,7 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
         }
 
         nErr = m_Camera.getWB_G(nMin, nMax, nVal, bIsAuto);
-        if(nErr == -1)
+        if(nErr == VAL_NOT_AVAILABLE)
             dx->setEnabled("WB_G", false);
         else {
             dx->setPropertyInt("WB_G", "minimum", (int)nMin);
@@ -289,7 +294,7 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
         }
 
         nErr = m_Camera.getWB_B(nMin, nMax, nVal, bIsAuto);
-        if(nErr == -1)
+        if(nErr == VAL_NOT_AVAILABLE)
             dx->setEnabled("WB_B", false);
         else {
             dx->setPropertyInt("WB_B", "minimum", (int)nMin);
@@ -305,7 +310,7 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
         }
 
         nErr = m_Camera.getFlip(nMin, nMax, nVal);
-        if(nErr == -1)
+        if(nErr == VAL_NOT_AVAILABLE)
             dx->setEnabled("Flip", false);
         else {
             dx->setCurrentIndex("Flip", (int)nVal);
@@ -313,7 +318,7 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
 
         dx->invokeMethod("SensorMode","clear");
         nErr = m_Camera.getSensorModeList(sModes, nCurrentSensorMode);
-        if(nErr == -1)
+        if(nErr == VAL_NOT_AVAILABLE)
             dx->setEnabled("SensorMode", false);
         else {
             if(nCurrentSensorMode) {
@@ -325,7 +330,7 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
         }
 
         nErr = m_Camera.getUSBBandwidth(nMin, nMax, nVal);
-        if(nErr == -1)
+        if(nErr == VAL_NOT_AVAILABLE)
             dx->setEnabled("USBBandwidth", false);
         else {
             dx->setPropertyInt("USBBandwidth", "minimum", (int)nMin);
@@ -337,7 +342,7 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
         }
 
         nErr = m_Camera.getPixelBinMode(bBinPixelSumMode);
-        if(nErr == -1)
+        if(nErr == VAL_NOT_AVAILABLE)
             dx->setEnabled("PixelBinMode", false);
         else {
             dx->setCurrentIndex("PixelBinMode", bBinPixelSumMode?0:1);
@@ -973,46 +978,76 @@ int X2Camera::valueForIntegerField (int nIndex, BasicStringInterface &sFieldName
     long nVal = 0;
     long nMin = 0;
     long nMax = 0;
-    bool bIsAuto;
+    bool bIsAuto = false;
     
     X2MutexLocker ml(GetMutex());
 
     switch(nIndex) {
         case F_GAIN :
-            m_Camera.getGain(nMin, nMax, nVal);
             sFieldName = "GAIN";
-            sFieldComment = "";
-            nFieldValue = (int)nVal;
+            nErr = m_Camera.getGain(nMin, nMax, nVal);
+            if(nErr == VAL_NOT_AVAILABLE) {
+                sFieldComment = "not available";
+                nFieldValue = 0;
+            }
+            else {
+                sFieldComment = "";
+                nFieldValue = (int)nVal;
+            }
             break;
             
+        case F_BLACK_OFFSET :
+            sFieldName = "BLACK-OFFSET";
+            nErr = m_Camera.getOffset(nMin, nMax, nVal);
+            if(nErr == VAL_NOT_AVAILABLE) {
+                sFieldComment = "not available";
+                nFieldValue = 0;
+            }
+            else {
+                sFieldComment = "";
+                nFieldValue = (int)nVal;
+            }
+            break;
+
         case F_WB_R :
-            m_Camera.getWB_R(nMin, nMax, nVal, bIsAuto);
             sFieldName = "R-WB";
-            sFieldComment = "";
-            nFieldValue = (int)nVal;
+            nErr = m_Camera.getWB_R(nMin, nMax, nVal, bIsAuto);
+            if(nErr == VAL_NOT_AVAILABLE) {
+                sFieldComment = "not available";
+                nFieldValue = 0;
+            }
+            else {
+                sFieldComment = "";
+                nFieldValue = (int)nVal;
+            }
             break;
             
         case F_WB_G :
-            m_Camera.getWB_G(nMin, nMax, nVal, bIsAuto);
             sFieldName = "G-WB";
-            sFieldComment = "";
-            nFieldValue = (int)nVal;
+            nErr = m_Camera.getWB_G(nMin, nMax, nVal, bIsAuto);
+            if(nErr == VAL_NOT_AVAILABLE) {
+                sFieldComment = "not available";
+                nFieldValue = 0;
+            }
+            else {
+                sFieldComment = "";
+                nFieldValue = (int)nVal;
+            }
             break;
             
         case F_WB_B :
-            m_Camera.getWB_B(nMin, nMax, nVal, bIsAuto);
             sFieldName = "B-WB";
-            sFieldComment = "";
-            nFieldValue = (int)nVal;
+            nErr = m_Camera.getWB_B(nMin, nMax, nVal, bIsAuto);
+            if(nErr == VAL_NOT_AVAILABLE) {
+                sFieldComment = "not available";
+                nFieldValue = 0;
+            }
+            else {
+                sFieldComment = "";
+                nFieldValue = (int)nVal;
+            }
             break;
 
-        case F_BLACK_OFFSET :
-            m_Camera.getOffset(nMin, nMax, nVal);
-            sFieldName = "BLACK-OFFSET";
-            sFieldComment = "";
-            nFieldValue = (int)nVal;
-            break;
-            
         default :
             break;
 
@@ -1088,10 +1123,16 @@ int X2Camera::valueForStringField (int nIndex, BasicStringInterface &sFieldName,
             break;
 
         case F_SENSOR_MODE :
-            m_Camera.getCurentSensorMode(sTmp, nModeIndex);
             sFieldName = "SENSOR_MODE";
-            sFieldComment = "";
-            sFieldValue = sTmp.c_str();
+            nErr = m_Camera.getCurentSensorMode(sTmp, nModeIndex);
+            if(nErr == VAL_NOT_AVAILABLE) {
+                sFieldComment = "not available";
+                sFieldValue = "";
+            }
+            else {
+                sFieldComment = "";
+                sFieldValue = sTmp.c_str();
+            }
             break;
 
         default :

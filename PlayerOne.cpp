@@ -613,7 +613,7 @@ int CPlayerOne::getSensorModeList(std::vector<std::string> &sModes, int &curentM
     POAErrors ret;
 
     if(!m_nSensorModeCount) // sensor mode no supported by camera
-        return -1;
+        return VAL_NOT_AVAILABLE;
 
     ret = POAGetSensorMode(m_nCameraID, &curentModeIndex);
     if(ret) {
@@ -621,7 +621,7 @@ int CPlayerOne::getSensorModeList(std::vector<std::string> &sModes, int &curentM
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getSensorMode] Error getting current sensor mode." << std::endl;
         m_sLogFile.flush();
 #endif
-        return -1;
+        return VAL_NOT_AVAILABLE;
     }
     sModes.clear();
     for (POASensorModeInfo mode : m_sensorModeInfo) {
@@ -982,7 +982,7 @@ int CPlayerOne::getGain(long &nMin, long &nMax, long &nValue)
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getGain] Error getting gain, Error = " << POAGetErrorString(ret) << std::endl;
         m_sLogFile.flush();
 #endif
-        return -1;
+        return VAL_NOT_AVAILABLE;
     }
 
     nMin = minValue.intValue;
@@ -1041,7 +1041,7 @@ int CPlayerOne::getWB_R(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getWB_R] Error getting WB_R, Error = " << POAGetErrorString(ret) << std::endl;
         m_sLogFile.flush();
 #endif
-        return -1;
+        return VAL_NOT_AVAILABLE;
     }
     bIsAuto = (bool)bAuto;
     nMin = minValue.intValue;
@@ -1105,7 +1105,7 @@ int CPlayerOne::getWB_G(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getWB_G] Error getting WB_G, Error = " << POAGetErrorString(ret) << std::endl;
         m_sLogFile.flush();
 #endif
-        return -1;
+        return VAL_NOT_AVAILABLE;
     }
     bIsAuto = (bool)bAuto;
     nMin = minValue.intValue;
@@ -1169,7 +1169,7 @@ int CPlayerOne::getWB_B(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getWB_B] Error getting WB_B, Error = " << POAGetErrorString(ret) << std::endl;
         m_sLogFile.flush();
 #endif
-        return -1;
+        return VAL_NOT_AVAILABLE;
     }
     bIsAuto = (bool)bAuto;
     nMin = minValue.intValue;
@@ -1237,7 +1237,7 @@ int CPlayerOne::getFlip(long &nMin, long &nMax, long &nValue)
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFlip] Error getting Flip mode, Error = " << POAGetErrorString(ret) << std::endl;
         m_sLogFile.flush();
 #endif
-        return -1;
+        return VAL_NOT_AVAILABLE;
     }
     if(confValue.boolValue == POA_TRUE) {
         nMin = minValue.boolValue?1:0;
@@ -1251,7 +1251,7 @@ int CPlayerOne::getFlip(long &nMin, long &nMax, long &nValue)
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFlip] Error getting Flip mode, Error = " << POAGetErrorString(ret) << std::endl;
         m_sLogFile.flush();
 #endif
-        return -1;
+        return VAL_NOT_AVAILABLE;
     }
     if(confValue.boolValue == POA_TRUE) {
         nMin = minValue.boolValue?1:0;
@@ -1265,7 +1265,7 @@ int CPlayerOne::getFlip(long &nMin, long &nMax, long &nValue)
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFlip] Error getting Flip mode, Error = " << POAGetErrorString(ret) << std::endl;
         m_sLogFile.flush();
 #endif
-        return -1;
+        return VAL_NOT_AVAILABLE;
     }
     if(confValue.boolValue == POA_TRUE) {
         nMin = minValue.boolValue?1:0;
@@ -1279,7 +1279,7 @@ int CPlayerOne::getFlip(long &nMin, long &nMax, long &nValue)
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFlip] Error getting Flip mode, Error = " << POAGetErrorString(ret) << std::endl;
         m_sLogFile.flush();
 #endif
-        return -1;
+        return VAL_NOT_AVAILABLE;
     }
     if(confValue.boolValue == POA_TRUE) {
         nMin = minValue.boolValue?1:0;
@@ -1358,7 +1358,7 @@ int CPlayerOne::getOffset(long &nMin, long &nMax, long &nValue)
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getOffset] Error getting Offset, Error = " << POAGetErrorString(ret) << std::endl;
         m_sLogFile.flush();
 #endif
-        return -1;
+        return VAL_NOT_AVAILABLE;
     }
 
     nMin = minValue.intValue;
@@ -1418,7 +1418,7 @@ int CPlayerOne::getUSBBandwidth(long &nMin, long &nMax, long &nValue)
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getWB_R] Error getting USB Bandwidth, Error = " << POAGetErrorString(ret) << std::endl;
         m_sLogFile.flush();
 #endif
-        return -1;
+        return VAL_NOT_AVAILABLE;
     }
     nMin = minValue.intValue;
     nMax = maxValue.intValue;
