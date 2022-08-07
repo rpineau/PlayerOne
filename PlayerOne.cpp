@@ -12,7 +12,7 @@ CPlayerOne::CPlayerOne()
 {
 
     m_bSetUserConf = false;
-
+    m_nCameraNum = 0;
     m_nImageFormat = POA_RAW16;
     m_sensorModeInfo.clear();
     m_nSensorModeIndex = 0;
@@ -543,27 +543,36 @@ int CPlayerOne::listCamera(std::vector<camera_info_t>  &cameraIdList)
     camera_info_t   tCameraInfo;
 
     cameraIdList.clear();
-    // list camera connected to the system
-    int cameraNum = POAGetCameraCount();
+    if(!m_bConnected) {
+        // list camera connected to the system
+        m_nCameraNum = POAGetCameraCount();
 
-    POAErrors ret;
-    for (int i = 0; i < cameraNum; i++)
-    {
-        ret = POAGetCameraProperties(i, &m_cameraProperty);
-        if (ret == POA_OK) {
+        POAErrors ret;
+        for (int i = 0; i < m_nCameraNum; i++)
+        {
+            ret = POAGetCameraProperties(i, &m_cameraProperty);
+            if (ret == POA_OK) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [listCamera] Name : " << m_cameraProperty.cameraModelName << std::endl;
-            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [listCamera] USB Port type : " << (m_cameraProperty.isUSB3Speed?"USB3":"USB2") << std::endl;
-            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [listCamera] SN  : " << m_cameraProperty.SN << std::endl;
-            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [listCamera] Camera ID : " << m_cameraProperty.cameraID << std::endl;
-            m_sLogFile.flush();
+                m_sLogFile << "["<<getTimeStamp()<<"]"<< " [listCamera] Name : " << m_cameraProperty.cameraModelName << std::endl;
+                m_sLogFile << "["<<getTimeStamp()<<"]"<< " [listCamera] USB Port type : " << (m_cameraProperty.isUSB3Speed?"USB3":"USB2") << std::endl;
+                m_sLogFile << "["<<getTimeStamp()<<"]"<< " [listCamera] SN  : " << m_cameraProperty.SN << std::endl;
+                m_sLogFile << "["<<getTimeStamp()<<"]"<< " [listCamera] Camera ID : " << m_cameraProperty.cameraID << std::endl;
+                m_sLogFile.flush();
 #endif
+                tCameraInfo.cameraId = m_cameraProperty.cameraID;
+                strncpy(tCameraInfo.model, m_cameraProperty.cameraModelName, BUFFER_LEN);
+                strncpy((char *)tCameraInfo.Sn, m_cameraProperty.SN, 64);
+
+                cameraIdList.push_back(tCameraInfo);
+            }
+        }
+    }
+    else {
         tCameraInfo.cameraId = m_cameraProperty.cameraID;
         strncpy(tCameraInfo.model, m_cameraProperty.cameraModelName, BUFFER_LEN);
         strncpy((char *)tCameraInfo.Sn, m_cameraProperty.SN, 64);
-            
+
         cameraIdList.push_back(tCameraInfo);
-        }
     }
 
     return nErr;
@@ -1494,12 +1503,25 @@ POAErrors CPlayerOne::getConfigValue(POAConfig confID , POAConfigValue &confValu
 {
     POAErrors ret;
     POAConfigAttributes confAttr;
+    int nControlID;
+    bool bControlAvailable  = false;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getConfigValue] getting values for attribute " << confID << std::endl;
     m_sLogFile.flush();
 #endif
 
+    // look for the control
+    for(nControlID = 0; nControlID< m_nControlNums; nControlID++) {
+        if(m_ControlList.at(nControlID).configID == confID) {
+            bControlAvailable = true;
+            break;
+        }
+    }
+
+    if(!bControlAvailable) {
+        return POA_ERROR_INVALID_CONFIG;
+    }
 
     ret = POAGetConfig(m_nCameraID, confID, &confValue, &bAuto);
     if(ret != POA_OK) {

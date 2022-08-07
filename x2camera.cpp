@@ -136,17 +136,25 @@ int	X2Camera::queryAbstraction(const char* pszName, void** ppVal)
 int X2Camera::execModalSettingsDialog()
 {
     int nErr = SB_OK;
-    X2ModalUIUtil uiutil(this, GetTheSkyXFacadeForDrivers());
-    X2GUIInterface*                    ui = uiutil.X2UI();
-    X2GUIExchangeInterface*            dx = NULL;//Comes after ui is loaded
     bool bPressedOK = false;
     int i;
     char tmpBuffer[128];
     int nCamIndex;
     bool bCameraFoud = false;
-    
+
+
+    if(m_bLinked) {
+        nErr = doPlayerOneCAmFeatureConfig();
+        return nErr;
+    }
+
+    X2GUIExchangeInterface* dx = NULL;//Comes after ui is loaded
+    X2ModalUIUtil           uiutil(this, GetTheSkyXFacadeForDrivers());
+    X2GUIInterface*         ui = uiutil.X2UI();
+
     if (NULL == ui)
         return ERR_POINTER;
+
     nErr = ui->loadUserInterface("PlayerOneCamSelect.ui", deviceType(), m_nPrivateISIndex);
     if (nErr)
         return nErr;
@@ -173,12 +181,7 @@ int X2Camera::execModalSettingsDialog()
         }
         dx->setCurrentIndex("comboBox",nCamIndex);
     }
-    if(m_bLinked) {
-        dx->setEnabled("pushButton", true);
-    }
-    else {
-        dx->setEnabled("pushButton", false);
-    }
+
     m_nCurrentDialog = SELECT;
     
     //Display the user interface
@@ -208,9 +211,6 @@ int X2Camera::execModalSettingsDialog()
 int X2Camera::doPlayerOneCAmFeatureConfig()
 {
     int nErr = SB_OK;
-    X2ModalUIUtil uiutil(this, GetTheSkyXFacadeForDrivers());
-    X2GUIInterface*                    ui = uiutil.X2UI();
-    X2GUIExchangeInterface*            dx = NULL;
     long nVal, nMin, nMax;
     int nCtrlVal;
     bool bIsAuto;
@@ -225,6 +225,10 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
     int nGainLowestRN;
     int nOffsetLowestRN;
     int nHCGain;
+
+    X2GUIExchangeInterface* dx = NULL;
+    X2ModalUIUtil           uiutil(this, GetTheSkyXFacadeForDrivers());
+    X2GUIInterface*         ui = uiutil.X2UI();
 
     if (NULL == ui)
         return ERR_POINTER;
@@ -492,13 +496,6 @@ void X2Camera::uiEvent(X2GUIExchangeInterface* uiex, const char* pszEvent)
 
 void X2Camera::doSelectCamEvent(X2GUIExchangeInterface* uiex, const char* pszEvent)
 {
-    if (!strcmp(pszEvent, "on_pushButton_clicked"))
-    {
-        int nErr=SB_OK;
-        
-        nErr = doPlayerOneCAmFeatureConfig();
-        m_nCurrentDialog = SELECT;
-    }
 }
 
 void X2Camera::doSettingsCamEvent(X2GUIExchangeInterface* uiex, const char* pszEvent)
@@ -506,22 +503,22 @@ void X2Camera::doSettingsCamEvent(X2GUIExchangeInterface* uiex, const char* pszE
     bool bEnable;
     
     if (!strcmp(pszEvent, "on_checkBox_stateChanged")) {
-        bEnable = uiex->isChecked("chackBox");
+        bEnable = uiex->isChecked("checkBox");
         uiex->setEnabled("Gain", !bEnable);
     }
 
     if (!strcmp(pszEvent, "on_checkBox_2_stateChanged")) {
-        bEnable = uiex->isChecked("chackBox_2");
+        bEnable = uiex->isChecked("checkBox_2");
         uiex->setEnabled("WB_R", !bEnable);
     }
 
     if (!strcmp(pszEvent, "on_checkBox_3_stateChanged")) {
-        bEnable = uiex->isChecked("chackBox_3");
+        bEnable = uiex->isChecked("checkBox_3");
         uiex->setEnabled("WB_G", !bEnable);
     }
 
     if (!strcmp(pszEvent, "on_checkBox_4_stateChanged")) {
-        bEnable = uiex->isChecked("chackBox_4");
+        bEnable = uiex->isChecked("checkBox_4");
         uiex->setEnabled("WB_B", !bEnable);
     }
 

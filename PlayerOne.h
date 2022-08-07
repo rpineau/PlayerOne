@@ -137,7 +137,8 @@ protected:
     void                    buildGainList(long nMin, long nMax, long nValue);
 
     bool                    m_bSetUserConf;
-
+    int                     m_nCameraNum;
+    
     POACameraProperties     m_cameraProperty;
     POAImgFormat            m_nImageFormat;
     std::vector<POASensorModeInfo>       m_sensorModeInfo;
