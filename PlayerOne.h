@@ -1,8 +1,8 @@
 //
 //  PlayerOne.hpp
 //
-//  Created by Rodolphe Pineau on 06/12/2017
-//  Copyright © 2017 RTI-Zone. All rights reserved.
+//  Created by Rodolphe Pineau on 2022/07/06
+//  Copyright © 2022 RTI-Zone. All rights reserved.
 //
 
 #ifndef PlayerOne_hpp
