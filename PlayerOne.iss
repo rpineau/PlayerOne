@@ -53,13 +53,12 @@ Source: "libPlayerOne/Win32/Release/libPlayerOne.dll";        DestDir: "{app}\Pl
 Source: "PlayerOneCamSelect.ui";                           DestDir: "{app}\Plugins\CameraPlugIns"; Flags: ignoreversion
 Source: "PlayerOneCamera.ui";                              DestDir: "{app}\Plugins\CameraPlugIns"; Flags: ignoreversion
 Source: "PlayerOne.png";                                   DestDir: "{app}\Plugins\CameraPlugIns"; Flags: ignoreversion
-Source: "static_libs/Windows/Win32/SVBCameraSDK.dll";   DestDir: "{app}\..\..\"; Flags: ignoreversion
+
 ; 64 bit
 Source: "libPlayerOne/x64/Release/libPlayerOne.dll";          DestDir: "{app}\Plugins64\CameraPlugIns"; Flags: ignoreversion; Check: DirExists(ExpandConstant('{app}\Plugins64\CameraPlugIns'))
 Source: "PlayerOneCamSelect.ui";                           DestDir: "{app}\Plugins64\CameraPlugIns"; Flags: ignoreversion; Check: DirExists(ExpandConstant('{app}\Plugins64\CameraPlugIns'))
 Source: "PlayerOneCamera.ui";                              DestDir: "{app}\Plugins64\CameraPlugIns"; Flags: ignoreversion; Check: DirExists(ExpandConstant('{app}\Plugins64\CameraPlugIns'))
 Source: "PlayerOne.png";                                   DestDir: "{app}\Plugins64\CameraPlugIns"; Flags: ignoreversion; Check: DirExists(ExpandConstant('{app}\Plugins64\CameraPlugIns'))
-Source: "static_libs/Windows/x64/SVBCameraSDK.dll";     DestDir: "{app}\..\..\TheSky64"; Flags: ignoreversion; Check: DirExists(ExpandConstant('{app}\..\..\TheSky64'))
 
 
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
