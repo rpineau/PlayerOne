@@ -39,6 +39,7 @@ cp "./cameralist PlayerOne.txt" "$TheSkyX_Path/Resources/Common/Miscellaneous Fi
 cp "./PlayerOneCamera.ui" "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/"
 cp "./PlayerOneCamSelect.ui" "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/"
 cp "./libPlayerOne.so" "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/"
+cp "./PlayerOne.png" "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/"
 sudo cp -f "./player_one_astronomy.rules" "/etc/udev/rules.d/"
 
 app_owner=`/usr/bin/stat -c "%u" "$TheSkyX_Path" | xargs id -n -u`
@@ -47,6 +48,7 @@ if [ ! -z "$app_owner" ]; then
 	chown $app_owner "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/PlayerOneCamera.ui"
 	chown $app_owner "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/PlayerOneCamSelect.ui"
 	chown $app_owner "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/libPlayerOne.so"
+	chown $app_owner "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/PlayerOne.png"
 fi
 chmod  755 "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/libPlayerOne.so"
 sudo udevadm control --reload
