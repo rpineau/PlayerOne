@@ -740,8 +740,8 @@ int X2Camera::CCGetChipSize(const enumCameraIndex& Camera, const enumWhichCCD& C
 {
 	X2MutexLocker ml(GetMutex());
 
-	nW = m_Camera.getWidth()/nXBin;
-    nH = m_Camera.getHeight()/nYBin;
+	nW = (m_Camera.getWidth()/nXBin) * m_Camera.getPixelSize();
+    nH = (m_Camera.getHeight()/nYBin) * m_Camera.getPixelSize();
     nReadOut = CameraDriverInterface::rm_Image;
 
     m_Camera.setBinSize(nXBin);

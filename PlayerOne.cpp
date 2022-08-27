@@ -599,10 +599,13 @@ int CPlayerOne::getNumBins()
 
 int CPlayerOne::getBinFromIndex(int nIndex)
 {
+    if(!m_bConnected)
+        return 1;
+
     if(nIndex>(m_nNbBin-1))
         return 1;
-    
-    return m_SupportedBins[nIndex];        
+
+    return m_SupportedBins[nIndex];
 }
 
 int CPlayerOne::getCurentSensorMode(std::string &sSensorMode, int &nModeIndex)
