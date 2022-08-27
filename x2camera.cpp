@@ -17,7 +17,8 @@ X2Camera::X2Camera( const char* pszSelection,
     int nValue = 0;
     bool bIsAuto;
     bool bUserConf;
-    
+    int  nErr = PLUGIN_OK;
+
 	m_nPrivateISIndex				= nISIndex;
 	m_pTheSkyXForMounts				= pTheSkyXForMounts;
 	m_pSleeper						= pSleeper;
@@ -38,7 +39,12 @@ X2Camera::X2Camera( const char* pszSelection,
         m_Camera.setUserConf(bUserConf);
         if(bUserConf) {
             m_pIniUtil->readString(KEY_X2CAM_ROOT, KEY_GUID, "0", m_szCameraSerial, 128);
-            m_Camera.getCameraIdFromSerial(m_nCameraID, std::string(m_szCameraSerial));
+            nErr = m_Camera.getCameraIdFromSerial(m_nCameraID, std::string(m_szCameraSerial));
+            if(nErr) {
+                m_nCameraID = 0;
+                m_Camera.setCameraId(m_nCameraID);
+                return;
+            }
             m_Camera.setCameraSerial(std::string(m_szCameraSerial));
             m_Camera.setCameraId(m_nCameraID);
 
@@ -618,19 +624,19 @@ int X2Camera::CCEstablishLink(const enumLPTPort portLPT, const enumWhichCCD& CCD
 
     m_dCurTemp = -100.0;
     nErr = m_Camera.Connect(m_nCameraID);
-    if(nErr)
+    if(nErr) {
         m_bLinked = false;
+        return ERR_NODEVICESELECTED;
+    }
     else
         m_bLinked = true;
 
-    if(!m_nCameraID) {
-        m_Camera.getCameraId(m_nCameraID);
-        std::string sCameraSerial;
-        m_Camera.getCameraSerialFromID(m_nCameraID, sCameraSerial);
-        // store camera ID
-        m_pIniUtil->writeString(KEY_X2CAM_ROOT, KEY_GUID, sCameraSerial.c_str());
-    }
-    
+    m_Camera.getCameraId(m_nCameraID);
+    std::string sCameraSerial;
+    m_Camera.getCameraSerialFromID(m_nCameraID, sCameraSerial);
+    // store camera ID
+    m_pIniUtil->writeString(KEY_X2CAM_ROOT, KEY_GUID, sCameraSerial.c_str());
+
     return nErr;
 }
 

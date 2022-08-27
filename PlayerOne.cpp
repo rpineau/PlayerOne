@@ -121,7 +121,7 @@ int CPlayerOne::Connect(int nCameraID)
 
     long nMin, nMax;
 
-    if(nCameraID)
+    if(nCameraID>=0)
         m_nCameraID = nCameraID;
     else {
         // check if there is at least one camera connected to the system
@@ -402,9 +402,10 @@ void CPlayerOne::getCameraId(int &nCameraId)
     nCameraId = m_nCameraID;
 }
 
-void CPlayerOne::getCameraIdFromSerial(int &nCameraId, std::string sSerial)
+int CPlayerOne::getCameraIdFromSerial(int &nCameraId, std::string sSerial)
 {
     POAErrors ret;
+    int nErr = PLUGIN_OK;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getCameraIdFromSerial] sSerial = " << sSerial << std::endl;
@@ -435,22 +436,27 @@ void CPlayerOne::getCameraIdFromSerial(int &nCameraId, std::string sSerial)
     }
     else {
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getCameraIdFromSerial] camera id  not found for SN: "<< sSerial << std::endl;
-
     }
     m_sLogFile.flush();
 #endif
+    if(nCameraId<0)
+        nErr = ERR_NODEVICESELECTED;
+    return nErr;
 }
 
-void CPlayerOne::getCameraSerialFromID(int nCameraId, std::string &sSerial)
+int CPlayerOne::getCameraSerialFromID(int nCameraId, std::string &sSerial)
 {
     POAErrors ret;
+    int nErr = PLUGIN_OK;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getCameraSerialFromID] nCameraId = " << nCameraId << std::endl;
     m_sLogFile.flush();
 #endif
 
-    nCameraId = 0;
+    if(nCameraId<0)
+        return ERR_NODEVICESELECTED;
+
     sSerial.clear();
     int cameraNum = POAGetCameraCount();
     for (int i = 0; i < cameraNum; i++)
@@ -475,10 +481,10 @@ void CPlayerOne::getCameraSerialFromID(int nCameraId, std::string &sSerial)
     }
     else {
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getCameraSerialFromID] camera serial  not found for id: "<< nCameraId << std::endl;
-
     }
     m_sLogFile.flush();
 #endif
+    return nErr;
 }
 
 void CPlayerOne::getCameraNameFromID(int nCameraId, std::string &sName)

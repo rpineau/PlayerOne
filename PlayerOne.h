@@ -57,8 +57,8 @@ public:
     void        Disconnect(void);
     void        setCameraId(int nCameraId);
     void        getCameraId(int &nCcameraId);
-    void        getCameraIdFromSerial(int &nCameraId, std::string sSerial);
-    void        getCameraSerialFromID(int nCameraId, std::string &sSerial);
+    int         getCameraIdFromSerial(int &nCameraId, std::string sSerial);
+    int         getCameraSerialFromID(int nCameraId, std::string &sSerial);
     void        getCameraNameFromID(int nCameraId, std::string &sName);
     
     void        getCameraName(std::string &sName);
