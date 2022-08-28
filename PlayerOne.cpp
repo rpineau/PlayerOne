@@ -321,6 +321,12 @@ int CPlayerOne::Connect(int nCameraID)
     m_sLogFile.flush();
 #endif
 
+    POAGetSensorModeCount(m_nCameraID, &m_nSensorModeCount);
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Number of sensor mode : " << m_nSensorModeCount << std::endl;
+    m_sLogFile.flush();
+#endif
+
     if(m_bSetUserConf) {
         // set default values
         setGain(m_nGain);
@@ -349,7 +355,6 @@ int CPlayerOne::Connect(int nCameraID)
 
     ret = POASetImageFormat(m_nCameraID, m_nImageFormat);
 
-    POAGetSensorModeCount(m_nCameraID, &m_nSensorModeCount);
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] sensor mode count : " << m_nSensorModeCount << std::endl;
@@ -615,6 +620,10 @@ int CPlayerOne::getCurentSensorMode(std::string &sSensorMode, int &nModeIndex)
     int nErr = PLUGIN_OK;
     POAErrors ret;
 
+    if(!m_nSensorModeCount) {
+        return VAL_NOT_AVAILABLE;
+    }
+
     ret =  POAGetSensorMode(m_nCameraID, &nModeIndex);
     if(ret) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -766,6 +775,7 @@ int CPlayerOne::startCaputure(double dTime)
     m_sLogFile.flush();
 #endif
 
+    POAStopExposure(m_nCameraID);
     ret = POAGetCameraState(m_nCameraID, &cameraState);
     if(ret) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -956,6 +966,9 @@ void CPlayerOne::getBayerPattern(std::string &sBayerPattern)
             case POA_BAYER_MONO:
                 sBayerPattern.assign("MONO");
                 break;
+            default:
+                sBayerPattern.assign("MONO");
+                break;
         }
     }
     else {
@@ -1055,6 +1068,10 @@ int CPlayerOne::getWB_R(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
     nMax = 0;
     nValue = 0;
 
+    if(!m_cameraProperty.isColorCamera) {
+        return VAL_NOT_AVAILABLE;
+    }
+
     ret = getConfigValue(POA_WB_R, confValue, minValue, maxValue, bAuto);
     if(ret) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -1090,6 +1107,10 @@ int CPlayerOne::setWB_R(long nWB_R, bool bIsAuto)
     if(!m_bConnected)
         return nErr;
 
+    if(!m_cameraProperty.isColorCamera) {
+        return VAL_NOT_AVAILABLE;
+    }
+
     confValue.intValue = nWB_R;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -1118,6 +1139,10 @@ int CPlayerOne::getWB_G(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
     nMin = 0;
     nMax = 0;
     nValue = 0;
+
+    if(!m_cameraProperty.isColorCamera) {
+        return VAL_NOT_AVAILABLE;
+    }
 
     ret = getConfigValue(POA_WB_G, confValue, minValue, maxValue, bAuto);
     if(ret) {
@@ -1154,6 +1179,10 @@ int CPlayerOne::setWB_G(long nWB_G, bool bIsAuto)
     if(!m_bConnected)
         return nErr;
 
+    if(!m_cameraProperty.isColorCamera) {
+        return VAL_NOT_AVAILABLE;
+    }
+
     confValue.intValue = m_nWbG;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -1182,6 +1211,10 @@ int CPlayerOne::getWB_B(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
     nMin = 0;
     nMax = 0;
     nValue = 0;
+
+    if(!m_cameraProperty.isColorCamera) {
+        return VAL_NOT_AVAILABLE;
+    }
 
     ret = getConfigValue(POA_WB_B, confValue, minValue, maxValue, bAuto);
     if(ret) {
@@ -1217,6 +1250,10 @@ int CPlayerOne::setWB_B(long nWB_B, bool bIsAuto)
 
     if(!m_bConnected)
         return nErr;
+
+    if(!m_cameraProperty.isColorCamera) {
+        return VAL_NOT_AVAILABLE;
+    }
 
     confValue.intValue = m_nWbB;
 
@@ -1552,11 +1589,13 @@ POAErrors CPlayerOne::getConfigValue(POAConfig confID , POAConfigValue &confValu
         return ret;
     }
 
+
     switch(confAttr.valueType) {
         case VAL_INT :
             minValue.intValue = confAttr.minValue.intValue;
             maxValue.intValue = confAttr.maxValue.intValue;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getConfigValue] Attribute Value       = " << confValue.intValue << std::endl;
             m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getConfigValue] Attribute Min Value   = " << confAttr.minValue.intValue << std::endl;
             m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getConfigValue] Attribute Max Value   = " << confAttr.maxValue.intValue << std::endl;
             m_sLogFile.flush();
@@ -1566,6 +1605,7 @@ POAErrors CPlayerOne::getConfigValue(POAConfig confID , POAConfigValue &confValu
             minValue.floatValue = confAttr.minValue.floatValue;
             maxValue.floatValue = confAttr.maxValue.floatValue;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getConfigValue] Attribute Value       = " << confValue.floatValue << std::endl;
             m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getConfigValue] Attribute Min Value   = " << confAttr.minValue.floatValue << std::endl;
             m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getConfigValue] Attribute Max Value   = " << confAttr.maxValue.floatValue << std::endl;
             m_sLogFile.flush();
@@ -1575,6 +1615,7 @@ POAErrors CPlayerOne::getConfigValue(POAConfig confID , POAConfigValue &confValu
             minValue.boolValue = confAttr.minValue.boolValue;
             maxValue.boolValue = confAttr.maxValue.boolValue;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getConfigValue] Attribute Value       = " << (confValue.boolValue?"True":"False") << std::endl;
             m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getConfigValue] Attribute Min Value   = " << (confAttr.minValue.boolValue?"True":"False")  << std::endl;
             m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getConfigValue] Attribute Max Value   = " << (confAttr.maxValue.boolValue?"True":"False")  << std::endl;
             m_sLogFile.flush();
@@ -1584,6 +1625,7 @@ POAErrors CPlayerOne::getConfigValue(POAConfig confID , POAConfigValue &confValu
             minValue.intValue = confAttr.minValue.intValue;
             maxValue.intValue = confAttr.maxValue.intValue;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getConfigValue] Attribute Value       = " << confValue.intValue << std::endl;
             m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getConfigValue] Attribute Min Value   = " << confAttr.minValue.intValue << std::endl;
             m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getConfigValue] Attribute Max Value   = " << confAttr.maxValue.intValue << std::endl;
             m_sLogFile.flush();
@@ -1739,7 +1781,8 @@ bool CPlayerOne::isFameAvailable()
     POABool pIsReady = POA_FALSE;
     POAErrors ret;
 
-    if(m_ExposureTimer.GetElapsedSeconds() > m_dCaptureLenght) {
+//     if(m_ExposureTimer.GetElapsedSeconds() > m_dCaptureLenght) {
+/*
         POAGetCameraState(m_nCameraID, &cameraState);
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [isFameAvailable] Checking if a frame is ready." << std::endl;
@@ -1752,6 +1795,7 @@ bool CPlayerOne::isFameAvailable()
             bFrameAvailable = false;
         }
         else {
+*/
             ret = POAImageReady(m_nCameraID, &pIsReady);
             if(ret!=POA_OK) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -1764,8 +1808,8 @@ bool CPlayerOne::isFameAvailable()
             m_sLogFile << "["<<getTimeStamp()<<"]"<< " [isFameAvailable] bFrameAvailable : " << (bFrameAvailable?"Yes":"No")<< std::endl;
             m_sLogFile.flush();
 #endif
-        }
-    }
+        // }
+//     }
     return bFrameAvailable;
 }
 
@@ -1840,6 +1884,7 @@ int CPlayerOne::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
 #endif
             if(imgBuffer)
                 free(imgBuffer);
+            POAStopExposure(m_nCameraID);
             return ERR_RXTIMEOUT;
         }
     }
