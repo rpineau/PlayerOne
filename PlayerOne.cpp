@@ -91,7 +91,9 @@ CPlayerOne::CPlayerOne()
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [CPlayerOne] Constructor Called." << std::endl;
     m_sLogFile.flush();
 #endif
-    
+
+    std::vector<camera_info_t> tCameraIdList;
+    listCamera(tCameraIdList);
 }
 
 CPlayerOne::~CPlayerOne()
