@@ -51,8 +51,6 @@ CPlayerOne::CPlayerOne()
     m_bAbort = false;
     m_mAvailableFrameRate.clear();
     m_nNbBitToShift=0;
-    m_ExposureTimer.Reset();
-    m_ImageDownloadTimer.Reset();
     m_dCaptureLenght = 0;
     m_nROILeft = -1;
     m_nROITop = -1;
@@ -123,7 +121,7 @@ int CPlayerOne::Connect(int nCameraID)
 
     long nMin, nMax;
 
-    if(nCameraID>=0)
+    if(nCameraID>=0 && m_sCameraSerial.size()!=0)
         m_nCameraID = nCameraID;
     else {
         // check if there is at least one camera connected to the system
@@ -165,7 +163,7 @@ int CPlayerOne::Connect(int nCameraID)
     m_sLogFile.flush();
 #endif
 
-    
+
     ret = POAGetCameraPropertiesByID(m_nCameraID, &m_cameraProperty);
     if (ret != POA_OK)
     {
@@ -189,7 +187,7 @@ int CPlayerOne::Connect(int nCameraID)
     m_dPixelSize = m_cameraProperty.pixelSize;
     m_nNbBin = 0;
     m_nCurrentBin = 0;
-    
+
     for (i = 0; i < MAX_NB_BIN; i++) {
         m_SupportedBins[i] = m_cameraProperty.bins[i];
         if (m_cameraProperty.bins[i] == 0) {
@@ -420,7 +418,7 @@ int CPlayerOne::getCameraIdFromSerial(int &nCameraId, std::string sSerial)
 
 #endif
     nCameraId = -1;
-    
+
     int cameraNum = POAGetCameraCount();
     for (int i = 0; i < cameraNum; i++)
     {
@@ -807,7 +805,6 @@ int CPlayerOne::startCaputure(double dTime)
         nErr =ERR_CMDFAILED;
 
     m_dCaptureLenght = dTime;
-    m_ExposureTimer.Reset();
     return nErr;
 }
 
@@ -1040,7 +1037,7 @@ int CPlayerOne::setGain(long nGain)
     m_nGain = nGain;
     if(!m_bConnected)
         return nErr;
-    
+
     confValue.intValue = m_nGain;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -1448,7 +1445,7 @@ int CPlayerOne::setOffset(long nOffset)
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setOffset] black offset set to " << m_nOffset << std::endl;
     m_sLogFile.flush();
 #endif
-    
+
     ret = setConfigValue(POA_OFFSET, confValue);
     if(ret != POA_OK) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -1525,7 +1522,7 @@ int CPlayerOne::setUSBBandwidth(long nBandwidth)
 POAErrors CPlayerOne::setConfigValue(POAConfig confID , POAConfigValue confValue,  POABool bAuto)
 {
     POAErrors ret;
-    
+
     if(!m_bConnected)
         return POA_OK;
 
@@ -1783,7 +1780,6 @@ bool CPlayerOne::isFameAvailable()
     POABool pIsReady = POA_FALSE;
     POAErrors ret;
 
-//     if(m_ExposureTimer.GetElapsedSeconds() > m_dCaptureLenght) {
 /*
         POAGetCameraState(m_nCameraID, &cameraState);
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -1811,7 +1807,6 @@ bool CPlayerOne::isFameAvailable()
             m_sLogFile.flush();
 #endif
         // }
-//     }
     return bFrameAvailable;
 }
 
