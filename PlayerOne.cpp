@@ -763,7 +763,7 @@ int CPlayerOne::startCaputure(double dTime)
     POAErrors ret;
     int nTimeout;
     m_bAbort = false;
-    POACameraState cameraState;
+    // POACameraState cameraState;
     POAConfigValue exposure_value;
 
     nTimeout = 0;
@@ -1776,23 +1776,23 @@ int CPlayerOne::clearROI()
 bool CPlayerOne::isFameAvailable()
 {
     bool bFrameAvailable = false;
-    POACameraState cameraState;
     POABool pIsReady = POA_FALSE;
     POAErrors ret;
 
 /*
-        POAGetCameraState(m_nCameraID, &cameraState);
+    POACameraState cameraState;
+    POAGetCameraState(m_nCameraID, &cameraState);
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [isFameAvailable] Checking if a frame is ready." << std::endl;
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [isFameAvailable] cameraState  = " << cameraState << std::endl;
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [isFameAvailable] cameraState still exposing = " << (cameraState==STATE_EXPOSING?"Yes":"No") << std::endl;
         m_sLogFile.flush();
 #endif
-        if(cameraState == STATE_EXPOSING)
-        {
-            bFrameAvailable = false;
-        }
-        else {
+    if(cameraState == STATE_EXPOSING)
+    {
+        bFrameAvailable = false;
+    }
+    else {
 */
             ret = POAImageReady(m_nCameraID, &pIsReady);
             if(ret!=POA_OK) {
@@ -1806,7 +1806,7 @@ bool CPlayerOne::isFameAvailable()
             m_sLogFile << "["<<getTimeStamp()<<"]"<< " [isFameAvailable] bFrameAvailable : " << (bFrameAvailable?"Yes":"No")<< std::endl;
             m_sLogFile.flush();
 #endif
-        // }
+    // }
     return bFrameAvailable;
 }
 
@@ -1825,6 +1825,8 @@ int CPlayerOne::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
     int i = 0;
     uint16_t *buf;
     int srcMemWidth;
+    int copyWidth = 0;
+    int copyHeight = 0;
     int exposure_ms = 0;
 
     if(!frameBuffer)
@@ -1895,6 +1897,8 @@ int CPlayerOne::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
     }
 
     if(imgBuffer != frameBuffer) {
+        copyWidth = srcMemWidth>nMemWidth?nMemWidth:srcMemWidth;
+        copyHeight = m_nROIHeight>nHeight?nHeight:m_nROIHeight;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] copying ("<< m_nROILeft <<","
                                                                         << m_nROITop <<","
@@ -1905,14 +1909,17 @@ int CPlayerOne::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
                                                                         << m_nReqROIWidth <<","
                                                                         << m_nReqROIHeight <<","
                                                                         << std::endl;
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] srcMemWidth  =>  nMemWidth   : " << srcMemWidth << " => " << nMemWidth << std::endl;
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] sizeReadFromCam              : " << sizeReadFromCam << std::endl;
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] size to TSX                  : " << nHeight * nMemWidth << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] srcMemWidth       : " << srcMemWidth << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] nMemWidth         : " << nMemWidth << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] copyHeight        : " << copyHeight << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] copyWidth         : " << copyWidth << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] sizeReadFromCam   : " << sizeReadFromCam << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] size to TSX       : " << nHeight * nMemWidth << std::endl;
         m_sLogFile.flush();
 #endif
-        // copy every line from source buffer newly aligned into TSX buffer cutting at nMemWidth
-        for(i=0; i<nHeight; i++) {
-            memcpy(frameBuffer+(i*nMemWidth), imgBuffer+(i*srcMemWidth), nMemWidth);
+        // copy every line from source buffer newly aligned into TSX buffer cutting at copyWidth
+        for(i=0; i<copyHeight; i++) {
+            memcpy(frameBuffer+(i*nMemWidth), imgBuffer+(i*srcMemWidth), copyWidth);
         }
         free(imgBuffer);
     }
