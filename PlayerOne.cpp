@@ -1644,7 +1644,8 @@ int CPlayerOne::setROI(int nLeft, int nTop, int nWidth, int nHeight)
     int nNewTop = 0;
     int nNewWidth = 0;
     int nNewHeight = 0;
-
+    int tmp1, tmp2;
+    
 
     m_nReqROILeft = nLeft;
     m_nReqROITop = nTop;
@@ -1708,12 +1709,28 @@ int CPlayerOne::setROI(int nLeft, int nTop, int nWidth, int nHeight)
 #endif
 
 
-    if( m_nROILeft == nNewLeft && m_nROITop == nNewTop && m_nROIWidth == nNewWidth && m_nROIHeight == nNewHeight) {
-        return nErr; // no change since last ROI change request
-    }
+//    if( m_nROILeft == nNewLeft && m_nROITop == nNewTop && m_nROIWidth == nNewWidth && m_nROIHeight == nNewHeight) {
+//        return nErr; // no change since last ROI change request
+//    }
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] Requested x, y, w, h : " << nLeft << ", " << nTop << ", " << nWidth << ", " << nHeight <<  std::endl;
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] Set to    x, y, w, h : " << nNewLeft << ", " << nNewTop << ", " << nNewWidth << ", " << nNewHeight <<  std::endl;
+    m_sLogFile.flush();
+#endif
+
+    ret = POASetImageSize(m_nCameraID,nNewWidth,nNewHeight);
+    if(ret != POA_OK) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] Error setting new Width and Height, Error = " << POAGetErrorString(ret) << std::endl;
+        m_sLogFile.flush();
+#endif
+        return ERR_CMDFAILED;
+    }
+
+    POAGetImageSize(m_nCameraID, &tmp1, &tmp2);
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] POAGetImageSize w  : " << tmp1 << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] POAGetImageSize h  : " << tmp2 << std::endl;
     m_sLogFile.flush();
 #endif
 
@@ -1725,14 +1742,14 @@ int CPlayerOne::setROI(int nLeft, int nTop, int nWidth, int nHeight)
 #endif
         return ERR_CMDFAILED;
     }
-    ret = POASetImageSize(m_nCameraID,nNewWidth,nNewHeight);
-    if(ret != POA_OK) {
+
+    POAGetImageStartPos(m_nCameraID, &tmp1, &tmp2);
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] Error setting new Width and Height, Error = " << POAGetErrorString(ret) << std::endl;
-        m_sLogFile.flush();
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] POAGetImageStartPos x  : " << tmp1 << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] POAGetImageStartPos y  : " << tmp2 << std::endl;
+    m_sLogFile.flush();
 #endif
-        return ERR_CMDFAILED;
-    }
+
 
     m_nROILeft = nNewLeft;
     m_nROITop = nNewTop;
@@ -1752,18 +1769,19 @@ int CPlayerOne::clearROI()
     int nErr = PLUGIN_OK;
     POAErrors ret;
 
-    ret = POASetImageStartPos(m_nCameraID, 0, 0);
-    if(ret != POA_OK) {
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [clearROI] Error setting new Left and top, Error = " << POAGetErrorString(ret) << std::endl;
-        m_sLogFile.flush();
-#endif
-        return ERR_CMDFAILED;
-    }
     ret = POASetImageSize(m_nCameraID,  m_cameraProperty.maxWidth/m_nCurrentBin , m_cameraProperty.maxHeight/m_nCurrentBin);
     if(ret != POA_OK) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [clearROI] Error setting new Width and Height, Error = " << POAGetErrorString(ret) << std::endl;
+        m_sLogFile.flush();
+#endif
+        return ERR_CMDFAILED;
+    }
+
+    ret = POASetImageStartPos(m_nCameraID, 0, 0);
+    if(ret != POA_OK) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [clearROI] Error setting new Left and top, Error = " << POAGetErrorString(ret) << std::endl;
         m_sLogFile.flush();
 #endif
         return ERR_CMDFAILED;
@@ -1779,7 +1797,6 @@ bool CPlayerOne::isFameAvailable()
     POABool pIsReady = POA_FALSE;
     POAErrors ret;
 
-/*
     POACameraState cameraState;
     POAGetCameraState(m_nCameraID, &cameraState);
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -1788,6 +1805,7 @@ bool CPlayerOne::isFameAvailable()
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [isFameAvailable] cameraState still exposing = " << (cameraState==STATE_EXPOSING?"Yes":"No") << std::endl;
         m_sLogFile.flush();
 #endif
+    /*
     if(cameraState == STATE_EXPOSING)
     {
         bFrameAvailable = false;
@@ -1812,7 +1830,10 @@ bool CPlayerOne::isFameAvailable()
 
 uint32_t CPlayerOne::getBitDepth()
 {
-    return 16; // m_cameraProperty.bitDepth;
+    if(m_nImageFormat == POA_RAW16)
+        return 16;
+    else
+        return 8;
 }
 
 
@@ -1829,6 +1850,8 @@ int CPlayerOne::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
     int copyHeight = 0;
     int exposure_ms = 0;
 
+    int tmp1, tmp2;
+
     if(!frameBuffer)
         return ERR_POINTER;
 
@@ -1844,6 +1867,20 @@ int CPlayerOne::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] m_nROIHeight    = " << m_nROIHeight << std::endl;
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] m_nReqROIHeight = " << m_nReqROIHeight << std::endl;
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] getBitDepth()/8 = " << getBitDepth()/8 << std::endl;
+    m_sLogFile.flush();
+#endif
+
+    POAGetImageStartPos(m_nCameraID, &tmp1, &tmp2);
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] POAGetImageStartPos x  : " << tmp1 << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] POAGetImageStartPos y  : " << tmp2 << std::endl;
+    m_sLogFile.flush();
+#endif
+
+    POAGetImageSize(m_nCameraID, &tmp1, &tmp2);
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] POAGetImageSize w  : " << tmp1 << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] POAGetImageSize h  : " << tmp2 << std::endl;
     m_sLogFile.flush();
 #endif
 
@@ -1907,7 +1944,7 @@ int CPlayerOne::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
                                                                         << m_nReqROILeft <<","
                                                                         << m_nReqROITop <<","
                                                                         << m_nReqROIWidth <<","
-                                                                        << m_nReqROIHeight <<","
+                                                                        << m_nReqROIHeight <<")"
                                                                         << std::endl;
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] srcMemWidth       : " << srcMemWidth << std::endl;
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] nMemWidth         : " << nMemWidth << std::endl;
