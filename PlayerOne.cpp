@@ -1644,8 +1644,9 @@ int CPlayerOne::setROI(int nLeft, int nTop, int nWidth, int nHeight)
     int nNewTop = 0;
     int nNewWidth = 0;
     int nNewHeight = 0;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     int tmp1, tmp2;
-    
+#endif
 
     m_nReqROILeft = nLeft;
     m_nReqROITop = nTop;
@@ -1709,9 +1710,9 @@ int CPlayerOne::setROI(int nLeft, int nTop, int nWidth, int nHeight)
 #endif
 
 
-//    if( m_nROILeft == nNewLeft && m_nROITop == nNewTop && m_nROIWidth == nNewWidth && m_nROIHeight == nNewHeight) {
-//        return nErr; // no change since last ROI change request
-//    }
+    if( m_nROILeft == nNewLeft && m_nROITop == nNewTop && m_nROIWidth == nNewWidth && m_nROIHeight == nNewHeight) {
+        return nErr; // no change since last ROI change request
+    }
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] Requested x, y, w, h : " << nLeft << ", " << nTop << ", " << nWidth << ", " << nHeight <<  std::endl;
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] Set to    x, y, w, h : " << nNewLeft << ", " << nNewTop << ", " << nNewWidth << ", " << nNewHeight <<  std::endl;
@@ -1727,8 +1728,8 @@ int CPlayerOne::setROI(int nLeft, int nTop, int nWidth, int nHeight)
         return ERR_CMDFAILED;
     }
 
-    POAGetImageSize(m_nCameraID, &tmp1, &tmp2);
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    POAGetImageSize(m_nCameraID, &tmp1, &tmp2);
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] POAGetImageSize w  : " << tmp1 << std::endl;
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] POAGetImageSize h  : " << tmp2 << std::endl;
     m_sLogFile.flush();
@@ -1743,8 +1744,8 @@ int CPlayerOne::setROI(int nLeft, int nTop, int nWidth, int nHeight)
         return ERR_CMDFAILED;
     }
 
-    POAGetImageStartPos(m_nCameraID, &tmp1, &tmp2);
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    POAGetImageStartPos(m_nCameraID, &tmp1, &tmp2);
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] POAGetImageStartPos x  : " << tmp1 << std::endl;
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] POAGetImageStartPos y  : " << tmp2 << std::endl;
     m_sLogFile.flush();
