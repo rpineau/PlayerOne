@@ -33,7 +33,7 @@
 
 // #define PLUGIN_DEBUG    3
 
-#define PLUGIN_VERSION      1.04
+#define PLUGIN_VERSION      1.3
 #define BUFFER_LEN 128
 #define PLUGIN_OK   0
 #define MAX_NB_BIN  8
@@ -188,8 +188,6 @@ protected:
     std::map<int,bool>      m_mAvailableFrameRate;
     int                     m_nNbBitToShift;
     
-    CStopWatch              m_ExposureTimer;
-    CStopWatch              m_ImageDownloadTimer;
     double                  m_dCaptureLenght;
     
     int                     m_nROILeft;

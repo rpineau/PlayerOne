@@ -51,8 +51,6 @@ CPlayerOne::CPlayerOne()
     m_bAbort = false;
     m_mAvailableFrameRate.clear();
     m_nNbBitToShift=0;
-    m_ExposureTimer.Reset();
-    m_ImageDownloadTimer.Reset();
     m_dCaptureLenght = 0;
     m_nROILeft = -1;
     m_nROITop = -1;
@@ -123,7 +121,7 @@ int CPlayerOne::Connect(int nCameraID)
 
     long nMin, nMax;
 
-    if(nCameraID>=0)
+    if(nCameraID>=0 && m_sCameraSerial.size()!=0)
         m_nCameraID = nCameraID;
     else {
         // check if there is at least one camera connected to the system
@@ -165,7 +163,7 @@ int CPlayerOne::Connect(int nCameraID)
     m_sLogFile.flush();
 #endif
 
-    
+
     ret = POAGetCameraPropertiesByID(m_nCameraID, &m_cameraProperty);
     if (ret != POA_OK)
     {
@@ -189,7 +187,7 @@ int CPlayerOne::Connect(int nCameraID)
     m_dPixelSize = m_cameraProperty.pixelSize;
     m_nNbBin = 0;
     m_nCurrentBin = 0;
-    
+
     for (i = 0; i < MAX_NB_BIN; i++) {
         m_SupportedBins[i] = m_cameraProperty.bins[i];
         if (m_cameraProperty.bins[i] == 0) {
@@ -420,7 +418,7 @@ int CPlayerOne::getCameraIdFromSerial(int &nCameraId, std::string sSerial)
 
 #endif
     nCameraId = -1;
-    
+
     int cameraNum = POAGetCameraCount();
     for (int i = 0; i < cameraNum; i++)
     {
@@ -765,7 +763,7 @@ int CPlayerOne::startCaputure(double dTime)
     POAErrors ret;
     int nTimeout;
     m_bAbort = false;
-    POACameraState cameraState;
+    // POACameraState cameraState;
     POAConfigValue exposure_value;
 
     nTimeout = 0;
@@ -807,7 +805,6 @@ int CPlayerOne::startCaputure(double dTime)
         nErr =ERR_CMDFAILED;
 
     m_dCaptureLenght = dTime;
-    m_ExposureTimer.Reset();
     return nErr;
 }
 
@@ -1040,7 +1037,7 @@ int CPlayerOne::setGain(long nGain)
     m_nGain = nGain;
     if(!m_bConnected)
         return nErr;
-    
+
     confValue.intValue = m_nGain;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -1448,7 +1445,7 @@ int CPlayerOne::setOffset(long nOffset)
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setOffset] black offset set to " << m_nOffset << std::endl;
     m_sLogFile.flush();
 #endif
-    
+
     ret = setConfigValue(POA_OFFSET, confValue);
     if(ret != POA_OK) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -1525,7 +1522,7 @@ int CPlayerOne::setUSBBandwidth(long nBandwidth)
 POAErrors CPlayerOne::setConfigValue(POAConfig confID , POAConfigValue confValue,  POABool bAuto)
 {
     POAErrors ret;
-    
+
     if(!m_bConnected)
         return POA_OK;
 
@@ -1647,7 +1644,8 @@ int CPlayerOne::setROI(int nLeft, int nTop, int nWidth, int nHeight)
     int nNewTop = 0;
     int nNewWidth = 0;
     int nNewHeight = 0;
-
+    int tmp1, tmp2;
+    
 
     m_nReqROILeft = nLeft;
     m_nReqROITop = nTop;
@@ -1711,12 +1709,28 @@ int CPlayerOne::setROI(int nLeft, int nTop, int nWidth, int nHeight)
 #endif
 
 
-    if( m_nROILeft == nNewLeft && m_nROITop == nNewTop && m_nROIWidth == nNewWidth && m_nROIHeight == nNewHeight) {
-        return nErr; // no change since last ROI change request
-    }
+//    if( m_nROILeft == nNewLeft && m_nROITop == nNewTop && m_nROIWidth == nNewWidth && m_nROIHeight == nNewHeight) {
+//        return nErr; // no change since last ROI change request
+//    }
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] Requested x, y, w, h : " << nLeft << ", " << nTop << ", " << nWidth << ", " << nHeight <<  std::endl;
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] Set to    x, y, w, h : " << nNewLeft << ", " << nNewTop << ", " << nNewWidth << ", " << nNewHeight <<  std::endl;
+    m_sLogFile.flush();
+#endif
+
+    ret = POASetImageSize(m_nCameraID,nNewWidth,nNewHeight);
+    if(ret != POA_OK) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] Error setting new Width and Height, Error = " << POAGetErrorString(ret) << std::endl;
+        m_sLogFile.flush();
+#endif
+        return ERR_CMDFAILED;
+    }
+
+    POAGetImageSize(m_nCameraID, &tmp1, &tmp2);
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] POAGetImageSize w  : " << tmp1 << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] POAGetImageSize h  : " << tmp2 << std::endl;
     m_sLogFile.flush();
 #endif
 
@@ -1728,14 +1742,14 @@ int CPlayerOne::setROI(int nLeft, int nTop, int nWidth, int nHeight)
 #endif
         return ERR_CMDFAILED;
     }
-    ret = POASetImageSize(m_nCameraID,nNewWidth,nNewHeight);
-    if(ret != POA_OK) {
+
+    POAGetImageStartPos(m_nCameraID, &tmp1, &tmp2);
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] Error setting new Width and Height, Error = " << POAGetErrorString(ret) << std::endl;
-        m_sLogFile.flush();
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] POAGetImageStartPos x  : " << tmp1 << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] POAGetImageStartPos y  : " << tmp2 << std::endl;
+    m_sLogFile.flush();
 #endif
-        return ERR_CMDFAILED;
-    }
+
 
     m_nROILeft = nNewLeft;
     m_nROITop = nNewTop;
@@ -1755,18 +1769,19 @@ int CPlayerOne::clearROI()
     int nErr = PLUGIN_OK;
     POAErrors ret;
 
-    ret = POASetImageStartPos(m_nCameraID, 0, 0);
-    if(ret != POA_OK) {
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [clearROI] Error setting new Left and top, Error = " << POAGetErrorString(ret) << std::endl;
-        m_sLogFile.flush();
-#endif
-        return ERR_CMDFAILED;
-    }
     ret = POASetImageSize(m_nCameraID,  m_cameraProperty.maxWidth/m_nCurrentBin , m_cameraProperty.maxHeight/m_nCurrentBin);
     if(ret != POA_OK) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [clearROI] Error setting new Width and Height, Error = " << POAGetErrorString(ret) << std::endl;
+        m_sLogFile.flush();
+#endif
+        return ERR_CMDFAILED;
+    }
+
+    ret = POASetImageStartPos(m_nCameraID, 0, 0);
+    if(ret != POA_OK) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [clearROI] Error setting new Left and top, Error = " << POAGetErrorString(ret) << std::endl;
         m_sLogFile.flush();
 #endif
         return ERR_CMDFAILED;
@@ -1779,24 +1794,23 @@ int CPlayerOne::clearROI()
 bool CPlayerOne::isFameAvailable()
 {
     bool bFrameAvailable = false;
-    POACameraState cameraState;
     POABool pIsReady = POA_FALSE;
     POAErrors ret;
 
-//     if(m_ExposureTimer.GetElapsedSeconds() > m_dCaptureLenght) {
-/*
-        POAGetCameraState(m_nCameraID, &cameraState);
+    POACameraState cameraState;
+    POAGetCameraState(m_nCameraID, &cameraState);
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [isFameAvailable] Checking if a frame is ready." << std::endl;
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [isFameAvailable] cameraState  = " << cameraState << std::endl;
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [isFameAvailable] cameraState still exposing = " << (cameraState==STATE_EXPOSING?"Yes":"No") << std::endl;
         m_sLogFile.flush();
 #endif
-        if(cameraState == STATE_EXPOSING)
-        {
-            bFrameAvailable = false;
-        }
-        else {
+    /*
+    if(cameraState == STATE_EXPOSING)
+    {
+        bFrameAvailable = false;
+    }
+    else {
 */
             ret = POAImageReady(m_nCameraID, &pIsReady);
             if(ret!=POA_OK) {
@@ -1810,14 +1824,16 @@ bool CPlayerOne::isFameAvailable()
             m_sLogFile << "["<<getTimeStamp()<<"]"<< " [isFameAvailable] bFrameAvailable : " << (bFrameAvailable?"Yes":"No")<< std::endl;
             m_sLogFile.flush();
 #endif
-        // }
-//     }
+    // }
     return bFrameAvailable;
 }
 
 uint32_t CPlayerOne::getBitDepth()
 {
-    return 16; // m_cameraProperty.bitDepth;
+    if(m_nImageFormat == POA_RAW16)
+        return 16;
+    else
+        return 8;
 }
 
 
@@ -1830,7 +1846,11 @@ int CPlayerOne::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
     int i = 0;
     uint16_t *buf;
     int srcMemWidth;
+    int copyWidth = 0;
+    int copyHeight = 0;
     int exposure_ms = 0;
+
+    int tmp1, tmp2;
 
     if(!frameBuffer)
         return ERR_POINTER;
@@ -1847,6 +1867,20 @@ int CPlayerOne::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] m_nROIHeight    = " << m_nROIHeight << std::endl;
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] m_nReqROIHeight = " << m_nReqROIHeight << std::endl;
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] getBitDepth()/8 = " << getBitDepth()/8 << std::endl;
+    m_sLogFile.flush();
+#endif
+
+    POAGetImageStartPos(m_nCameraID, &tmp1, &tmp2);
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] POAGetImageStartPos x  : " << tmp1 << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] POAGetImageStartPos y  : " << tmp2 << std::endl;
+    m_sLogFile.flush();
+#endif
+
+    POAGetImageSize(m_nCameraID, &tmp1, &tmp2);
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] POAGetImageSize w  : " << tmp1 << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] POAGetImageSize h  : " << tmp2 << std::endl;
     m_sLogFile.flush();
 #endif
 
@@ -1900,6 +1934,8 @@ int CPlayerOne::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
     }
 
     if(imgBuffer != frameBuffer) {
+        copyWidth = srcMemWidth>nMemWidth?nMemWidth:srcMemWidth;
+        copyHeight = m_nROIHeight>nHeight?nHeight:m_nROIHeight;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] copying ("<< m_nROILeft <<","
                                                                         << m_nROITop <<","
@@ -1908,16 +1944,19 @@ int CPlayerOne::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
                                                                         << m_nReqROILeft <<","
                                                                         << m_nReqROITop <<","
                                                                         << m_nReqROIWidth <<","
-                                                                        << m_nReqROIHeight <<","
+                                                                        << m_nReqROIHeight <<")"
                                                                         << std::endl;
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] srcMemWidth  =>  nMemWidth   : " << srcMemWidth << " => " << nMemWidth << std::endl;
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] sizeReadFromCam              : " << sizeReadFromCam << std::endl;
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] size to TSX                  : " << nHeight * nMemWidth << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] srcMemWidth       : " << srcMemWidth << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] nMemWidth         : " << nMemWidth << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] copyHeight        : " << copyHeight << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] copyWidth         : " << copyWidth << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] sizeReadFromCam   : " << sizeReadFromCam << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] size to TSX       : " << nHeight * nMemWidth << std::endl;
         m_sLogFile.flush();
 #endif
-        // copy every line from source buffer newly aligned into TSX buffer cutting at nMemWidth
-        for(i=0; i<nHeight; i++) {
-            memcpy(frameBuffer+(i*nMemWidth), imgBuffer+(i*srcMemWidth), nMemWidth);
+        // copy every line from source buffer newly aligned into TSX buffer cutting at copyWidth
+        for(i=0; i<copyHeight; i++) {
+            memcpy(frameBuffer+(i*nMemWidth), imgBuffer+(i*srcMemWidth), copyWidth);
         }
         free(imgBuffer);
     }

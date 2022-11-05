@@ -62,7 +62,6 @@
 		931843DA1EEF33FC00AE51F8 = {
 			isa = PBXGroup;
 			children = (
-				931843F41EEF391800AE51F8 /* Libs */,
 				931843EA1EEF341C00AE51F8 /* Sources */,
 				931843E41EEF33FC00AE51F8 /* Products */,
 				931843F91EEF394F00AE51F8 /* Frameworks */,
@@ -90,13 +89,6 @@
 				931843EF1EEF350D00AE51F8 /* x2camera.h */,
 			);
 			name = Sources;
-			sourceTree = "<group>";
-		};
-		931843F41EEF391800AE51F8 /* Libs */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Libs;
 			sourceTree = "<group>";
 		};
 		931843F91EEF394F00AE51F8 /* Frameworks */ = {
@@ -154,7 +146,7 @@
 		931843DB1EEF33FC00AE51F8 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 1340;
+				LastUpgradeCheck = 1400;
 				ORGANIZATIONNAME = "RTI-Zone";
 				TargetAttributes = {
 					931843E21EEF33FC00AE51F8 = {
@@ -230,6 +222,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -295,6 +288,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = "";
 				ENABLE_NS_ASSERTIONS = NO;
@@ -324,6 +318,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = x86_64;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = "";
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
@@ -343,6 +338,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = x86_64;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = "";
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
