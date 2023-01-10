@@ -49,7 +49,6 @@ class AddFITSKeyInterface;
 #define KEY_USB_BANDWIDTH           "USBBandwidth"
 #define PIXEL_BIN_MODE              "PixelBinMode"
 
-
 enum DIALOGS {SELECT, SETTINGS };
 
 

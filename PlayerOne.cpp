@@ -125,7 +125,7 @@ int CPlayerOne::Connect(int nCameraID)
         m_nCameraID = nCameraID;
     else {
         // check if there is at least one camera connected to the system
-        if(POAGetCameraCount() == 1) {
+        if(POAGetCameraCount() >= 1) {
             std::vector<camera_info_t> tCameraIdList;
             listCamera(tCameraIdList);
             if(tCameraIdList.size()) {
@@ -333,7 +333,6 @@ int CPlayerOne::Connect(int nCameraID)
         setWB_G(m_nWbG, m_bG_Auto);
         setWB_B(m_nWbB, m_bB_Auto);
         setFlip(m_nFlip);
-        setSensorMode(m_nSensorModeIndex);
         setUSBBandwidth(m_nUSBBandwidth);
         setPixelBinMode(m_bPixelBinMode);
     }
@@ -359,16 +358,37 @@ int CPlayerOne::Connect(int nCameraID)
     m_sLogFile.flush();
 #endif
     // if the camera supports it, in general, there are at least two sensor modes[Normal, LowNoise, ...]
+    m_sensorModeInfo.clear();
     for(i=0; i< m_nSensorModeCount; i++) {
         ret = POAGetSensorModeInfo(m_nCameraID, i, &sensorMode);
-        if(!ret)
+        if (ret != POA_OK) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Error getting sensor mode info : "<< ret << std::endl;
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Error getting sensor mode info : "<< POAGetErrorString(ret) << std::endl;
+            m_sLogFile.flush();
+#endif
             continue;
+        }
         m_sensorModeInfo.push_back(sensorMode);
+        sTmp.assign(sensorMode.name);
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] sensor mode " << i << " name : " << sensorMode.name << std::endl;
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] sensor mode " << i << " desc : " << sensorMode.desc << std::endl;
         m_sLogFile.flush();
 #endif
+    }
+
+    if(m_nSensorModeCount) {
+        ret = (POAErrors)setSensorMode(m_nSensorModeIndex);
+        if(ret) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Error setting sensor mode, Error = " << POAGetErrorString(ret) << std::endl;
+            m_sLogFile.flush();
+#endif
+            POACloseCamera(m_nCameraID);
+            m_bConnected = false;
+            return ERR_CMDFAILED;
+        }
     }
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -618,19 +638,36 @@ int CPlayerOne::getCurentSensorMode(std::string &sSensorMode, int &nModeIndex)
     int nErr = PLUGIN_OK;
     POAErrors ret;
 
-    if(!m_nSensorModeCount) {
+    if(!m_nSensorModeCount)
         return VAL_NOT_AVAILABLE;
-    }
+
+    if(m_sensorModeInfo.size()==0)
+        return VAL_NOT_AVAILABLE;
 
     ret =  POAGetSensorMode(m_nCameraID, &nModeIndex);
     if(ret) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getSensorMode] Error getting current sensor mode." << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getCurentSensorMode] Error getting current sensor mode." << std::endl;
         m_sLogFile.flush();
 #endif
         return ERR_CMDFAILED;
     }
-    sSensorMode = m_sensorModeInfo[nModeIndex].name;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getCurentSensorMode] nModeIndex = " << nModeIndex << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getCurentSensorMode] m_sensorModeInfo size = " <<  m_sensorModeInfo.size() << std::endl;
+    m_sLogFile.flush();
+#endif
+    if(nModeIndex>=m_sensorModeInfo.size()) {
+        // not good
+        sSensorMode.assign("Bad index");
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getCurentSensorMode] Error Bad index nModeIndex >= m_sensorModeInfo.size() " << std::endl;
+        m_sLogFile.flush();
+#endif
+    }
+    else
+        sSensorMode.assign(m_sensorModeInfo[nModeIndex].name);
     return nErr;
 }
 
@@ -642,20 +679,30 @@ int CPlayerOne::getSensorModeList(std::vector<std::string> &sModes, int &curentM
     if(!m_nSensorModeCount) // sensor mode no supported by camera
         return VAL_NOT_AVAILABLE;
 
+    if(m_sensorModeInfo.size()==0)
+        return VAL_NOT_AVAILABLE;
+
     ret = POAGetSensorMode(m_nCameraID, &curentModeIndex);
     if(ret) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getSensorMode] Error getting current sensor mode." << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getSensorModeList] POAGetSensorMode Error getting current sensor mode." << std::endl;
         m_sLogFile.flush();
 #endif
         return VAL_NOT_AVAILABLE;
     }
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getSensorModeList] curentModeIndex = " << curentModeIndex << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getSensorModeList] m_sensorModeInfo size = " <<  m_sensorModeInfo.size() << std::endl;
+    m_sLogFile.flush();
+#endif
+
     sModes.clear();
     for (POASensorModeInfo mode : m_sensorModeInfo) {
         sModes.push_back(mode.name);
     }
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getCurentSensorMode] Current Sensor mode is " << sModes.at(curentModeIndex) << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getSensorModeList] Current Sensor mode is " << sModes.at(curentModeIndex) << std::endl;
     m_sLogFile.flush();
 #endif
 
@@ -838,15 +885,15 @@ int CPlayerOne::getTemperture(double &dTemp, double &dPower, double &dSetPoint, 
         if(m_cameraProperty.isHasCooler) {
             ret = getConfigValue(POA_TARGET_TEMP, confValue, minValue, maxValue, bAuto);
             if(ret == POA_OK)
-                dPower = double(confValue.intValue);
+                dSetPoint = double(confValue.intValue);
             else
-                dPower = 0;
+                dSetPoint = 0;
 
             ret = getConfigValue(POA_COOLER_POWER, confValue, minValue, maxValue, bAuto);
             if(ret == POA_OK)
-                dSetPoint = double(confValue.intValue);
+                dPower = double(confValue.intValue);
             else
-                dSetPoint = dTemp;
+                dPower = dTemp;
 
             ret = getConfigValue(POA_COOLER, confValue, minValue, maxValue, bAuto);
             if(ret == POA_OK)
