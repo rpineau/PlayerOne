@@ -14,11 +14,9 @@ X2Camera::X2Camera( const char* pszSelection,
 					MutexInterface*						pIOMutex,
 					TickCountInterface*					pTickCount)
 {
-    int nValue = 0;
-    bool bIsAuto;
-    bool bUserConf;
     int  nErr = PLUGIN_OK;
-
+    char szCameraSerial[128];
+    
 	m_nPrivateISIndex				= nISIndex;
 	m_pTheSkyXForMounts				= pTheSkyXForMounts;
 	m_pSleeper						= pSleeper;
@@ -33,68 +31,21 @@ X2Camera::X2Camera( const char* pszSelection,
     mPixelSizeX = 0.0;
     mPixelSizeY = 0.0;
 
-    // Read in settings, default values were chosen based on test with a SV305
+    // Read in settings
     if (m_pIniUtil) {
-        bUserConf = (m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_USER_CONF, 0) == 0?false:true);
-        m_Camera.setUserConf(bUserConf);
-        if(bUserConf) {
-            m_pIniUtil->readString(KEY_X2CAM_ROOT, KEY_GUID, "0", m_szCameraSerial, 128);
-            nErr = m_Camera.getCameraIdFromSerial(m_nCameraID, std::string(m_szCameraSerial));
-            if(nErr) {
-                m_nCameraID = 0;
-                m_Camera.setCameraId(m_nCameraID);
-                return;
-            }
-            m_Camera.setCameraSerial(std::string(m_szCameraSerial));
-            m_Camera.setCameraId(m_nCameraID);
-
-            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_GAIN, VAL_NOT_AVAILABLE);
-            if(nValue!=VAL_NOT_AVAILABLE)
-                m_Camera.setGain((long)nValue);
-            else {
-                m_Camera.setUserConf(false); // better not set any bad value and read defaults from camera
-                return;
-            }
-            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_OFFSET, VAL_NOT_AVAILABLE);
-            if(nValue!=VAL_NOT_AVAILABLE)
-                m_Camera.setOffset((long)nValue);
-
-            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_R, VAL_NOT_AVAILABLE);
-            bIsAuto =  (m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_R_AUTO, 0) == 0?false:true);
-            if(nValue!=VAL_NOT_AVAILABLE)
-                m_Camera.setWB_R((long)nValue, bIsAuto);
-
-            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_G, VAL_NOT_AVAILABLE);
-            bIsAuto =  (m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_G_AUTO, 0) == 0?false:true);
-            if(nValue!=VAL_NOT_AVAILABLE)
-                m_Camera.setWB_G((long)nValue, bIsAuto);
-
-            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_B, VAL_NOT_AVAILABLE);
-            bIsAuto =  (m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_B_AUTO, 0) == 0?false:true);
-            if(nValue!=VAL_NOT_AVAILABLE)
-                m_Camera.setWB_B((long)nValue, bIsAuto);
-
-            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_FLIP, 0);
-            m_Camera.setFlip((long)nValue);
-
-            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_SENSOR_MODE, VAL_NOT_AVAILABLE);
-            if(nValue!=VAL_NOT_AVAILABLE)
-                m_Camera.setSensorMode(nValue);
-
-            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_USB_BANDWIDTH, VAL_NOT_AVAILABLE);
-            if(nValue!=VAL_NOT_AVAILABLE)
-                m_Camera.setUSBBandwidth(long(nValue));
-
-            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, PIXEL_BIN_MODE, VAL_NOT_AVAILABLE);
-            if(nValue!=VAL_NOT_AVAILABLE)
-                m_Camera.setPixelBinMode((nValue==1)?true:false);
-        }
-        else {
+        m_pIniUtil->readString(KEY_X2CAM_ROOT, KEY_GUID, "0", szCameraSerial, 128);
+        m_sCameraSerial.assign(szCameraSerial);
+        nErr = m_Camera.getCameraIdFromSerial(m_nCameraID, m_sCameraSerial);
+        if(nErr) { // we don't know that camera, we'll use the default from the camera
             m_nCameraID = 0;
             m_Camera.setCameraId(m_nCameraID);
+            m_Camera.setUserConf(false);
+            return;
         }
+        m_Camera.setCameraSerial(m_sCameraSerial);
+        m_Camera.setCameraId(m_nCameraID);
+        nErr = loadCameraSettings(m_sCameraSerial);
     }
-
 }
 
 X2Camera::~X2Camera()
@@ -208,6 +159,8 @@ int X2Camera::execModalSettingsDialog()
             m_Camera.setCameraSerial(sCameraSerial);
             // store camera ID
             m_pIniUtil->writeString(KEY_X2CAM_ROOT, KEY_GUID, sCameraSerial.c_str());
+            m_sCameraSerial.assign(sCameraSerial);
+            loadCameraSettings(m_sCameraSerial);
         }
     }
 
@@ -357,6 +310,16 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
         else {
             dx->setCurrentIndex("PixelBinMode", bBinPixelSumMode?0:1);
         }
+
+        nErr = m_Camera.getLensHeaterPowerPerc(nMin, nMax, nVal);
+        if(nErr == VAL_NOT_AVAILABLE)
+            dx->setEnabled("LensHeaterPower", false);
+        else {
+            dx->setPropertyInt("LensHeaterPower", "minimum", (int)nMin);
+            dx->setPropertyInt("LensHeaterPower", "maximum", (int)nMax);
+            dx->setPropertyInt("LensHeaterPower", "value", (int)nVal);
+        }
+
         m_Camera.getUserfulValues(nOffsetHighestDR, nOffsetUnityGain, nGainLowestRN, nOffsetLowestRN, nHCGain);
         ssTmp<< "Gain at HCG Mode(High Conversion Gain) : " << nHCGain;
         dx->setText("HCG_value", ssTmp.str().c_str());
@@ -404,6 +367,8 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
         dx->setEnabled("USBBandwidth", false);
         dx->setText("UsbBandwidthRange","");
 
+        dx->setEnabled("LensHeaterPower",false);
+
     }
 
     m_nCurrentDialog = SETTINGS;
@@ -414,28 +379,25 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
     //Retreive values from the user interface
     if (bPressedOK) {
 
-        m_Camera.setUserConf(true);
-        m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_USER_CONF, 1);
-
         dx->propertyInt("Gain", "value", nCtrlVal);
         nErr = m_Camera.setGain((long)nCtrlVal);
         if(!nErr) {
-            m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_GAIN, nCtrlVal);
+            m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_GAIN, nCtrlVal);
             m_Camera.rebuildGainList();
         }
 
         dx->propertyInt("Offset", "value", nCtrlVal);
         nErr = m_Camera.setOffset((long)nCtrlVal);
         if(!nErr)
-            m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_OFFSET, nCtrlVal);
+            m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_OFFSET, nCtrlVal);
 
         if(dx->isEnabled("WB_R")) {
             dx->propertyInt("WB_R", "value", nCtrlVal);
             bIsAuto = dx->isChecked("checkBox_2");
             nErr = m_Camera.setWB_R((long)nCtrlVal, bIsAuto);
             if(!nErr) {
-                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_R, nCtrlVal);
-                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_R_AUTO, bIsAuto?1:0);
+                m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_WHITE_BALANCE_R, nCtrlVal);
+                m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_WHITE_BALANCE_R_AUTO, bIsAuto?1:0);
             }
         }
 
@@ -444,8 +406,8 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
             bIsAuto = dx->isChecked("checkBox_3");
             nErr = m_Camera.setWB_G((long)nCtrlVal, bIsAuto);
             if(!nErr){
-                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_G, nCtrlVal);
-                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_G_AUTO, bIsAuto?1:0);
+                m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_WHITE_BALANCE_G, nCtrlVal);
+                m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_WHITE_BALANCE_G_AUTO, bIsAuto?1:0);
             }
         }
 
@@ -454,34 +416,98 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
             bIsAuto = dx->isChecked("checkBox_4");
             nErr = m_Camera.setWB_B((long)nCtrlVal, bIsAuto);
             if(!nErr) {
-                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_B, nCtrlVal);
-                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_B_AUTO, bIsAuto?1:0);
+                m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_WHITE_BALANCE_B, nCtrlVal);
+                m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_WHITE_BALANCE_B_AUTO, bIsAuto?1:0);
             }
         }
 
         nCtrlVal = dx->currentIndex("Flip");
         nErr = m_Camera.setFlip((long)nCtrlVal);
         if(!nErr)
-            m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_FLIP, nCtrlVal);
+            m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_FLIP, nCtrlVal);
 
         if(dx->isEnabled("SensorMode")) {
             nCtrlVal = dx->currentIndex("SensorMode");
             nErr = m_Camera.setSensorMode(nCtrlVal);
             if(!nErr)
-                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_SENSOR_MODE, nCtrlVal);
+                m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_SENSOR_MODE, nCtrlVal);
         }
 
         dx->propertyInt("USBBandwidth", "value", nCtrlVal);
         nErr = m_Camera.setUSBBandwidth((long)nCtrlVal);
         if(!nErr)
-            m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_USB_BANDWIDTH, nCtrlVal);
+            m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_USB_BANDWIDTH, nCtrlVal);
 
         nCtrlVal = dx->currentIndex("PixelBinMode");
         nErr = m_Camera.setPixelBinMode((nCtrlVal==0)); // true = Sum mode, False = Average mode
         if(!nErr)
-            m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_SENSOR_MODE, nCtrlVal);
+            m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_SENSOR_MODE, nCtrlVal);
+
+        dx->propertyInt("LensHeaterPower", "value", nCtrlVal);
+        nErr = m_Camera.setUSBBandwidth((long)nCtrlVal);
+        if(!nErr)
+            m_pIniUtil->writeInt(m_sCameraSerial.c_str(), LENS_POWER, nCtrlVal);
+
+
+
     }
 
+    return nErr;
+}
+
+
+int X2Camera::loadCameraSettings(std::string sSerial)
+{
+    int nErr = SB_OK;
+    int nValue = 0;
+    bool bIsAuto;
+
+    nValue = m_pIniUtil->readInt(sSerial.c_str(), KEY_GAIN, VAL_NOT_AVAILABLE);
+    if(nValue!=VAL_NOT_AVAILABLE)
+        m_Camera.setGain((long)nValue);
+    else {
+        m_Camera.setUserConf(false); // better not set any bad value and read defaults from camera
+        return VAL_NOT_AVAILABLE;
+    }
+    nValue = m_pIniUtil->readInt(sSerial.c_str(), KEY_OFFSET, VAL_NOT_AVAILABLE);
+    if(nValue!=VAL_NOT_AVAILABLE)
+        m_Camera.setOffset((long)nValue);
+
+    nValue = m_pIniUtil->readInt(sSerial.c_str(), KEY_WHITE_BALANCE_R, VAL_NOT_AVAILABLE);
+    bIsAuto =  (m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_R_AUTO, 0) == 0?false:true);
+    if(nValue!=VAL_NOT_AVAILABLE)
+        m_Camera.setWB_R((long)nValue, bIsAuto);
+
+    nValue = m_pIniUtil->readInt(sSerial.c_str(), KEY_WHITE_BALANCE_G, VAL_NOT_AVAILABLE);
+    bIsAuto =  (m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_G_AUTO, 0) == 0?false:true);
+    if(nValue!=VAL_NOT_AVAILABLE)
+        m_Camera.setWB_G((long)nValue, bIsAuto);
+
+    nValue = m_pIniUtil->readInt(sSerial.c_str(), KEY_WHITE_BALANCE_B, VAL_NOT_AVAILABLE);
+    bIsAuto =  (m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_B_AUTO, 0) == 0?false:true);
+    if(nValue!=VAL_NOT_AVAILABLE)
+        m_Camera.setWB_B((long)nValue, bIsAuto);
+
+    nValue = m_pIniUtil->readInt(sSerial.c_str(), KEY_FLIP, 0);
+    m_Camera.setFlip((long)nValue);
+
+    nValue = m_pIniUtil->readInt(sSerial.c_str(), KEY_SENSOR_MODE, VAL_NOT_AVAILABLE);
+    if(nValue!=VAL_NOT_AVAILABLE)
+        m_Camera.setSensorMode(nValue);
+
+    nValue = m_pIniUtil->readInt(sSerial.c_str(), KEY_USB_BANDWIDTH, VAL_NOT_AVAILABLE);
+    if(nValue!=VAL_NOT_AVAILABLE)
+        m_Camera.setUSBBandwidth(long(nValue));
+
+    nValue = m_pIniUtil->readInt(sSerial.c_str(), PIXEL_BIN_MODE, VAL_NOT_AVAILABLE);
+    if(nValue!=VAL_NOT_AVAILABLE)
+        m_Camera.setPixelBinMode((nValue==1)?true:false);
+
+    nValue = m_pIniUtil->readInt(sSerial.c_str(), LENS_POWER, VAL_NOT_AVAILABLE);
+    if(nValue!=VAL_NOT_AVAILABLE)
+        m_Camera.setLensHeaterPowerPerc((long)nValue);
+
+    m_Camera.setUserConf(true);
     return nErr;
 }
 

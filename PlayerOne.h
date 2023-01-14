@@ -33,7 +33,7 @@
 
 // #define PLUGIN_DEBUG    3
 
-#define PLUGIN_VERSION      1.5
+#define PLUGIN_VERSION      1.6
 #define BUFFER_LEN 128
 #define PLUGIN_OK   0
 #define MAX_NB_BIN  8
@@ -102,6 +102,8 @@ public:
     int         getUSBBandwidth(long &nMin, long &nMax, long &nValue);
     int         setUSBBandwidth(long nBandwidth);
 
+    int         getLensHeaterPowerPerc(long &nMin, long &nMax, long &nValue);
+    int         setLensHeaterPowerPerc(long nPercent);
 
     int         setROI(int nLeft, int nTop, int nWidth, int nHeight);
     int         clearROI(void);
@@ -164,7 +166,8 @@ protected:
 
     bool                    m_bPixelBinMode;
     long                    m_nUSBBandwidth;
-
+    long                    m_nLensHeaterPowerPerc;
+    
     double                  m_dPixelSize;
     int                     m_nMaxWidth;
     int                     m_nMaxHeight;

@@ -65,6 +65,7 @@ CPlayerOne::CPlayerOne()
     m_nGainLowestRN = VAL_NOT_AVAILABLE;
     m_nOffsetLowestRN = VAL_NOT_AVAILABLE;
     m_nHCGain = VAL_NOT_AVAILABLE;
+    m_nLensHeaterPowerPerc = VAL_NOT_AVAILABLE;
 
 #ifdef PLUGIN_DEBUG
 #if defined(SB_WIN_BUILD)
@@ -106,6 +107,11 @@ CPlayerOne::~CPlayerOne()
 #pragma mark - Camera access
 void CPlayerOne::setUserConf(bool bUserConf)
 {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]" << " [setUserConf]  Set m_bSetUserConf to : " << (bUserConf?"Yes":"No") << std::endl;
+    m_sLogFile.flush();
+#endif
+
     m_bSetUserConf = bUserConf;
 }
 
@@ -162,7 +168,6 @@ int CPlayerOne::Connect(int nCameraID)
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Connected to camera ID  " << m_nCameraID << " Serial " << m_sCameraSerial << std::endl;
     m_sLogFile.flush();
 #endif
-
 
     ret = POAGetCameraPropertiesByID(m_nCameraID, &m_cameraProperty);
     if (ret != POA_OK)
@@ -325,6 +330,11 @@ int CPlayerOne::Connect(int nCameraID)
     m_sLogFile.flush();
 #endif
 
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] m_bSetUserConf : " << (m_bSetUserConf?"Yes":"No") << std::endl;
+    m_sLogFile.flush();
+#endif
+
     if(m_bSetUserConf) {
         // set default values
         setGain(m_nGain);
@@ -335,9 +345,14 @@ int CPlayerOne::Connect(int nCameraID)
         setFlip(m_nFlip);
         setUSBBandwidth(m_nUSBBandwidth);
         setPixelBinMode(m_bPixelBinMode);
+        setLensHeaterPowerPerc(m_nLensHeaterPowerPerc);
     }
     else {
-        getGain(nMin, nMax , m_nGain);
+        getUserfulValues(m_nOffsetHighestDR, m_nOffsetUnityGain, m_nGainLowestRN, m_nOffsetLowestRN, m_nHCGain);
+        setGain(m_nHCGain);
+        m_nGain = m_nHCGain;
+        setOffset(m_nOffsetHighestDR);
+        m_nOffset = m_nOffsetHighestDR;
         getOffset(nMin, nMax, m_nOffset);
         getWB_R(nMin, nMax, m_nWbR, m_bR_Auto);
         getWB_G(nMin, nMax, m_nWbG, m_bG_Auto);
@@ -346,6 +361,7 @@ int CPlayerOne::Connect(int nCameraID)
         getCurentSensorMode(sTmp, m_nSensorModeIndex);
         getUSBBandwidth(nMin, nMax, m_nUSBBandwidth);
         getPixelBinMode(m_bPixelBinMode);
+        getLensHeaterPowerPerc(nMin, nMax, m_nLensHeaterPowerPerc);
     }
 
     rebuildGainList();
@@ -1081,6 +1097,11 @@ int CPlayerOne::setGain(long nGain)
     POAErrors ret;
     POAConfigValue confValue;
 
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setGain] Called with gain =  " << nGain << std::endl;
+    m_sLogFile.flush();
+#endif
+
     m_nGain = nGain;
     if(!m_bConnected)
         return nErr;
@@ -1518,7 +1539,7 @@ int CPlayerOne::getUSBBandwidth(long &nMin, long &nMax, long &nValue)
     ret = getConfigValue(POA_USB_BANDWIDTH_LIMIT, confValue, minValue, maxValue, bAuto);
     if(ret) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getWB_R] Error getting USB Bandwidth, Error = " << POAGetErrorString(ret) << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getUSBBandwidth] Error getting USB Bandwidth, Error = " << POAGetErrorString(ret) << std::endl;
         m_sLogFile.flush();
 #endif
         return VAL_NOT_AVAILABLE;
@@ -1559,6 +1580,66 @@ int CPlayerOne::setUSBBandwidth(long nBandwidth)
         nErr = ERR_CMDFAILED;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setUSBBandwidth] Error setting USB Bandwidth, Error = " << POAGetErrorString(ret) << std::endl;
+        m_sLogFile.flush();
+#endif
+    }
+    return nErr;
+}
+
+int CPlayerOne::getLensHeaterPowerPerc(long &nMin, long &nMax, long &nValue)
+{
+    POAErrors ret;
+    POAConfigValue minValue, maxValue, confValue;
+    POABool bAuto;
+
+    nMin = 0;
+    nMax = 0;
+    nValue = 0;
+
+    ret = getConfigValue(POA_HEATER_POWER, confValue, minValue, maxValue, bAuto);
+    if(ret) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getLensHeaterPowerPerc] Error getting lens power percentage, Error = " << POAGetErrorString(ret) << std::endl;
+        m_sLogFile.flush();
+#endif
+        return VAL_NOT_AVAILABLE;
+    }
+    nMin = minValue.intValue;
+    nMax = maxValue.intValue;
+    nValue = confValue.intValue;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getLensHeaterPowerPerc] lens power is at " << nValue << "%" << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getLensHeaterPowerPerc] min is " << nMin << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getLensHeaterPowerPerc] max is " << nMax << std::endl;
+    m_sLogFile.flush();
+#endif
+    return 0;
+}
+
+int CPlayerOne::setLensHeaterPowerPerc(long nPercent)
+{
+    int nErr = PLUGIN_OK;
+    POAErrors ret;
+    POAConfigValue confValue;
+
+    m_nLensHeaterPowerPerc = nPercent;
+
+    if(!m_bConnected)
+        return nErr;
+
+    confValue.intValue = m_nUSBBandwidth;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setLensHeaterPowerPerc] Lens power percentage set to " << m_nLensHeaterPowerPerc << "%" << std::endl;
+    m_sLogFile.flush();
+#endif
+
+    ret = setConfigValue(POA_HEATER_POWER, confValue, POA_FALSE);
+    if(ret != POA_OK) {
+        nErr = ERR_CMDFAILED;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setLensHeaterPowerPerc] Error setting Lens power percentage, Error = " << POAGetErrorString(ret) << std::endl;
         m_sLogFile.flush();
 #endif
     }
@@ -2059,24 +2140,27 @@ int CPlayerOne::RelayActivate(const int nXPlus, const int nXMinus, const int nYP
 
 void CPlayerOne::buildGainList(long nMin, long nMax, long nValue)
 {
-    long i = 0;
-    int nStep = 1;
+    std::stringstream ssTmp;
+
     m_GainList.clear();
     m_nNbGainValue = 0;
 
-    if(nMin != nValue) {
-        m_GainList.push_back(std::to_string(nValue));
-        m_nNbGainValue++;
-    }
+    ssTmp << "High Conversion Gain (" << m_nHCGain <<")";
+    m_GainList.push_back(ssTmp.str());
+    std::stringstream().swap(ssTmp);
+    m_nNbGainValue++;
 
-    nStep = int(float(nMax-nMin)/20);
-    for(i=nMin; i<nMax; i+=nStep) {
-        m_GainList.push_back(std::to_string(i));
-        m_nNbGainValue++;
-    }
-    m_GainList.push_back(std::to_string(nMax));
+    ssTmp << "Lowest read noise Gain (" << m_nGainLowestRN <<")";
+    m_GainList.push_back(ssTmp.str());
+    std::stringstream().swap(ssTmp);
+    m_nNbGainValue++;
+
+    ssTmp << "User value(" << m_nGain <<")";
+    m_GainList.push_back(ssTmp.str());
+    std::stringstream().swap(ssTmp);
     m_nNbGainValue++;
 }
+
 int CPlayerOne::getNbGainInList()
 {
     return m_nNbGainValue;

@@ -48,6 +48,7 @@ class AddFITSKeyInterface;
 #define KEY_OFFSET                  "Offset"
 #define KEY_USB_BANDWIDTH           "USBBandwidth"
 #define PIXEL_BIN_MODE              "PixelBinMode"
+#define LENS_POWER                  "LensPower"
 
 enum DIALOGS {SELECT, SETTINGS };
 
@@ -245,9 +246,10 @@ private:
     CPlayerOne      m_Camera;
     enumCameraIndex m_CameraIdx;
     int             m_nCameraID;
-    char            m_szCameraSerial[128];
+    std::string     m_sCameraSerial;
     std::vector<camera_info_t>           m_tCameraIdList;
 
+    int loadCameraSettings(std::string sSerial);
     int doPlayerOneCAmFeatureConfig();
     void doSelectCamEvent(X2GUIExchangeInterface* uiex, const char* pszEvent);
     void doSettingsCamEvent(X2GUIExchangeInterface* uiex, const char* pszEvent);
