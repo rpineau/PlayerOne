@@ -1192,7 +1192,7 @@ int X2Camera::CCGetExtendedValueName (const enumCameraIndex &Camera, const enumW
 {
     int nErr = SB_OK;
 
-    sName = m_Camera.getGainFromListAtIndex(nIndex).c_str();
+    sName = m_Camera.getGainLabelFromListAtIndex(nIndex).c_str();
     return nErr;
 }
 
@@ -1206,10 +1206,11 @@ int X2Camera::CCStartExposureAdditionalArgInterface (const enumCameraIndex &Cam,
     bool bLight = true;
     int nErr = SB_OK;
 
-    nErr = m_Camera.setGain(std::stol(m_Camera.getGainFromListAtIndex(nIndex)));
+    nErr = m_Camera.setGain(m_Camera.getGainFromListAtIndex(nIndex));
     if(nErr) {
         return nErr; // can't set gain !
     }
+
     switch (Type)
     {
         case PT_FLAT:

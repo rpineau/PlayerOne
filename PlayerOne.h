@@ -116,7 +116,9 @@ public:
     int         RelayActivate(const int nXPlus, const int nXMinus, const int nYPlus, const int nYMinus, const bool bSynchronous, const bool bAbort);
 
     int         getNbGainInList();
-    std::string getGainFromListAtIndex(int nIndex);
+    std::string getGainLabelFromListAtIndex(int nIndex);
+    int         getGainFromListAtIndex(int nIndex);
+    
     void        rebuildGainList();
 
     int         getCurentSensorMode(std::string &sSensorMode, int &nModeIndex);
@@ -150,7 +152,8 @@ protected:
     int                     m_nControlNums;
     std::vector<POAConfigAttributes> m_ControlList;
 
-    std::vector<std::string>    m_GainList;
+    std::vector<std::string>    m_GainListLabel;
+    std::vector<int>            m_GainList;
     int                     m_nNbGainValue;
 
     long                    m_nGain;

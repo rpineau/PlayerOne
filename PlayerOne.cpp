@@ -2143,20 +2143,24 @@ void CPlayerOne::buildGainList(long nMin, long nMax, long nValue)
     std::stringstream ssTmp;
 
     m_GainList.clear();
+    m_GainListLabel.clear();
     m_nNbGainValue = 0;
 
     ssTmp << "High Conversion Gain (" << m_nHCGain <<")";
-    m_GainList.push_back(ssTmp.str());
+    m_GainListLabel.push_back(ssTmp.str());
+    m_GainList.push_back(m_nHCGain);
     std::stringstream().swap(ssTmp);
     m_nNbGainValue++;
 
     ssTmp << "Lowest read noise Gain (" << m_nGainLowestRN <<")";
-    m_GainList.push_back(ssTmp.str());
+    m_GainListLabel.push_back(ssTmp.str());
+    m_GainList.push_back(m_nGainLowestRN);
     std::stringstream().swap(ssTmp);
     m_nNbGainValue++;
 
     ssTmp << "User value(" << m_nGain <<")";
-    m_GainList.push_back(ssTmp.str());
+    m_GainListLabel.push_back(ssTmp.str());
+    m_GainList.push_back((int)m_nGain);
     std::stringstream().swap(ssTmp);
     m_nNbGainValue++;
 }
@@ -2173,12 +2177,21 @@ void CPlayerOne::rebuildGainList()
     buildGainList(nMin, nMax, nVal);
 }
 
-std::string CPlayerOne::getGainFromListAtIndex(int nIndex)
+std::string CPlayerOne::getGainLabelFromListAtIndex(int nIndex)
+{
+    if(nIndex<m_GainListLabel.size())
+        return m_GainListLabel.at(nIndex);
+    else
+        return std::string("N/A");
+}
+
+
+int CPlayerOne::getGainFromListAtIndex(int nIndex)
 {
     if(nIndex<m_GainList.size())
         return m_GainList.at(nIndex);
     else
-        return std::string("N/A");
+        return m_nHCGain;
 }
 
 #ifdef PLUGIN_DEBUG
