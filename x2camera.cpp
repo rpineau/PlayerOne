@@ -175,7 +175,7 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
     bool bIsAuto;
     bool bPressedOK = false;
     std::stringstream ssTmp;
-    std::vector<std::string> sModes;
+    std::vector<std::string> svModes;
     int nCurrentSensorMode;
     bool bBinPixelSumMode;
     int i = 0;
@@ -280,16 +280,18 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
         }
 
         dx->invokeMethod("SensorMode","clear");
-        nErr = m_Camera.getSensorModeList(sModes, nCurrentSensorMode);
+        nErr = m_Camera.getSensorModeList(svModes, nCurrentSensorMode);
         if(nErr == VAL_NOT_AVAILABLE)
             dx->setEnabled("SensorMode", false);
         else {
-            if(nCurrentSensorMode) {
-                for (i=0; i< sModes.size(); i++){
-                    dx->comboBoxAppendString("SensorMode", sModes.at(i).c_str());
+            if(svModes.size()) {
+                for (i=0; i< svModes.size(); i++){
+                    dx->comboBoxAppendString("SensorMode", svModes.at(i).c_str());
                 }
                 dx->setCurrentIndex("SensorMode",nCurrentSensorMode);
             }
+            else    // no sensor mode selactable
+                dx->setEnabled("SensorMode", false);
         }
 
         nErr = m_Camera.getUSBBandwidth(nMin, nMax, nVal);

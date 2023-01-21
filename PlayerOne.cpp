@@ -654,6 +654,9 @@ int CPlayerOne::getCurentSensorMode(std::string &sSensorMode, int &nModeIndex)
     int nErr = PLUGIN_OK;
     POAErrors ret;
 
+    nModeIndex = -1;
+    sSensorMode.clear();
+
     if(!m_nSensorModeCount)
         return VAL_NOT_AVAILABLE;
 
@@ -687,10 +690,13 @@ int CPlayerOne::getCurentSensorMode(std::string &sSensorMode, int &nModeIndex)
     return nErr;
 }
 
-int CPlayerOne::getSensorModeList(std::vector<std::string> &sModes, int &curentModeIndex)
+int CPlayerOne::getSensorModeList(std::vector<std::string> &svModes, int &curentModeIndex)
 {
     int nErr = PLUGIN_OK;
     POAErrors ret;
+
+    svModes.clear();
+    curentModeIndex = -1;
 
     if(!m_nSensorModeCount) // sensor mode no supported by camera
         return VAL_NOT_AVAILABLE;
@@ -713,9 +719,9 @@ int CPlayerOne::getSensorModeList(std::vector<std::string> &sModes, int &curentM
     m_sLogFile.flush();
 #endif
 
-    sModes.clear();
+    svModes.clear();
     for (POASensorModeInfo mode : m_sensorModeInfo) {
-        sModes.push_back(mode.name);
+        svModes.push_back(mode.name);
     }
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getSensorModeList] Current Sensor mode is " << sModes.at(curentModeIndex) << std::endl;
