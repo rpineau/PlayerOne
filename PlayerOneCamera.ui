@@ -411,7 +411,7 @@
         <x>72</x>
         <y>504</y>
         <width>320</width>
-        <height>16</height>
+        <height>24</height>
        </rect>
       </property>
       <property name="text">
@@ -466,7 +466,7 @@
         <x>72</x>
         <y>552</y>
         <width>320</width>
-        <height>16</height>
+        <height>24</height>
        </rect>
       </property>
       <property name="text">
@@ -479,7 +479,7 @@
         <x>72</x>
         <y>480</y>
         <width>320</width>
-        <height>16</height>
+        <height>24</height>
        </rect>
       </property>
       <property name="text">
@@ -492,7 +492,7 @@
         <x>72</x>
         <y>528</y>
         <width>320</width>
-        <height>16</height>
+        <height>24</height>
        </rect>
       </property>
       <property name="text">
@@ -505,11 +505,11 @@
         <x>72</x>
         <y>456</y>
         <width>320</width>
-        <height>16</height>
+        <height>24</height>
        </rect>
       </property>
       <property name="text">
-       <string>Gain at HCG Mode(High Conversion Gain) : </string>
+       <string>Gain at HCG Mode (High Conversion Gain) : </string>
       </property>
      </widget>
      <widget class="QLabel" name="RwbRange">
@@ -557,7 +557,7 @@
         <x>24</x>
         <y>432</y>
         <width>192</width>
-        <height>16</height>
+        <height>24</height>
        </rect>
       </property>
       <property name="font">

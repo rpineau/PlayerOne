@@ -198,6 +198,7 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
     if (NULL == (dx = uiutil.X2DX()))
         return ERR_POINTER;
 
+    m_Camera.getCameraSerial(m_sCameraSerial);
 
     if(m_bLinked){
         nErr = m_Camera.getGain(nMin, nMax, nVal);
@@ -323,7 +324,7 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
         }
 
         m_Camera.getUserfulValues(nOffsetHighestDR, nOffsetUnityGain, nGainLowestRN, nOffsetLowestRN, nHCGain);
-        ssTmp<< "Gain at HCG Mode(High Conversion Gain) : " << nHCGain;
+        ssTmp<< "Gain at HCG Mode (High Conversion Gain) : " << nHCGain;
         dx->setText("HCG_value", ssTmp.str().c_str());
         std::stringstream().swap(ssTmp);
 
@@ -380,7 +381,6 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
 
     //Retreive values from the user interface
     if (bPressedOK) {
-
         dx->propertyInt("Gain", "value", nCtrlVal);
         nErr = m_Camera.setGain((long)nCtrlVal);
         if(!nErr) {
