@@ -660,11 +660,9 @@ int X2Camera::CCEstablishLink(const enumLPTPort portLPT, const enumWhichCCD& CCD
         m_bLinked = true;
 
     m_Camera.getCameraId(m_nCameraID);
-    std::string sCameraSerial;
-    m_Camera.getCameraSerialFromID(m_nCameraID, sCameraSerial);
+    m_Camera.getCameraSerialFromID(m_nCameraID, m_sCameraSerial);
     // store camera ID
-    m_pIniUtil->writeString(KEY_X2CAM_ROOT, KEY_GUID, sCameraSerial.c_str());
-
+    m_pIniUtil->writeString(KEY_X2CAM_ROOT, KEY_GUID, m_sCameraSerial.c_str());
     return nErr;
 }
 

@@ -392,6 +392,17 @@ int CPlayerOne::Connect(int nCameraID)
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] sensor mode " << i << " desc : " << sensorMode.desc << std::endl;
         m_sLogFile.flush();
 #endif
+        if(m_nSensorModeIndex == VAL_NOT_AVAILABLE) { // there was no values set
+            if(std::string(sensorMode.name).find("Low Noise")!=-1) {
+                m_nSensorModeIndex = i;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+                m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Setting Low Noise mode as the default as nothing was saved" << std::endl;
+                m_sLogFile.flush();
+#endif
+
+            }
+        }
+
     }
 
     if(m_nSensorModeCount) {
@@ -724,7 +735,7 @@ int CPlayerOne::getSensorModeList(std::vector<std::string> &svModes, int &curent
         svModes.push_back(mode.name);
     }
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getSensorModeList] Current Sensor mode is " << sModes.at(curentModeIndex) << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getSensorModeList] Current Sensor mode is " << svModes.at(curentModeIndex) << std::endl;
     m_sLogFile.flush();
 #endif
 
@@ -743,6 +754,12 @@ int CPlayerOne::setSensorMode(int nModeIndex)
 
     if(!m_nSensorModeCount) // sensor mode no supported by camera
         return ERR_COMMANDNOTSUPPORTED;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setSensorMode] Setting sensor mode to index  = " << nModeIndex << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setSensorMode] Sensor mode name   = " << m_sensorModeInfo[nModeIndex].name << std::endl;
+    m_sLogFile.flush();
+#endif
 
     ret = POASetSensorMode(m_nCameraID, m_nSensorModeIndex);
     if(ret) {
