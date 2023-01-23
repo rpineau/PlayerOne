@@ -327,8 +327,10 @@ int CPlayerOne::Connect(int nCameraID)
     POAGetSensorModeCount(m_nCameraID, &m_nSensorModeCount);
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Number of sensor mode : " << m_nSensorModeCount << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] m_nSensorModeIndex = " << m_nSensorModeIndex << std::endl;
     m_sLogFile.flush();
 #endif
+
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] m_bSetUserConf : " << (m_bSetUserConf?"Yes":"No") << std::endl;
@@ -358,11 +360,15 @@ int CPlayerOne::Connect(int nCameraID)
         getWB_G(nMin, nMax, m_nWbG, m_bG_Auto);
         getWB_B(nMin, nMax, m_nWbB, m_bB_Auto);
         getFlip(nMin, nMax, m_nFlip);
-        getCurentSensorMode(sTmp, m_nSensorModeIndex);
         getUSBBandwidth(nMin, nMax, m_nUSBBandwidth);
         getPixelBinMode(m_bPixelBinMode);
         getLensHeaterPowerPerc(nMin, nMax, m_nLensHeaterPowerPerc);
     }
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] after m_bSetUserConf, m_nSensorModeIndex = " << m_nSensorModeIndex << std::endl;
+    m_sLogFile.flush();
+#endif
 
     rebuildGainList();
 
@@ -399,27 +405,43 @@ int CPlayerOne::Connect(int nCameraID)
                 m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Setting Low Noise mode as the default as nothing was saved" << std::endl;
                 m_sLogFile.flush();
 #endif
-
             }
         }
 
     }
 
-    if(m_nSensorModeCount) {
-        ret = (POAErrors)setSensorMode(m_nSensorModeIndex);
-        if(ret) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Error setting sensor mode, Error = " << POAGetErrorString(ret) << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] after building m_sensorModeInfo, m_nSensorModeIndex = " << m_nSensorModeIndex << std::endl;
+    m_sLogFile.flush();
+#endif
+
+    if(m_nSensorModeCount) {
+        if(m_nSensorModeIndex == VAL_NOT_AVAILABLE) {
+            getCurentSensorMode(sTmp, m_nSensorModeIndex);
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] got sensor mode from camera = " << m_nSensorModeIndex << std::endl;
             m_sLogFile.flush();
 #endif
-            POACloseCamera(m_nCameraID);
-            m_bConnected = false;
-            return ERR_CMDFAILED;
+        }
+        else {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] setting sensor mode to " << m_nSensorModeIndex << std::endl;
+            m_sLogFile.flush();
+#endif
+            ret = (POAErrors)setSensorMode(m_nSensorModeIndex);
+            if(ret) {
+                setSensorMode(0);
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+                m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Error setting sensor mode to " << m_nSensorModeIndex<<", Error = " << POAGetErrorString(ret) << std::endl;
+                m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Setting to default mode" << std::endl;
+                m_sLogFile.flush();
+#endif
+            }
         }
     }
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Connected" << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Connected, nErr = " << nErr << std::endl;
     m_sLogFile.flush();
 #endif
 
@@ -665,7 +687,7 @@ int CPlayerOne::getCurentSensorMode(std::string &sSensorMode, int &nModeIndex)
     int nErr = PLUGIN_OK;
     POAErrors ret;
 
-    nModeIndex = -1;
+    nModeIndex = 0; // default mode
     sSensorMode.clear();
 
     if(!m_nSensorModeCount)

@@ -654,7 +654,7 @@ int X2Camera::CCEstablishLink(const enumLPTPort portLPT, const enumWhichCCD& CCD
     nErr = m_Camera.Connect(m_nCameraID);
     if(nErr) {
         m_bLinked = false;
-        return ERR_NODEVICESELECTED;
+        return nErr;
     }
     else
         m_bLinked = true;
