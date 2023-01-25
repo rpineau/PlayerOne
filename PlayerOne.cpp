@@ -2043,97 +2043,121 @@ int CPlayerOne::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] getBitDepth()/8 = " << getBitDepth()/8 << std::endl;
     m_sLogFile.flush();
 #endif
-
-    POAGetImageStartPos(m_nCameraID, &tmp1, &tmp2);
+    try {
+        POAGetImageStartPos(m_nCameraID, &tmp1, &tmp2);
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] POAGetImageStartPos x  : " << tmp1 << std::endl;
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] POAGetImageStartPos y  : " << tmp2 << std::endl;
-    m_sLogFile.flush();
-#endif
-
-    POAGetImageSize(m_nCameraID, &tmp1, &tmp2);
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] POAGetImageSize w  : " << tmp1 << std::endl;
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] POAGetImageSize h  : " << tmp2 << std::endl;
-    m_sLogFile.flush();
-#endif
-
-    // do we need to extract data as ROI was re-aligned to match PlayerOne specs of heigth%2 and width%8
-    if(m_nROIWidth != m_nReqROIWidth || m_nROIHeight != m_nReqROIHeight) {
-        // me need to extract the data so we allocate a buffer
-        srcMemWidth = m_nROIWidth * (getBitDepth()/8);
-        imgBuffer = (unsigned char*)malloc(m_nROIHeight * srcMemWidth);
-    }
-    else {
-        imgBuffer = frameBuffer;
-        srcMemWidth = nMemWidth;
-    }
-
-    sizeReadFromCam = m_nROIHeight * srcMemWidth;
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] srcMemWidth     = " << srcMemWidth << std::endl;
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] nMemWidth       = " << nMemWidth << std::endl;
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] sizeReadFromCam = " << sizeReadFromCam << std::endl;
-    m_sLogFile.flush();
-#endif
-    exposure_ms = (int)(m_dCaptureLenght * 1000);
-    ret = POAGetImageData(m_nCameraID, imgBuffer, sizeReadFromCam, exposure_ms + 500);
-    if(ret!=POA_OK) {
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] POAGetImageData error, retrying :  " << POAGetErrorString(ret) << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] POAGetImageStartPos x  : " << tmp1 << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] POAGetImageStartPos y  : " << tmp2 << std::endl;
         m_sLogFile.flush();
 #endif
-        // wait and retry
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-        std::this_thread::yield();
+
+        POAGetImageSize(m_nCameraID, &tmp1, &tmp2);
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] POAGetImageSize w  : " << tmp1 << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] POAGetImageSize h  : " << tmp2 << std::endl;
+        m_sLogFile.flush();
+#endif
+
+        // do we need to extract data as ROI was re-aligned to match PlayerOne specs of heigth%2 and width%8
+        if(m_nROIWidth != m_nReqROIWidth || m_nROIHeight != m_nReqROIHeight) {
+            // me need to extract the data so we allocate a buffer
+            srcMemWidth = m_nROIWidth * (getBitDepth()/8);
+            imgBuffer = (unsigned char*)malloc(m_nROIHeight * srcMemWidth);
+        }
+        else {
+            imgBuffer = frameBuffer;
+            srcMemWidth = nMemWidth;
+        }
+
+        sizeReadFromCam = m_nROIHeight * srcMemWidth;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] srcMemWidth     = " << srcMemWidth << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] nMemWidth       = " << nMemWidth << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] sizeReadFromCam = " << sizeReadFromCam << std::endl;
+        m_sLogFile.flush();
+#endif
+        exposure_ms = (int)(m_dCaptureLenght * 1000);
         ret = POAGetImageData(m_nCameraID, imgBuffer, sizeReadFromCam, exposure_ms + 500);
         if(ret!=POA_OK) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] POAGetImageData error :  " << POAGetErrorString(ret) << std::endl;
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] POAGetImageData error, retrying :  " << POAGetErrorString(ret) << std::endl;
             m_sLogFile.flush();
 #endif
-            if(imgBuffer)
-                free(imgBuffer);
-            POAStopExposure(m_nCameraID);
-            return ERR_RXTIMEOUT;
-        }
-    }
-    POAStopExposure(m_nCameraID);
-
-    // shift data
-    if(m_nNbBitToShift) {
-        buf = (uint16_t *)imgBuffer;
-        for(int i=0; i<sizeReadFromCam/2; i++)
-            buf[i] = buf[i]<<m_nNbBitToShift;
-    }
-
-    if(imgBuffer != frameBuffer) {
-        copyWidth = srcMemWidth>nMemWidth?nMemWidth:srcMemWidth;
-        copyHeight = m_nROIHeight>nHeight?nHeight:m_nROIHeight;
+            // wait and retry
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+            std::this_thread::yield();
+            ret = POAGetImageData(m_nCameraID, imgBuffer, sizeReadFromCam, exposure_ms + 500);
+            if(ret!=POA_OK) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] copying ("<< m_nROILeft <<","
-                                                                        << m_nROITop <<","
-                                                                        << m_nROIWidth <<","
-                                                                        << m_nROIHeight <<") => ("
-                                                                        << m_nReqROILeft <<","
-                                                                        << m_nReqROITop <<","
-                                                                        << m_nReqROIWidth <<","
-                                                                        << m_nReqROIHeight <<")"
-                                                                        << std::endl;
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] srcMemWidth       : " << srcMemWidth << std::endl;
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] nMemWidth         : " << nMemWidth << std::endl;
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] copyHeight        : " << copyHeight << std::endl;
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] copyWidth         : " << copyWidth << std::endl;
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] sizeReadFromCam   : " << sizeReadFromCam << std::endl;
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] size to TSX       : " << nHeight * nMemWidth << std::endl;
-        m_sLogFile.flush();
+                m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] POAGetImageData error :  " << POAGetErrorString(ret) << std::endl;
+                m_sLogFile.flush();
 #endif
-        // copy every line from source buffer newly aligned into TSX buffer cutting at copyWidth
-        for(i=0; i<copyHeight; i++) {
-            memcpy(frameBuffer+(i*nMemWidth), imgBuffer+(i*srcMemWidth), copyWidth);
+                if(imgBuffer)
+                    free(imgBuffer);
+                POAStopExposure(m_nCameraID);
+                return ERR_RXTIMEOUT;
+            }
         }
-        free(imgBuffer);
+        POAStopExposure(m_nCameraID);
+
+        // shift data
+        if(m_nNbBitToShift) {
+            buf = (uint16_t *)imgBuffer;
+            for(int i=0; i<sizeReadFromCam/2; i++)
+                buf[i] = buf[i]<<m_nNbBitToShift;
+        }
+
+        if(imgBuffer != frameBuffer) {
+            copyWidth = srcMemWidth>nMemWidth?nMemWidth:srcMemWidth;
+            copyHeight = m_nROIHeight>nHeight?nHeight:m_nROIHeight;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] copying ("<< m_nROILeft <<","
+                                                                            << m_nROITop <<","
+                                                                            << m_nROIWidth <<","
+                                                                            << m_nROIHeight <<") => ("
+                                                                            << m_nReqROILeft <<","
+                                                                            << m_nReqROITop <<","
+                                                                            << m_nReqROIWidth <<","
+                                                                            << m_nReqROIHeight <<")"
+                                                                            << std::endl;
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] srcMemWidth       : " << srcMemWidth << std::endl;
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] nMemWidth         : " << nMemWidth << std::endl;
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] copyHeight        : " << copyHeight << std::endl;
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] copyWidth         : " << copyWidth << std::endl;
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] sizeReadFromCam   : " << sizeReadFromCam << std::endl;
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] size to TSX       : " << nHeight * nMemWidth << std::endl;
+            m_sLogFile.flush();
+#endif
+            // copy every line from source buffer newly aligned into TSX buffer cutting at copyWidth
+            for(i=0; i<copyHeight; i++) {
+                memcpy(frameBuffer+(i*nMemWidth), imgBuffer+(i*srcMemWidth), copyWidth);
+            }
+            free(imgBuffer);
+        }
+
+    }  catch(const std::exception& e) {
+        if(imgBuffer) {
+            try {
+                free(imgBuffer);
+                imgBuffer = nullptr;
+                nErr = ERR_RXTIMEOUT;
+            }  catch(const std::exception& e) {
+                
+            }
+        }
     }
+    catch (...) {
+        if(imgBuffer) {
+            try {
+                free(imgBuffer);
+                imgBuffer = nullptr;
+                nErr = ERR_RXTIMEOUT;
+            }  catch(const std::exception& e) {
+                
+            }
+        }
+    }
+
     return nErr;
 }
 
