@@ -65,6 +65,7 @@ CPlayerOne::CPlayerOne()
     m_nGainLowestRN = VAL_NOT_AVAILABLE;
     m_nOffsetLowestRN = VAL_NOT_AVAILABLE;
     m_nHCGain = VAL_NOT_AVAILABLE;
+    m_nLensHeaterPowerPerc = VAL_NOT_AVAILABLE;
 
 #ifdef PLUGIN_DEBUG
 #if defined(SB_WIN_BUILD)
@@ -106,6 +107,11 @@ CPlayerOne::~CPlayerOne()
 #pragma mark - Camera access
 void CPlayerOne::setUserConf(bool bUserConf)
 {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]" << " [setUserConf]  Set m_bSetUserConf to : " << (bUserConf?"Yes":"No") << std::endl;
+    m_sLogFile.flush();
+#endif
+
     m_bSetUserConf = bUserConf;
 }
 
@@ -125,7 +131,7 @@ int CPlayerOne::Connect(int nCameraID)
         m_nCameraID = nCameraID;
     else {
         // check if there is at least one camera connected to the system
-        if(POAGetCameraCount() == 1) {
+        if(POAGetCameraCount() >= 1) {
             std::vector<camera_info_t> tCameraIdList;
             listCamera(tCameraIdList);
             if(tCameraIdList.size()) {
@@ -162,7 +168,6 @@ int CPlayerOne::Connect(int nCameraID)
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Connected to camera ID  " << m_nCameraID << " Serial " << m_sCameraSerial << std::endl;
     m_sLogFile.flush();
 #endif
-
 
     ret = POAGetCameraPropertiesByID(m_nCameraID, &m_cameraProperty);
     if (ret != POA_OK)
@@ -322,6 +327,13 @@ int CPlayerOne::Connect(int nCameraID)
     POAGetSensorModeCount(m_nCameraID, &m_nSensorModeCount);
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Number of sensor mode : " << m_nSensorModeCount << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] m_nSensorModeIndex = " << m_nSensorModeIndex << std::endl;
+    m_sLogFile.flush();
+#endif
+
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] m_bSetUserConf : " << (m_bSetUserConf?"Yes":"No") << std::endl;
     m_sLogFile.flush();
 #endif
 
@@ -333,21 +345,30 @@ int CPlayerOne::Connect(int nCameraID)
         setWB_G(m_nWbG, m_bG_Auto);
         setWB_B(m_nWbB, m_bB_Auto);
         setFlip(m_nFlip);
-        setSensorMode(m_nSensorModeIndex);
         setUSBBandwidth(m_nUSBBandwidth);
         setPixelBinMode(m_bPixelBinMode);
+        setLensHeaterPowerPerc(m_nLensHeaterPowerPerc);
     }
     else {
-        getGain(nMin, nMax , m_nGain);
+        getUserfulValues(m_nOffsetHighestDR, m_nOffsetUnityGain, m_nGainLowestRN, m_nOffsetLowestRN, m_nHCGain);
+        setGain(m_nHCGain);
+        m_nGain = m_nHCGain;
+        setOffset(m_nOffsetHighestDR);
+        m_nOffset = m_nOffsetHighestDR;
         getOffset(nMin, nMax, m_nOffset);
         getWB_R(nMin, nMax, m_nWbR, m_bR_Auto);
         getWB_G(nMin, nMax, m_nWbG, m_bG_Auto);
         getWB_B(nMin, nMax, m_nWbB, m_bB_Auto);
         getFlip(nMin, nMax, m_nFlip);
-        getCurentSensorMode(sTmp, m_nSensorModeIndex);
         getUSBBandwidth(nMin, nMax, m_nUSBBandwidth);
         getPixelBinMode(m_bPixelBinMode);
+        getLensHeaterPowerPerc(nMin, nMax, m_nLensHeaterPowerPerc);
     }
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] after m_bSetUserConf, m_nSensorModeIndex = " << m_nSensorModeIndex << std::endl;
+    m_sLogFile.flush();
+#endif
 
     rebuildGainList();
 
@@ -359,20 +380,68 @@ int CPlayerOne::Connect(int nCameraID)
     m_sLogFile.flush();
 #endif
     // if the camera supports it, in general, there are at least two sensor modes[Normal, LowNoise, ...]
+    m_sensorModeInfo.clear();
     for(i=0; i< m_nSensorModeCount; i++) {
         ret = POAGetSensorModeInfo(m_nCameraID, i, &sensorMode);
-        if(!ret)
+        if (ret != POA_OK) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Error getting sensor mode info : "<< ret << std::endl;
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Error getting sensor mode info : "<< POAGetErrorString(ret) << std::endl;
+            m_sLogFile.flush();
+#endif
             continue;
+        }
         m_sensorModeInfo.push_back(sensorMode);
+        sTmp.assign(sensorMode.name);
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] sensor mode " << i << " name : " << sensorMode.name << std::endl;
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] sensor mode " << i << " desc : " << sensorMode.desc << std::endl;
         m_sLogFile.flush();
 #endif
+        if(m_nSensorModeIndex == VAL_NOT_AVAILABLE) { // there was no values set
+            if(std::string(sensorMode.name).find("Low Noise")!=-1) {
+                m_nSensorModeIndex = i;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+                m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Setting Low Noise mode as the default as nothing was saved" << std::endl;
+                m_sLogFile.flush();
+#endif
+            }
+        }
+
     }
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Connected" << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] after building m_sensorModeInfo, m_nSensorModeIndex = " << m_nSensorModeIndex << std::endl;
+    m_sLogFile.flush();
+#endif
+
+    if(m_nSensorModeCount) {
+        if(m_nSensorModeIndex == VAL_NOT_AVAILABLE) {
+            getCurentSensorMode(sTmp, m_nSensorModeIndex);
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] got sensor mode from camera = " << m_nSensorModeIndex << std::endl;
+            m_sLogFile.flush();
+#endif
+        }
+        else {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] setting sensor mode to " << m_nSensorModeIndex << std::endl;
+            m_sLogFile.flush();
+#endif
+            ret = (POAErrors)setSensorMode(m_nSensorModeIndex);
+            if(ret) {
+                setSensorMode(0);
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+                m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Error setting sensor mode to " << m_nSensorModeIndex<<", Error = " << POAGetErrorString(ret) << std::endl;
+                m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Setting to default mode" << std::endl;
+                m_sLogFile.flush();
+#endif
+            }
+        }
+    }
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Connected, nErr = " << nErr << std::endl;
     m_sLogFile.flush();
 #endif
 
@@ -618,44 +687,77 @@ int CPlayerOne::getCurentSensorMode(std::string &sSensorMode, int &nModeIndex)
     int nErr = PLUGIN_OK;
     POAErrors ret;
 
-    if(!m_nSensorModeCount) {
+    nModeIndex = 0; // default mode
+    sSensorMode.clear();
+
+    if(!m_nSensorModeCount)
         return VAL_NOT_AVAILABLE;
-    }
+
+    if(m_sensorModeInfo.size()==0)
+        return VAL_NOT_AVAILABLE;
 
     ret =  POAGetSensorMode(m_nCameraID, &nModeIndex);
     if(ret) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getSensorMode] Error getting current sensor mode." << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getCurentSensorMode] Error getting current sensor mode." << std::endl;
         m_sLogFile.flush();
 #endif
         return ERR_CMDFAILED;
     }
-    sSensorMode = m_sensorModeInfo[nModeIndex].name;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getCurentSensorMode] nModeIndex = " << nModeIndex << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getCurentSensorMode] m_sensorModeInfo size = " <<  m_sensorModeInfo.size() << std::endl;
+    m_sLogFile.flush();
+#endif
+    if(nModeIndex>=m_sensorModeInfo.size()) {
+        // not good
+        sSensorMode.assign("Bad index");
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getCurentSensorMode] Error Bad index nModeIndex >= m_sensorModeInfo.size() " << std::endl;
+        m_sLogFile.flush();
+#endif
+    }
+    else
+        sSensorMode.assign(m_sensorModeInfo[nModeIndex].name);
     return nErr;
 }
 
-int CPlayerOne::getSensorModeList(std::vector<std::string> &sModes, int &curentModeIndex)
+int CPlayerOne::getSensorModeList(std::vector<std::string> &svModes, int &curentModeIndex)
 {
     int nErr = PLUGIN_OK;
     POAErrors ret;
 
+    svModes.clear();
+    curentModeIndex = -1;
+
     if(!m_nSensorModeCount) // sensor mode no supported by camera
+        return VAL_NOT_AVAILABLE;
+
+    if(m_sensorModeInfo.size()==0)
         return VAL_NOT_AVAILABLE;
 
     ret = POAGetSensorMode(m_nCameraID, &curentModeIndex);
     if(ret) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getSensorMode] Error getting current sensor mode." << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getSensorModeList] POAGetSensorMode Error getting current sensor mode." << std::endl;
         m_sLogFile.flush();
 #endif
         return VAL_NOT_AVAILABLE;
     }
-    sModes.clear();
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getSensorModeList] curentModeIndex = " << curentModeIndex << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getSensorModeList] m_sensorModeInfo size = " <<  m_sensorModeInfo.size() << std::endl;
+    m_sLogFile.flush();
+#endif
+
+    svModes.clear();
     for (POASensorModeInfo mode : m_sensorModeInfo) {
-        sModes.push_back(mode.name);
+        svModes.push_back(mode.name);
     }
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getCurentSensorMode] Current Sensor mode is " << sModes.at(curentModeIndex) << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getSensorModeList] Current Sensor mode is " << svModes.at(curentModeIndex) << std::endl;
     m_sLogFile.flush();
 #endif
 
@@ -674,6 +776,12 @@ int CPlayerOne::setSensorMode(int nModeIndex)
 
     if(!m_nSensorModeCount) // sensor mode no supported by camera
         return ERR_COMMANDNOTSUPPORTED;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setSensorMode] Setting sensor mode to index  = " << nModeIndex << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setSensorMode] Sensor mode name   = " << m_sensorModeInfo[nModeIndex].name << std::endl;
+    m_sLogFile.flush();
+#endif
 
     ret = POASetSensorMode(m_nCameraID, m_nSensorModeIndex);
     if(ret) {
@@ -838,15 +946,15 @@ int CPlayerOne::getTemperture(double &dTemp, double &dPower, double &dSetPoint, 
         if(m_cameraProperty.isHasCooler) {
             ret = getConfigValue(POA_TARGET_TEMP, confValue, minValue, maxValue, bAuto);
             if(ret == POA_OK)
-                dPower = double(confValue.intValue);
+                dSetPoint = double(confValue.intValue);
             else
-                dPower = 0;
+                dSetPoint = 0;
 
             ret = getConfigValue(POA_COOLER_POWER, confValue, minValue, maxValue, bAuto);
             if(ret == POA_OK)
-                dSetPoint = double(confValue.intValue);
+                dPower = double(confValue.intValue);
             else
-                dSetPoint = dTemp;
+                dPower = dTemp;
 
             ret = getConfigValue(POA_COOLER, confValue, minValue, maxValue, bAuto);
             if(ret == POA_OK)
@@ -1033,6 +1141,11 @@ int CPlayerOne::setGain(long nGain)
     int nErr = PLUGIN_OK;
     POAErrors ret;
     POAConfigValue confValue;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setGain] Called with gain =  " << nGain << std::endl;
+    m_sLogFile.flush();
+#endif
 
     m_nGain = nGain;
     if(!m_bConnected)
@@ -1471,7 +1584,7 @@ int CPlayerOne::getUSBBandwidth(long &nMin, long &nMax, long &nValue)
     ret = getConfigValue(POA_USB_BANDWIDTH_LIMIT, confValue, minValue, maxValue, bAuto);
     if(ret) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getWB_R] Error getting USB Bandwidth, Error = " << POAGetErrorString(ret) << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getUSBBandwidth] Error getting USB Bandwidth, Error = " << POAGetErrorString(ret) << std::endl;
         m_sLogFile.flush();
 #endif
         return VAL_NOT_AVAILABLE;
@@ -1512,6 +1625,66 @@ int CPlayerOne::setUSBBandwidth(long nBandwidth)
         nErr = ERR_CMDFAILED;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setUSBBandwidth] Error setting USB Bandwidth, Error = " << POAGetErrorString(ret) << std::endl;
+        m_sLogFile.flush();
+#endif
+    }
+    return nErr;
+}
+
+int CPlayerOne::getLensHeaterPowerPerc(long &nMin, long &nMax, long &nValue)
+{
+    POAErrors ret;
+    POAConfigValue minValue, maxValue, confValue;
+    POABool bAuto;
+
+    nMin = 0;
+    nMax = 0;
+    nValue = 0;
+
+    ret = getConfigValue(POA_HEATER_POWER, confValue, minValue, maxValue, bAuto);
+    if(ret) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getLensHeaterPowerPerc] Error getting lens power percentage, Error = " << POAGetErrorString(ret) << std::endl;
+        m_sLogFile.flush();
+#endif
+        return VAL_NOT_AVAILABLE;
+    }
+    nMin = minValue.intValue;
+    nMax = maxValue.intValue;
+    nValue = confValue.intValue;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getLensHeaterPowerPerc] lens power is at " << nValue << "%" << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getLensHeaterPowerPerc] min is " << nMin << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getLensHeaterPowerPerc] max is " << nMax << std::endl;
+    m_sLogFile.flush();
+#endif
+    return 0;
+}
+
+int CPlayerOne::setLensHeaterPowerPerc(long nPercent)
+{
+    int nErr = PLUGIN_OK;
+    POAErrors ret;
+    POAConfigValue confValue;
+
+    m_nLensHeaterPowerPerc = nPercent;
+
+    if(!m_bConnected)
+        return nErr;
+
+    confValue.intValue = m_nUSBBandwidth;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setLensHeaterPowerPerc] Lens power percentage set to " << m_nLensHeaterPowerPerc << "%" << std::endl;
+    m_sLogFile.flush();
+#endif
+
+    ret = setConfigValue(POA_HEATER_POWER, confValue, POA_FALSE);
+    if(ret != POA_OK) {
+        nErr = ERR_CMDFAILED;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setLensHeaterPowerPerc] Error setting Lens power percentage, Error = " << POAGetErrorString(ret) << std::endl;
         m_sLogFile.flush();
 #endif
     }
@@ -1870,97 +2043,121 @@ int CPlayerOne::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] getBitDepth()/8 = " << getBitDepth()/8 << std::endl;
     m_sLogFile.flush();
 #endif
-
-    POAGetImageStartPos(m_nCameraID, &tmp1, &tmp2);
+    try {
+        POAGetImageStartPos(m_nCameraID, &tmp1, &tmp2);
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] POAGetImageStartPos x  : " << tmp1 << std::endl;
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] POAGetImageStartPos y  : " << tmp2 << std::endl;
-    m_sLogFile.flush();
-#endif
-
-    POAGetImageSize(m_nCameraID, &tmp1, &tmp2);
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] POAGetImageSize w  : " << tmp1 << std::endl;
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] POAGetImageSize h  : " << tmp2 << std::endl;
-    m_sLogFile.flush();
-#endif
-
-    // do we need to extract data as ROI was re-aligned to match PlayerOne specs of heigth%2 and width%8
-    if(m_nROIWidth != m_nReqROIWidth || m_nROIHeight != m_nReqROIHeight) {
-        // me need to extract the data so we allocate a buffer
-        srcMemWidth = m_nROIWidth * (getBitDepth()/8);
-        imgBuffer = (unsigned char*)malloc(m_nROIHeight * srcMemWidth);
-    }
-    else {
-        imgBuffer = frameBuffer;
-        srcMemWidth = nMemWidth;
-    }
-
-    sizeReadFromCam = m_nROIHeight * srcMemWidth;
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] srcMemWidth     = " << srcMemWidth << std::endl;
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] nMemWidth       = " << nMemWidth << std::endl;
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] sizeReadFromCam = " << sizeReadFromCam << std::endl;
-    m_sLogFile.flush();
-#endif
-    exposure_ms = (int)(m_dCaptureLenght * 1000);
-    ret = POAGetImageData(m_nCameraID, imgBuffer, sizeReadFromCam, exposure_ms + 500);
-    if(ret!=POA_OK) {
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] POAGetImageData error, retrying :  " << POAGetErrorString(ret) << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] POAGetImageStartPos x  : " << tmp1 << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] POAGetImageStartPos y  : " << tmp2 << std::endl;
         m_sLogFile.flush();
 #endif
-        // wait and retry
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-        std::this_thread::yield();
+
+        POAGetImageSize(m_nCameraID, &tmp1, &tmp2);
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] POAGetImageSize w  : " << tmp1 << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] POAGetImageSize h  : " << tmp2 << std::endl;
+        m_sLogFile.flush();
+#endif
+
+        // do we need to extract data as ROI was re-aligned to match PlayerOne specs of heigth%2 and width%8
+        if(m_nROIWidth != m_nReqROIWidth || m_nROIHeight != m_nReqROIHeight) {
+            // me need to extract the data so we allocate a buffer
+            srcMemWidth = m_nROIWidth * (getBitDepth()/8);
+            imgBuffer = (unsigned char*)malloc(m_nROIHeight * srcMemWidth);
+        }
+        else {
+            imgBuffer = frameBuffer;
+            srcMemWidth = nMemWidth;
+        }
+
+        sizeReadFromCam = m_nROIHeight * srcMemWidth;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] srcMemWidth     = " << srcMemWidth << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] nMemWidth       = " << nMemWidth << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] sizeReadFromCam = " << sizeReadFromCam << std::endl;
+        m_sLogFile.flush();
+#endif
+        exposure_ms = (int)(m_dCaptureLenght * 1000);
         ret = POAGetImageData(m_nCameraID, imgBuffer, sizeReadFromCam, exposure_ms + 500);
         if(ret!=POA_OK) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] POAGetImageData error :  " << POAGetErrorString(ret) << std::endl;
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] POAGetImageData error, retrying :  " << POAGetErrorString(ret) << std::endl;
             m_sLogFile.flush();
 #endif
-            if(imgBuffer)
-                free(imgBuffer);
-            POAStopExposure(m_nCameraID);
-            return ERR_RXTIMEOUT;
-        }
-    }
-    POAStopExposure(m_nCameraID);
-
-    // shift data
-    if(m_nNbBitToShift) {
-        buf = (uint16_t *)imgBuffer;
-        for(int i=0; i<sizeReadFromCam/2; i++)
-            buf[i] = buf[i]<<m_nNbBitToShift;
-    }
-
-    if(imgBuffer != frameBuffer) {
-        copyWidth = srcMemWidth>nMemWidth?nMemWidth:srcMemWidth;
-        copyHeight = m_nROIHeight>nHeight?nHeight:m_nROIHeight;
+            // wait and retry
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+            std::this_thread::yield();
+            ret = POAGetImageData(m_nCameraID, imgBuffer, sizeReadFromCam, exposure_ms + 500);
+            if(ret!=POA_OK) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] copying ("<< m_nROILeft <<","
-                                                                        << m_nROITop <<","
-                                                                        << m_nROIWidth <<","
-                                                                        << m_nROIHeight <<") => ("
-                                                                        << m_nReqROILeft <<","
-                                                                        << m_nReqROITop <<","
-                                                                        << m_nReqROIWidth <<","
-                                                                        << m_nReqROIHeight <<")"
-                                                                        << std::endl;
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] srcMemWidth       : " << srcMemWidth << std::endl;
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] nMemWidth         : " << nMemWidth << std::endl;
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] copyHeight        : " << copyHeight << std::endl;
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] copyWidth         : " << copyWidth << std::endl;
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] sizeReadFromCam   : " << sizeReadFromCam << std::endl;
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] size to TSX       : " << nHeight * nMemWidth << std::endl;
-        m_sLogFile.flush();
+                m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] POAGetImageData error :  " << POAGetErrorString(ret) << std::endl;
+                m_sLogFile.flush();
 #endif
-        // copy every line from source buffer newly aligned into TSX buffer cutting at copyWidth
-        for(i=0; i<copyHeight; i++) {
-            memcpy(frameBuffer+(i*nMemWidth), imgBuffer+(i*srcMemWidth), copyWidth);
+                if(imgBuffer)
+                    free(imgBuffer);
+                POAStopExposure(m_nCameraID);
+                return ERR_RXTIMEOUT;
+            }
         }
-        free(imgBuffer);
+        POAStopExposure(m_nCameraID);
+
+        // shift data
+        if(m_nNbBitToShift) {
+            buf = (uint16_t *)imgBuffer;
+            for(int i=0; i<sizeReadFromCam/2; i++)
+                buf[i] = buf[i]<<m_nNbBitToShift;
+        }
+
+        if(imgBuffer != frameBuffer) {
+            copyWidth = srcMemWidth>nMemWidth?nMemWidth:srcMemWidth;
+            copyHeight = m_nROIHeight>nHeight?nHeight:m_nROIHeight;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] copying ("<< m_nROILeft <<","
+                                                                            << m_nROITop <<","
+                                                                            << m_nROIWidth <<","
+                                                                            << m_nROIHeight <<") => ("
+                                                                            << m_nReqROILeft <<","
+                                                                            << m_nReqROITop <<","
+                                                                            << m_nReqROIWidth <<","
+                                                                            << m_nReqROIHeight <<")"
+                                                                            << std::endl;
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] srcMemWidth       : " << srcMemWidth << std::endl;
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] nMemWidth         : " << nMemWidth << std::endl;
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] copyHeight        : " << copyHeight << std::endl;
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] copyWidth         : " << copyWidth << std::endl;
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] sizeReadFromCam   : " << sizeReadFromCam << std::endl;
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] size to TSX       : " << nHeight * nMemWidth << std::endl;
+            m_sLogFile.flush();
+#endif
+            // copy every line from source buffer newly aligned into TSX buffer cutting at copyWidth
+            for(i=0; i<copyHeight; i++) {
+                memcpy(frameBuffer+(i*nMemWidth), imgBuffer+(i*srcMemWidth), copyWidth);
+            }
+            free(imgBuffer);
+        }
+
+    }  catch(const std::exception& e) {
+        if(imgBuffer) {
+            try {
+                free(imgBuffer);
+                imgBuffer = nullptr;
+                nErr = ERR_RXTIMEOUT;
+            }  catch(const std::exception& e) {
+                
+            }
+        }
     }
+    catch (...) {
+        if(imgBuffer) {
+            try {
+                free(imgBuffer);
+                imgBuffer = nullptr;
+                nErr = ERR_RXTIMEOUT;
+            }  catch(const std::exception& e) {
+                
+            }
+        }
+    }
+
     return nErr;
 }
 
@@ -2012,24 +2209,31 @@ int CPlayerOne::RelayActivate(const int nXPlus, const int nXMinus, const int nYP
 
 void CPlayerOne::buildGainList(long nMin, long nMax, long nValue)
 {
-    long i = 0;
-    int nStep = 1;
+    std::stringstream ssTmp;
+
     m_GainList.clear();
+    m_GainListLabel.clear();
     m_nNbGainValue = 0;
 
-    if(nMin != nValue) {
-        m_GainList.push_back(std::to_string(nValue));
-        m_nNbGainValue++;
-    }
+    ssTmp << "High Conversion Gain (" << m_nHCGain <<")";
+    m_GainListLabel.push_back(ssTmp.str());
+    m_GainList.push_back(m_nHCGain);
+    std::stringstream().swap(ssTmp);
+    m_nNbGainValue++;
 
-    nStep = int(float(nMax-nMin)/20);
-    for(i=nMin; i<nMax; i+=nStep) {
-        m_GainList.push_back(std::to_string(i));
-        m_nNbGainValue++;
-    }
-    m_GainList.push_back(std::to_string(nMax));
+    ssTmp << "Lowest read noise Gain (" << m_nGainLowestRN <<")";
+    m_GainListLabel.push_back(ssTmp.str());
+    m_GainList.push_back(m_nGainLowestRN);
+    std::stringstream().swap(ssTmp);
+    m_nNbGainValue++;
+
+    ssTmp << "User value(" << m_nGain <<")";
+    m_GainListLabel.push_back(ssTmp.str());
+    m_GainList.push_back((int)m_nGain);
+    std::stringstream().swap(ssTmp);
     m_nNbGainValue++;
 }
+
 int CPlayerOne::getNbGainInList()
 {
     return m_nNbGainValue;
@@ -2042,12 +2246,21 @@ void CPlayerOne::rebuildGainList()
     buildGainList(nMin, nMax, nVal);
 }
 
-std::string CPlayerOne::getGainFromListAtIndex(int nIndex)
+std::string CPlayerOne::getGainLabelFromListAtIndex(int nIndex)
+{
+    if(nIndex<m_GainListLabel.size())
+        return m_GainListLabel.at(nIndex);
+    else
+        return std::string("N/A");
+}
+
+
+int CPlayerOne::getGainFromListAtIndex(int nIndex)
 {
     if(nIndex<m_GainList.size())
         return m_GainList.at(nIndex);
     else
-        return std::string("N/A");
+        return m_nHCGain;
 }
 
 #ifdef PLUGIN_DEBUG

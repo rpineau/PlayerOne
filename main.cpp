@@ -5,7 +5,7 @@
 
 //Ths file normally does not require changing
 
-#define PLUGIN_NAME "X2Camera IIDC plugin"
+#define PLUGIN_NAME "X2 Filterwheel Plugin Player One"
 
 extern "C" PlugInExport int sbPlugInName2(BasicStringInterface& str)
 {

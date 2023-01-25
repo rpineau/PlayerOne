@@ -33,7 +33,7 @@
 
 // #define PLUGIN_DEBUG    3
 
-#define PLUGIN_VERSION      1.3
+#define PLUGIN_VERSION      1.8
 #define BUFFER_LEN 128
 #define PLUGIN_OK   0
 #define MAX_NB_BIN  8
@@ -102,6 +102,8 @@ public:
     int         getUSBBandwidth(long &nMin, long &nMax, long &nValue);
     int         setUSBBandwidth(long nBandwidth);
 
+    int         getLensHeaterPowerPerc(long &nMin, long &nMax, long &nValue);
+    int         setLensHeaterPowerPerc(long nPercent);
 
     int         setROI(int nLeft, int nTop, int nWidth, int nHeight);
     int         clearROI(void);
@@ -114,7 +116,9 @@ public:
     int         RelayActivate(const int nXPlus, const int nXMinus, const int nYPlus, const int nYMinus, const bool bSynchronous, const bool bAbort);
 
     int         getNbGainInList();
-    std::string getGainFromListAtIndex(int nIndex);
+    std::string getGainLabelFromListAtIndex(int nIndex);
+    int         getGainFromListAtIndex(int nIndex);
+    
     void        rebuildGainList();
 
     int         getCurentSensorMode(std::string &sSensorMode, int &nModeIndex);
@@ -148,7 +152,8 @@ protected:
     int                     m_nControlNums;
     std::vector<POAConfigAttributes> m_ControlList;
 
-    std::vector<std::string>    m_GainList;
+    std::vector<std::string>    m_GainListLabel;
+    std::vector<int>            m_GainList;
     int                     m_nNbGainValue;
 
     long                    m_nGain;
@@ -164,7 +169,8 @@ protected:
 
     bool                    m_bPixelBinMode;
     long                    m_nUSBBandwidth;
-
+    long                    m_nLensHeaterPowerPerc;
+    
     double                  m_dPixelSize;
     int                     m_nMaxWidth;
     int                     m_nMaxHeight;
