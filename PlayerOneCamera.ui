@@ -389,7 +389,7 @@
        </rect>
       </property>
       <property name="text">
-       <string>0 to 780</string>
+       <string>Range N/A</string>
       </property>
      </widget>
      <widget class="QLabel" name="UsbBandwidthRange">
@@ -428,7 +428,7 @@
        </rect>
       </property>
       <property name="text">
-       <string>0 to 500</string>
+       <string>Range N/A</string>
       </property>
      </widget>
      <widget class="QLabel" name="label_13">
@@ -522,7 +522,7 @@
        </rect>
       </property>
       <property name="text">
-       <string>-1200 to 1200</string>
+       <string>Range N/A</string>
       </property>
      </widget>
      <widget class="QLabel" name="GwbRange">
@@ -535,7 +535,7 @@
        </rect>
       </property>
       <property name="text">
-       <string>-1200 to 1200</string>
+       <string>Range N/A</string>
       </property>
      </widget>
      <widget class="QLabel" name="BwbRange">
@@ -548,7 +548,7 @@
        </rect>
       </property>
       <property name="text">
-       <string>-1200 to 1200</string>
+       <string>Range N/A</string>
       </property>
      </widget>
      <widget class="QLabel" name="label">

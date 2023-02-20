@@ -95,7 +95,7 @@ int X2Camera::execModalSettingsDialog()
     int nErr = SB_OK;
     bool bPressedOK = false;
     int i;
-    char tmpBuffer[128];
+    std::stringstream ssTmp;
     int nCamIndex;
     bool bCameraFoud = false;
 
@@ -122,8 +122,7 @@ int X2Camera::execModalSettingsDialog()
     //Intialize the user interface
     m_Camera.listCamera(m_tCameraIdList);
     if(!m_tCameraIdList.size()) {
-        snprintf(tmpBuffer,128,"No Camera found");
-        dx->comboBoxAppendString("comboBox",tmpBuffer);
+        dx->comboBoxAppendString("comboBox","No Camera found");
         dx->setCurrentIndex("comboBox",0);
     }
     else {
@@ -131,8 +130,8 @@ int X2Camera::execModalSettingsDialog()
         nCamIndex = 0;
         for(i=0; i< m_tCameraIdList.size(); i++) {
             //Populate the camera combo box and set the current index (selection)
-            snprintf(tmpBuffer, 128, "%s [%s]",m_tCameraIdList[i].model, m_tCameraIdList[i].Sn);
-            dx->comboBoxAppendString("comboBox",tmpBuffer);
+            ssTmp << m_tCameraIdList[i].model << " [" << m_tCameraIdList[i].Sn << "]";
+            dx->comboBoxAppendString("comboBox",ssTmp.str().c_str());
             if(m_tCameraIdList[i].cameraId == m_nCameraID)
                 nCamIndex = i;
         }
@@ -202,8 +201,10 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
 
     if(m_bLinked){
         nErr = m_Camera.getGain(nMin, nMax, nVal);
-        if(nErr == VAL_NOT_AVAILABLE)
+        if(nErr == VAL_NOT_AVAILABLE) {
             dx->setEnabled("Gain", false);
+            dx->setText("gainRange", "");
+        }
         else {
             dx->setPropertyInt("Gain", "minimum", (int)nMin);
             dx->setPropertyInt("Gain", "maximum", (int)nMax);
@@ -214,8 +215,10 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
         }
 
         nErr = m_Camera.getOffset(nMin, nMax, nVal);
-        if(nErr == VAL_NOT_AVAILABLE)
+        if(nErr == VAL_NOT_AVAILABLE) {
             dx->setEnabled("Offset", false);
+            dx->setText("offsetRange", "");
+        }
         else {
             dx->setPropertyInt("Offset", "minimum", (int)nMin);
             dx->setPropertyInt("Offset", "maximum", (int)nMax);
@@ -226,8 +229,10 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
         }
 
         nErr = m_Camera.getWB_R(nMin, nMax, nVal, bIsAuto);
-        if(nErr == VAL_NOT_AVAILABLE)
+        if(nErr == VAL_NOT_AVAILABLE) {
             dx->setEnabled("WB_R", false);
+            dx->setText("RwbRange", "");
+        }
         else {
             dx->setPropertyInt("WB_R", "minimum", (int)nMin);
             dx->setPropertyInt("WB_R", "maximum", (int)nMax);
@@ -242,8 +247,10 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
         }
 
         nErr = m_Camera.getWB_G(nMin, nMax, nVal, bIsAuto);
-        if(nErr == VAL_NOT_AVAILABLE)
+        if(nErr == VAL_NOT_AVAILABLE) {
             dx->setEnabled("WB_G", false);
+            dx->setText("GwbRange", "");
+        }
         else {
             dx->setPropertyInt("WB_G", "minimum", (int)nMin);
             dx->setPropertyInt("WB_G", "maximum", (int)nMax);
@@ -258,8 +265,10 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
         }
 
         nErr = m_Camera.getWB_B(nMin, nMax, nVal, bIsAuto);
-        if(nErr == VAL_NOT_AVAILABLE)
+        if(nErr == VAL_NOT_AVAILABLE) {
             dx->setEnabled("WB_B", false);
+            dx->setText("BwbRange", "");
+        }
         else {
             dx->setPropertyInt("WB_B", "minimum", (int)nMin);
             dx->setPropertyInt("WB_B", "maximum", (int)nMax);
@@ -296,8 +305,10 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
         }
 
         nErr = m_Camera.getUSBBandwidth(nMin, nMax, nVal);
-        if(nErr == VAL_NOT_AVAILABLE)
+        if(nErr == VAL_NOT_AVAILABLE) {
             dx->setEnabled("USBBandwidth", false);
+            dx->setText("UsbBandwidthRange", "");
+        }
         else {
             dx->setPropertyInt("USBBandwidth", "minimum", (int)nMin);
             dx->setPropertyInt("USBBandwidth", "maximum", (int)nMax);
@@ -393,7 +404,7 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
         if(!nErr)
             m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_OFFSET, nCtrlVal);
 
-        if(dx->isEnabled("WB_R")) {
+        if(dx->isEnabled("WB_R") || dx->isEnabled("checkBox_2")) {
             dx->propertyInt("WB_R", "value", nCtrlVal);
             bIsAuto = dx->isChecked("checkBox_2");
             nErr = m_Camera.setWB_R((long)nCtrlVal, bIsAuto);
@@ -403,7 +414,7 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
             }
         }
 
-        if(dx->isEnabled("WB_G")) {
+        if(dx->isEnabled("WB_G") || dx->isEnabled("checkBox_3")) {
             dx->propertyInt("WB_G", "value", nCtrlVal);
             bIsAuto = dx->isChecked("checkBox_3");
             nErr = m_Camera.setWB_G((long)nCtrlVal, bIsAuto);
@@ -413,7 +424,7 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
             }
         }
 
-        if(dx->isEnabled("WB_B")) {
+        if(dx->isEnabled("WB_B") || dx->isEnabled("checkBox_4")) {
             dx->propertyInt("WB_B", "value", nCtrlVal);
             bIsAuto = dx->isChecked("checkBox_4");
             nErr = m_Camera.setWB_B((long)nCtrlVal, bIsAuto);
@@ -580,12 +591,10 @@ void X2Camera::deviceInfoNameShort(BasicStringInterface& str) const
     X2MutexLocker ml(pMe->GetMutex());
     
     if(m_bLinked) {
-        char cDevName[BUFFER_LEN];
         std::string sCameraSerial;
         std::string sCameraName;
         pMe->m_Camera.getCameraName(sCameraName);
-        snprintf(cDevName, BUFFER_LEN, "%s", sCameraName.c_str());
-        str = cDevName;
+        str = sCameraName.c_str();
     }
     else {
         str = "";
@@ -598,13 +607,13 @@ void X2Camera::deviceInfoNameLong(BasicStringInterface& str) const
     X2MutexLocker ml(pMe->GetMutex());
 
     if(m_bLinked) {
-        char cDevName[BUFFER_LEN];
+        std::stringstream cDevName;
         std::string sCameraSerial;
         std::string sCameraName;
         pMe->m_Camera.getCameraName(sCameraName);
         pMe->m_Camera.getCameraSerial(sCameraSerial);
-        snprintf(cDevName, BUFFER_LEN, "%s (%s)", sCameraName.c_str(), sCameraSerial.c_str() );
-        str = cDevName;
+        cDevName << sCameraName << " (" << sCameraSerial <<")";
+        str = cDevName.str().c_str();
     }
     else {
         str = "";
@@ -631,12 +640,10 @@ void X2Camera::deviceInfoModel(BasicStringInterface& str)
 	X2MutexLocker ml(GetMutex());
 
     if(m_bLinked) {
-        char cDevName[BUFFER_LEN];
         std::string sCameraSerial;
         std::string sCameraName;
         m_Camera.getCameraName(sCameraName);
-        snprintf(cDevName, BUFFER_LEN, "%s", sCameraName.c_str());
-        str = cDevName;
+        str = sCameraName.c_str();
     }
     else {
         str = "";

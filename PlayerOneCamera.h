@@ -1,4 +1,4 @@
-﻿/****************************************************************************
+/****************************************************************************
 **
 ** Copyright (C) 2022 The Player One Astronomy Co., Ltd.
 ** This software is the secondary software development kit (SDK) for
@@ -586,7 +586,7 @@ POACAMERA_API  POAErrors POAImageReady(int nCameraID, POABool *pIsReady);
  *
  * @param pBuf (output), pointer to data buffer, note: the buffer need to be mallloced first, and make sure it's big enough
  *
- * @param nBufSize (input), the buffer size, POA_RAW8: width*height, POA_RAW16: width*height*2, POA_RGB24: width*height*3
+ * @param lBufSize (input), the buffer size, POA_RAW8: width*height, POA_RAW16: width*height*2, POA_RGB24: width*height*3
  *
  * @param nTimeoutms (input), wait time (ms), recommend set it to exposure+500ms, -1 means infinite waiting
  *

@@ -623,46 +623,34 @@ int CPlayerOne::listCamera(std::vector<camera_info_t>  &cameraIdList)
     camera_info_t   tCameraInfo;
 
     cameraIdList.clear();
-    if(!m_bConnected) {
-        // list camera connected to the system
-        m_nCameraNum = POAGetCameraCount();
+    m_nCameraNum = POAGetCameraCount();
 
-        POAErrors ret;
-        for (int i = 0; i < m_nCameraNum; i++)
-        {
-            ret = POAGetCameraProperties(i, &m_cameraProperty);
-            if (ret == POA_OK) {
+    POAErrors ret;
+    for (int i = 0; i < m_nCameraNum; i++)
+    {
+        ret = POAGetCameraProperties(i, &m_cameraProperty);
+        if (ret == POA_OK) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-                m_sLogFile << "["<<getTimeStamp()<<"]"<< " [listCamera] Name : " << m_cameraProperty.cameraModelName << std::endl;
-                m_sLogFile << "["<<getTimeStamp()<<"]"<< " [listCamera] USB Port type : " << (m_cameraProperty.isUSB3Speed?"USB3":"USB2") << std::endl;
-                m_sLogFile << "["<<getTimeStamp()<<"]"<< " [listCamera] SN  : " << m_cameraProperty.SN << std::endl;
-                m_sLogFile << "["<<getTimeStamp()<<"]"<< " [listCamera] Camera ID : " << m_cameraProperty.cameraID << std::endl;
-                m_sLogFile.flush();
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [listCamera] Name : " << m_cameraProperty.cameraModelName << std::endl;
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [listCamera] USB Port type : " << (m_cameraProperty.isUSB3Speed?"USB3":"USB2") << std::endl;
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [listCamera] SN  : " << m_cameraProperty.SN << std::endl;
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [listCamera] Camera ID : " << m_cameraProperty.cameraID << std::endl;
+            m_sLogFile.flush();
 #endif
-                tCameraInfo.cameraId = m_cameraProperty.cameraID;
-                strncpy(tCameraInfo.model, m_cameraProperty.cameraModelName, BUFFER_LEN);
-                strncpy((char *)tCameraInfo.Sn, m_cameraProperty.SN, 64);
-
-                cameraIdList.push_back(tCameraInfo);
-            }
+            tCameraInfo.cameraId = m_cameraProperty.cameraID;
+            tCameraInfo.model.assign(m_cameraProperty.cameraModelName);
+            tCameraInfo.Sn.assign(m_cameraProperty.SN);
+            cameraIdList.push_back(tCameraInfo);
         }
     }
-    else {
-        tCameraInfo.cameraId = m_cameraProperty.cameraID;
-        strncpy(tCameraInfo.model, m_cameraProperty.cameraModelName, BUFFER_LEN);
-        strncpy((char *)tCameraInfo.Sn, m_cameraProperty.SN, 64);
-
-        cameraIdList.push_back(tCameraInfo);
-    }
-
     return nErr;
 }
 
 void CPlayerOne::getFirmwareVersion(std::string &sVersion)
 {
-    std::string sTmp;
-    sTmp.assign(POAGetSDKVersion());
-    sVersion = "SDK version " + sTmp;
+    std::stringstream ssTmp;
+    ssTmp << " API V" << POAGetAPIVersion() << ", SDK "<<POAGetSDKVersion();
+    sVersion.assign(ssTmp.str());
 }
 
 
@@ -2092,9 +2080,9 @@ int CPlayerOne::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
                 m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] POAGetImageData error :  " << POAGetErrorString(ret) << std::endl;
                 m_sLogFile.flush();
 #endif
-                if(imgBuffer)
-                    free(imgBuffer);
                 POAStopExposure(m_nCameraID);
+                if(imgBuffer != frameBuffer)
+                    free(imgBuffer);
                 return ERR_RXTIMEOUT;
             }
         }
