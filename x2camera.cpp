@@ -454,7 +454,7 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
         nCtrlVal = dx->currentIndex("PixelBinMode");
         nErr = m_Camera.setPixelBinMode((nCtrlVal==0)); // true = Sum mode, False = Average mode
         if(!nErr)
-            m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_SENSOR_MODE, nCtrlVal);
+            m_pIniUtil->writeInt(m_sCameraSerial.c_str(), PIXEL_BIN_MODE, nCtrlVal);
 
         dx->propertyInt("LensHeaterPower", "value", nCtrlVal);
         nErr = m_Camera.setUSBBandwidth((long)nCtrlVal);
