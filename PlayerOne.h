@@ -33,7 +33,7 @@
 
 // #define PLUGIN_DEBUG    3
 
-#define PLUGIN_VERSION      1.8
+#define PLUGIN_VERSION      1.9
 #define BUFFER_LEN 128
 #define PLUGIN_OK   0
 #define MAX_NB_BIN  8
@@ -41,8 +41,8 @@
 
 typedef struct _camera_info {
     int     cameraId;
-    char    Sn[64];
-    char    model[BUFFER_LEN];
+    std::string    Sn;
+    std::string    model;
 } camera_info_t;
 
 enum Plugin_Flip_Mode { FLIP_NONE, FLIP_HORI, FLIP_VERT, FLIP_BOTH};
@@ -68,7 +68,8 @@ public:
     int         listCamera(std::vector<camera_info_t>  &cameraIdList);
 
     void        getFirmwareVersion(std::string &sVersion);
-
+    void        isUSB3(bool &bUSB3);
+    
     int         getNumBins();
     int         getBinFromIndex(int nIndex);
     
