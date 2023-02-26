@@ -68,7 +68,8 @@ public:
     int         listCamera(std::vector<camera_info_t>  &cameraIdList);
 
     void        getFirmwareVersion(std::string &sVersion);
-
+    void        isUSB3(bool &bUSB3);
+    
     int         getNumBins();
     int         getBinFromIndex(int nIndex);
     

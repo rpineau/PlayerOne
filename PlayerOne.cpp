@@ -653,6 +653,10 @@ void CPlayerOne::getFirmwareVersion(std::string &sVersion)
     sVersion.assign(ssTmp.str());
 }
 
+void CPlayerOne::isUSB3(bool &bUSB3)
+{
+    bUSB3 = m_cameraProperty.isUSB3Speed;
+}
 
 int CPlayerOne::getNumBins()
 {
@@ -820,8 +824,9 @@ int CPlayerOne::setPixelBinMode(bool bSumMode)
 
     m_bPixelBinMode = bSumMode;
 
-    if(m_bConnected)
-    // POA_TRUE is sum and POA_FALSE is average,
+    if(!m_bConnected)
+        return ERR_NOLINK;
+    // POA_TRUE is sum and POA_FLASE is average
     confValue.boolValue = m_bPixelBinMode?POA_TRUE:POA_FALSE;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2

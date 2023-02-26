@@ -128,7 +128,7 @@ int X2Camera::execModalSettingsDialog()
     else {
         bCameraFoud = true;
         nCamIndex = 0;
-        for(i=0; i< m_tCameraIdList.size(); i++) {
+        for(i = 0; i < m_tCameraIdList.size(); i++) {
             //Populate the camera combo box and set the current index (selection)
             ssTmp << m_tCameraIdList[i].model << " [" << m_tCameraIdList[i].Sn << "]";
             dx->comboBoxAppendString("comboBox",ssTmp.str().c_str());
@@ -183,6 +183,7 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
     int nGainLowestRN;
     int nOffsetLowestRN;
     int nHCGain;
+    bool bIsUSB3;
 
     X2GUIExchangeInterface* dx = NULL;
     X2ModalUIUtil           uiutil(this, GetTheSkyXFacadeForDrivers());
@@ -295,7 +296,7 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
             dx->setEnabled("SensorMode", false);
         else {
             if(svModes.size()) {
-                for (i=0; i< svModes.size(); i++){
+                for(i = 0; i < svModes.size(); i++){
                     dx->comboBoxAppendString("SensorMode", svModes.at(i).c_str());
                 }
                 dx->setCurrentIndex("SensorMode",nCurrentSensorMode);
@@ -333,6 +334,9 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
             dx->setPropertyInt("LensHeaterPower", "maximum", (int)nMax);
             dx->setPropertyInt("LensHeaterPower", "value", (int)nVal);
         }
+
+        m_Camera.isUSB3(bIsUSB3);
+        dx->setText("USBMode", bIsUSB3?"<html><head/><body><p><span style=\" color:#00FF00;\">USB 3.0</span></p></body></html>" : "<html><head/><body><p><span style=\" color:#FF0000;\">USB 2.0</span></p></body></html>");
 
         m_Camera.getUserfulValues(nOffsetHighestDR, nOffsetUnityGain, nGainLowestRN, nOffsetLowestRN, nHCGain);
         ssTmp<< "Gain at HCG Mode (High Conversion Gain) : " << nHCGain;
@@ -383,6 +387,7 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
 
         dx->setEnabled("LensHeaterPower",false);
 
+        dx->setText("USBMode","");
     }
 
     m_nCurrentDialog = SETTINGS;
@@ -452,7 +457,7 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
             m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_USB_BANDWIDTH, nCtrlVal);
 
         nCtrlVal = dx->currentIndex("PixelBinMode");
-        nErr = m_Camera.setPixelBinMode((nCtrlVal==0)); // true = Sum mode, False = Average mode
+        nErr = m_Camera.setPixelBinMode((nCtrlVal==0)?true:false); // true = Sum mode, False = Average mode
         if(!nErr)
             m_pIniUtil->writeInt(m_sCameraSerial.c_str(), PIXEL_BIN_MODE, nCtrlVal);
 
@@ -514,7 +519,7 @@ int X2Camera::loadCameraSettings(std::string sSerial)
 
     nValue = m_pIniUtil->readInt(sSerial.c_str(), PIXEL_BIN_MODE, VAL_NOT_AVAILABLE);
     if(nValue!=VAL_NOT_AVAILABLE)
-        m_Camera.setPixelBinMode((nValue==1)?true:false);
+        m_Camera.setPixelBinMode((nValue==0)?true:false);
 
     nValue = m_pIniUtil->readInt(sSerial.c_str(), LENS_POWER, VAL_NOT_AVAILABLE);
     if(nValue!=VAL_NOT_AVAILABLE)
