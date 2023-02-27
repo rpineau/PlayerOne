@@ -314,13 +314,17 @@ int CPlayerOne::Connect(int nCameraID)
     }
 
     // get usefull gains and offsets
-    ret = POAGetGainOffset(m_nCameraID, &m_nOffsetHighestDR, &m_nOffsetUnityGain, &m_nGainLowestRN, &m_nOffsetLowestRN, &m_nHCGain);
+    ret = POAGetGainsAndOffsets(m_nCameraID, &m_nGainHighestDR, &m_nHCGain, &m_nUnityGain, &m_nGainLowestRN, &m_nOffsetHighestDR, &m_nOffsetHCGain, &m_nOffsetUnityGain, &m_nOffsetLowestRN);
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Offset at highest dynamic range        : " << m_nOffsetHighestDR << std::endl;
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Offset at unity gain                   : " << m_nOffsetHighestDR << std::endl;
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Gain at lowest read noise              : " << m_nGainLowestRN << std::endl;
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Offset at lowest read noise            : " << m_nOffsetLowestRN << std::endl;
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Gain at HCG Mode(High Conversion Gain) : " << m_nHCGain << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Gain at unity                          : " << m_nUnityGain << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Gain at lowest read noise              : " << m_nGainLowestRN << std::endl;
+
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Offset at highest dynamic range        : " << m_nOffsetHighestDR << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Offset at HCG                          : " << m_nOffsetHCGain << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Offset at unity gain                   : " << m_nOffsetUnityGain << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Offset at lowest read noise            : " << m_nOffsetLowestRN << std::endl;
     m_sLogFile.flush();
 #endif
 
@@ -350,11 +354,10 @@ int CPlayerOne::Connect(int nCameraID)
         setLensHeaterPowerPerc(m_nLensHeaterPowerPerc);
     }
     else {
-        getUserfulValues(m_nOffsetHighestDR, m_nOffsetUnityGain, m_nGainLowestRN, m_nOffsetLowestRN, m_nHCGain);
         setGain(m_nHCGain);
         m_nGain = m_nHCGain;
-        setOffset(m_nOffsetHighestDR);
-        m_nOffset = m_nOffsetHighestDR;
+        setOffset(m_nOffsetHCGain);
+        m_nOffset = m_nOffsetHCGain;
         getOffset(nMin, nMax, m_nOffset);
         getWB_R(nMin, nMax, m_nWbR, m_bR_Auto);
         getWB_G(nMin, nMax, m_nWbG, m_bG_Auto);
@@ -846,15 +849,18 @@ int CPlayerOne::setPixelBinMode(bool bSumMode)
     return nErr;
 }
 
-void CPlayerOne::getUserfulValues(int &nOffsetHighestDR, int &nOffsetUnityGain, int &nGainLowestRN, int &nOffsetLowestRN, int &nHCGain)
+void CPlayerOne::getAllUsefulValues(int &nGainHighestDR, int &nHCGain, int &nUnityGain, int &nGainLowestRN,
+                                    int &nOffsetHighestDR, int &nOffsetHCGain, int &nOffsetUnityGain, int &nOffsetLowestRN)
 {
-    nOffsetHighestDR = m_nOffsetHighestDR;
-    nOffsetUnityGain = m_nOffsetUnityGain;
-    nGainLowestRN = m_nGainLowestRN;
-    nOffsetLowestRN = m_nOffsetLowestRN;
+    nGainHighestDR = m_nGainHighestDR;
     nHCGain = m_nHCGain;
+    nUnityGain = m_nUnityGain;
+    nGainLowestRN = m_nGainLowestRN;
+    nOffsetHighestDR = m_nOffsetHighestDR;
+    nOffsetHCGain = m_nOffsetHCGain;
+    nOffsetUnityGain = m_nOffsetUnityGain;
+    nOffsetLowestRN = m_nOffsetUnityGain;
 }
-
 
 #pragma mark - Camera capture
 

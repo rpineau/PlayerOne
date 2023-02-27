@@ -129,7 +129,11 @@ public:
     int         getPixelBinMode(bool &bSumMode);
     int         setPixelBinMode(bool bSumMode);
 
-    void        getUserfulValues(int &nOffsetHighestDR, int &nOffsetUnityGain, int &nGainLowestRN, int &nOffsetLowestRN, int &nHCGain);
+    void        getAllUsefulValues(int &nGainHighestDR, int &nHCGain, int &nUnityGain, int &nGainLowestRN,
+                                 int &nOffsetHighestDR, int &nOffsetHCGain, int &nOffsetUnityGain, int &nOffsetLowestRN);
+
+    // POAGetGainsAndOffsets(int nCameraID, int*pGainHighestDR, int *pHCGain, int *pUnityGain, int *pGainLowestRN,
+    // int *pOffsetHighestDR, int *pOffsetHCGain, int *pOffsetUnityGain, int *pOffsetLowestRN);
 
 #ifdef PLUGIN_DEBUG
     void log(std::string sLogEntry);
@@ -208,11 +212,15 @@ protected:
     int                     m_nReqROIHeight;
 
     // special gain and offset data
-    int                     m_nOffsetHighestDR;
-    int                     m_nOffsetUnityGain;
-    int                     m_nGainLowestRN;
-    int                     m_nOffsetLowestRN;
+    int                     m_nGainHighestDR;
     int                     m_nHCGain;
+    int                     m_nUnityGain;
+    int                     m_nGainLowestRN;
+
+    int                     m_nOffsetHighestDR;
+    int                     m_nOffsetHCGain;
+    int                     m_nOffsetUnityGain;
+    int                     m_nOffsetLowestRN;
 
     POAConfig               m_confIDGuideDir;
 #ifdef PLUGIN_DEBUG
