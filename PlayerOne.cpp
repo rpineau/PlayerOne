@@ -2163,6 +2163,7 @@ int CPlayerOne::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
 
 #pragma mark - Camera relay
 
+// a lot of this Relay code is based on code from Richard Wright Jr.
 
 int CPlayerOne::RelayActivate(const int nXPlus, const int nXMinus, const int nYPlus, const int nYMinus, const bool bSynchronous, const bool bAbort)
 {
@@ -2170,38 +2171,278 @@ int CPlayerOne::RelayActivate(const int nXPlus, const int nXMinus, const int nYP
     POAErrors ret;
     POAConfigValue confValue;
     POABool bAuto = POA_FALSE;
+    int netX;
+    int netY;
+    bool bNorth, bSouth, bEast, bWest;
+    float timeToWait =0.0;
+    CStopWatch pulseTimer;
 
     if(!m_cameraProperty.isHasST4Port)
         return ERR_COMMANDNOTSUPPORTED;
 
-    if(!bAbort) {
-        confValue.boolValue = POA_TRUE;
-        if(nXPlus != 0 && nXMinus ==0)
-            m_confIDGuideDir = POA_GUIDE_WEST;
-        if(nXPlus == 0 && nXMinus !=0)
-            m_confIDGuideDir = POA_GUIDE_EAST;
-
-        if(nYPlus != 0 && nYMinus ==0)
-            m_confIDGuideDir = POA_GUIDE_SOUTH;
-        if(nYPlus == 0 && nYMinus !=0)
-            m_confIDGuideDir = POA_GUIDE_NORTH;
-
-        ret = POASetConfig(m_nCameraID, m_confIDGuideDir, confValue, bAuto);
-    }
-    else {
-        confValue.boolValue = POA_FALSE;
-        ret = POASetConfig(m_nCameraID, m_confIDGuideDir, confValue, bAuto);
-    }
-
-    if(ret!=POA_OK) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] POASetConfig error :  " << POAGetErrorString(ret) << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] nXPlus       : " << nXPlus << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] nXMinus      : " << nXMinus << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] nYPlus       : " << nYPlus << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] nYMinus      : " << nYMinus << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] bSynchronous : " << (bSynchronous?"True":"False") << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] bAbort       : " << (bAbort?"True":"False") << std::endl;
+    m_sLogFile.flush();
+#endif
+
+    if(bAbort) {
+        confValue.boolValue = POA_FALSE;
+        ret = POASetConfig(m_nCameraID, POA_GUIDE_NORTH, confValue, bAuto);
+        ret = POASetConfig(m_nCameraID, POA_GUIDE_SOUTH, confValue, bAuto);
+        ret = POASetConfig(m_nCameraID, POA_GUIDE_EAST, confValue, bAuto);
+        ret = POASetConfig(m_nCameraID, POA_GUIDE_WEST, confValue, bAuto);
+        return nErr;
+    }
+
+    if(!bSynchronous) { // done for the GUI
+        if(nXPlus == 0 && nXMinus ==0 && nYPlus == 0 && nYMinus ==0) {
+            confValue.boolValue = POA_FALSE; // stop guiding, m_confGuideDir should still contain the last guide direction
+        }
+        else {
+            confValue.boolValue = POA_TRUE; // enable guiding
+            if(nXPlus != 0 && nXMinus ==0)
+                m_confGuideDir = POA_GUIDE_EAST;
+            else if(nXPlus == 0 && nXMinus !=0)
+                m_confGuideDir = POA_GUIDE_WEST;
+            else if(nYPlus != 0 && nYMinus ==0)
+                m_confGuideDir = POA_GUIDE_NORTH;
+            else if(nYPlus == 0 && nYMinus !=0)
+                m_confGuideDir = POA_GUIDE_SOUTH;
+            else { // dual direction, can't be done from the GUI
+                return ERR_COMMANDNOTSUPPORTED;
+            }
+        }
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] GUI move m_confGuideDir    : " << m_confGuideDir << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] GUI move confValue.boolValue : " << (confValue.boolValue?"True":"False") << std::endl;
         m_sLogFile.flush();
 #endif
-        nErr = ERR_CMDFAILED;
+
+        ret = POASetConfig(m_nCameraID, m_confGuideDir, confValue, bAuto);
+        if(ret!=POA_OK) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] GUI move POASetConfig error :  " << POAGetErrorString(ret) << std::endl;
+            m_sLogFile.flush();
+#endif
+            nErr = ERR_CMDFAILED;
+        }
+        return nErr;
+    }
+
+    // start guiding / calibrating
+    bEast = false;
+    bWest = false;
+    bNorth = false;
+    bSouth = false;
+    confValue.boolValue = POA_TRUE; // enable guiding
+    pulseTimer.Reset();
+    // East/West
+    if(nXPlus != 0 && nXMinus ==0) {
+        ret = POASetConfig(m_nCameraID, POA_GUIDE_EAST, confValue, bAuto);
+        if(ret!=POA_OK) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] AutoGuide move POASetConfig error :  " << POAGetErrorString(ret) << std::endl;
+            m_sLogFile.flush();
+#endif
+            nErr = ERR_CMDFAILED;
+        }
+        bEast = true;
+    }
+    if(nXPlus == 0 && nXMinus !=0) {
+        ret = POASetConfig(m_nCameraID, POA_GUIDE_WEST, confValue, bAuto);
+        if(ret!=POA_OK) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] AutoGuide move POASetConfig error :  " << POAGetErrorString(ret) << std::endl;
+            m_sLogFile.flush();
+#endif
+            nErr = ERR_CMDFAILED;
+        }
+        bWest = true;
+    }
+    // North/South
+    if(nYPlus != 0 && nYMinus ==0) {
+        ret = POASetConfig(m_nCameraID, POA_GUIDE_NORTH, confValue, bAuto);
+        if(ret!=POA_OK) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] AutoGuide move POASetConfig error :  " << POAGetErrorString(ret) << std::endl;
+            m_sLogFile.flush();
+#endif
+            nErr = ERR_CMDFAILED;
+        }
+        bNorth = true;
+    }
+
+    if(nYPlus == 0 && nYMinus !=0) {
+        ret = POASetConfig(m_nCameraID, POA_GUIDE_SOUTH, confValue, bAuto);
+        if(ret!=POA_OK) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] AutoGuide move POASetConfig error :  " << POAGetErrorString(ret) << std::endl;
+            m_sLogFile.flush();
+#endif
+            nErr = ERR_CMDFAILED;
+        }
+        bSouth = true;
+    }
+
+    confValue.boolValue = POA_FALSE; // to stop move
+    // One of these will always be zero, so this gives me the net
+    // plus or minus movement
+    netX = nXPlus - nXMinus;
+    netY = nYPlus - nYMinus;
+    if(netX == 0) {   // netY will not be zero
+        // One of nYPLus and nYMinus will be zero, so this expression will work
+        timeToWait = float(nYPlus + nYMinus)/100.0f;
+        // Just wait for time to expire and stop relay
+        while(pulseTimer.GetElapsedSeconds() < timeToWait);
+        // need to know which one to stop
+        if(bNorth)
+            ret = POASetConfig(m_nCameraID, POA_GUIDE_NORTH, confValue, bAuto);
+        else
+            ret = POASetConfig(m_nCameraID, POA_GUIDE_SOUTH, confValue, bAuto);
+        if(ret!=POA_OK) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] POASetConfig error :  " << POAGetErrorString(ret) << std::endl;
+            m_sLogFile.flush();
+#endif
+            nErr = ERR_CMDFAILED;
+        }
+        return nErr;
+    }
+
+    if(netY == 0)  {  // netX will not be zero
+        // Again, one of these will be zero
+        timeToWait = float(nXPlus + nXMinus)/100.0f;
+        // Just wait for time to expire and stop relay
+        while(pulseTimer.GetElapsedSeconds() < timeToWait);
+        // need to know which one to stop
+        if(bEast)
+            ret = POASetConfig(m_nCameraID, POA_GUIDE_EAST, confValue, bAuto);
+        else
+            ret = POASetConfig(m_nCameraID, POA_GUIDE_WEST, confValue, bAuto);
+
+        if(ret!=POA_OK) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] POASetConfig error :  " << POAGetErrorString(ret) << std::endl;
+            m_sLogFile.flush();
+#endif
+            nErr = ERR_CMDFAILED;
+        }
+        return nErr;
+    }
+    //
+    //  Dual axis movement, Are they both the same. Wait and then terminate both at same time
+    //
+    if(abs(netY) == abs(netX)) {
+        // Pick one, doesn't matter which
+        timeToWait = float(nXPlus + nXMinus)/100.0f;
+        // Just wait for time to expire and stop relay
+        while(pulseTimer.GetElapsedSeconds() < timeToWait);
+
+        // need to know which one to stop
+        if(bNorth)
+            ret = POASetConfig(m_nCameraID, POA_GUIDE_NORTH, confValue, bAuto);
+        else
+            ret = POASetConfig(m_nCameraID, POA_GUIDE_SOUTH, confValue, bAuto);
+
+        // need to know which one to stop
+        if(bEast)
+            ret = POASetConfig(m_nCameraID, POA_GUIDE_EAST, confValue, bAuto);
+        else
+            ret = POASetConfig(m_nCameraID, POA_GUIDE_WEST, confValue, bAuto);
+
+        if(ret!=POA_OK) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] POASetConfig error :  " << POAGetErrorString(ret) << std::endl;
+            m_sLogFile.flush();
+#endif
+            nErr = ERR_CMDFAILED;
+        }
+        return nErr;
+     }
+    //
+    // Dual axis movement, not the same time for each!
+    //
+    if(abs(netY) < abs(netX)) { // East-West movement was greater
+        // Wait for shorter time
+        timeToWait = float(nYPlus + nYMinus)/100.0f;
+        while(pulseTimer.GetElapsedSeconds() < timeToWait);
+        // Turn off Y direction only
+        if(netY < 0)
+            ret = POASetConfig(m_nCameraID, POA_GUIDE_SOUTH, confValue, bAuto);
+        else
+            ret = POASetConfig(m_nCameraID, POA_GUIDE_NORTH, confValue, bAuto);
+
+        if(ret!=POA_OK) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] POASetConfig error :  " << POAGetErrorString(ret) << std::endl;
+            m_sLogFile.flush();
+#endif
+            nErr = ERR_CMDFAILED;
+        }
+        // Longer time
+        timeToWait = float(nXPlus + nXMinus)/100.0f;
+        while(pulseTimer.GetElapsedSeconds() < timeToWait);
+
+        // need to know which one to stop
+        if(bEast)
+            ret = POASetConfig(m_nCameraID, POA_GUIDE_EAST, confValue, bAuto);
+        else
+            ret = POASetConfig(m_nCameraID, POA_GUIDE_WEST, confValue, bAuto);
+
+        if(ret!=POA_OK) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] POASetConfig error :  " << POAGetErrorString(ret) << std::endl;
+            m_sLogFile.flush();
+#endif
+            nErr = ERR_CMDFAILED;
+        }
+
+        return nErr;
+    }
+    else { // North-South movement was greater
+        // Wait for shorter time
+        timeToWait = float(nXPlus + nXMinus)/100.0f;
+        while(pulseTimer.GetElapsedSeconds() < timeToWait);
+        // Turn off Y direction only
+        if(netY < 0) // need to double check this one
+            ret = POASetConfig(m_nCameraID, POA_GUIDE_WEST, confValue, bAuto);
+        else
+            ret = POASetConfig(m_nCameraID, POA_GUIDE_EAST, confValue, bAuto);
+
+        if(ret!=POA_OK) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] POASetConfig error :  " << POAGetErrorString(ret) << std::endl;
+            m_sLogFile.flush();
+#endif
+            nErr = ERR_CMDFAILED;
+        }
+
+        // Longer time
+        timeToWait = float(nYPlus + nYMinus)/100.0f;
+        while(pulseTimer.GetElapsedSeconds() < timeToWait);
+
+        if(bNorth)
+            ret = POASetConfig(m_nCameraID, POA_GUIDE_NORTH, confValue, bAuto);
+        else
+            ret = POASetConfig(m_nCameraID, POA_GUIDE_SOUTH, confValue, bAuto);
+
+        if(ret!=POA_OK) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] POASetConfig error :  " << POAGetErrorString(ret) << std::endl;
+            m_sLogFile.flush();
+#endif
+            nErr = ERR_CMDFAILED;
+        }
+
+        return nErr;
     }
     return nErr;
-
 }
 
 #pragma mark - helper functions

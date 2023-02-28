@@ -134,6 +134,7 @@ int X2Camera::execModalSettingsDialog()
             dx->comboBoxAppendString("comboBox",ssTmp.str().c_str());
             if(m_tCameraIdList[i].cameraId == m_nCameraID)
                 nCamIndex = i;
+            std::stringstream().swap(ssTmp);
         }
         dx->setCurrentIndex("comboBox",nCamIndex);
     }
