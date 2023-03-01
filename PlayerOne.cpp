@@ -2372,11 +2372,11 @@ int CPlayerOne::RelayActivate(const int nXPlus, const int nXMinus, const int nYP
         // Wait for shorter time
         timeToWait = float(nYPlus + nYMinus)/100.0f;
         while(pulseTimer.GetElapsedSeconds() < timeToWait);
-        // Turn off Y direction only
-        if(netY < 0)
-            ret = POASetConfig(m_nCameraID, POA_GUIDE_SOUTH, confValue, bAuto);
-        else
+        // need to know which one to stop
+        if(bNorth)
             ret = POASetConfig(m_nCameraID, POA_GUIDE_NORTH, confValue, bAuto);
+        else
+            ret = POASetConfig(m_nCameraID, POA_GUIDE_SOUTH, confValue, bAuto);
 
         if(ret!=POA_OK) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -2409,11 +2409,11 @@ int CPlayerOne::RelayActivate(const int nXPlus, const int nXMinus, const int nYP
         // Wait for shorter time
         timeToWait = float(nXPlus + nXMinus)/100.0f;
         while(pulseTimer.GetElapsedSeconds() < timeToWait);
-        // Turn off Y direction only
-        if(netY < 0) // need to double check this one
-            ret = POASetConfig(m_nCameraID, POA_GUIDE_WEST, confValue, bAuto);
-        else
+        // need to know which one to stop
+        if(bEast)
             ret = POASetConfig(m_nCameraID, POA_GUIDE_EAST, confValue, bAuto);
+        else
+            ret = POASetConfig(m_nCameraID, POA_GUIDE_WEST, confValue, bAuto);
 
         if(ret!=POA_OK) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2

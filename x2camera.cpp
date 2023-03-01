@@ -485,9 +485,6 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
         nErr = m_Camera.setUSBBandwidth((long)nCtrlVal);
         if(!nErr)
             m_pIniUtil->writeInt(m_sCameraSerial.c_str(), LENS_POWER, nCtrlVal);
-
-
-
     }
 
     return nErr;
@@ -512,17 +509,17 @@ int X2Camera::loadCameraSettings(std::string sSerial)
         m_Camera.setOffset((long)nValue);
 
     nValue = m_pIniUtil->readInt(sSerial.c_str(), KEY_WHITE_BALANCE_R, VAL_NOT_AVAILABLE);
-    bIsAuto =  (m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_R_AUTO, 0) == 0?false:true);
+    bIsAuto =  (m_pIniUtil->readInt(sSerial.c_str(), KEY_WHITE_BALANCE_R_AUTO, 0) == 0?false:true);
     if(nValue!=VAL_NOT_AVAILABLE)
         m_Camera.setWB_R((long)nValue, bIsAuto);
 
     nValue = m_pIniUtil->readInt(sSerial.c_str(), KEY_WHITE_BALANCE_G, VAL_NOT_AVAILABLE);
-    bIsAuto =  (m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_G_AUTO, 0) == 0?false:true);
+    bIsAuto =  (m_pIniUtil->readInt(sSerial.c_str(), KEY_WHITE_BALANCE_G_AUTO, 0) == 0?false:true);
     if(nValue!=VAL_NOT_AVAILABLE)
         m_Camera.setWB_G((long)nValue, bIsAuto);
 
     nValue = m_pIniUtil->readInt(sSerial.c_str(), KEY_WHITE_BALANCE_B, VAL_NOT_AVAILABLE);
-    bIsAuto =  (m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_B_AUTO, 0) == 0?false:true);
+    bIsAuto =  (m_pIniUtil->readInt(sSerial.c_str(), KEY_WHITE_BALANCE_B_AUTO, 0) == 0?false:true);
     if(nValue!=VAL_NOT_AVAILABLE)
         m_Camera.setWB_B((long)nValue, bIsAuto);
 
