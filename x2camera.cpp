@@ -134,6 +134,7 @@ int X2Camera::execModalSettingsDialog()
             dx->comboBoxAppendString("comboBox",ssTmp.str().c_str());
             if(m_tCameraIdList[i].cameraId == m_nCameraID)
                 nCamIndex = i;
+            std::stringstream().swap(ssTmp);
         }
         dx->setCurrentIndex("comboBox",nCamIndex);
     }
@@ -178,11 +179,17 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
     int nCurrentSensorMode;
     bool bBinPixelSumMode;
     int i = 0;
-    int nOffsetHighestDR;
-    int nOffsetUnityGain;
-    int nGainLowestRN;
-    int nOffsetLowestRN;
+
+    int nGainHighestDR;
     int nHCGain;
+    int nUnityGain;
+    int nGainLowestRN;
+
+    int nOffsetHighestDR;
+    int nOffsetHCGain;
+    int nOffsetUnityGain;
+    int nOffsetLowestRN;
+
     bool bIsUSB3;
 
     X2GUIExchangeInterface* dx = NULL;
@@ -338,9 +345,18 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
         m_Camera.isUSB3(bIsUSB3);
         dx->setText("USBMode", bIsUSB3?"<html><head/><body><p><span style=\" color:#00FF00;\">USB 3.0</span></p></body></html>" : "<html><head/><body><p><span style=\" color:#FF0000;\">USB 2.0</span></p></body></html>");
 
-        m_Camera.getUserfulValues(nOffsetHighestDR, nOffsetUnityGain, nGainLowestRN, nOffsetLowestRN, nHCGain);
+        m_Camera.getAllUsefulValues(nGainHighestDR, nHCGain, nUnityGain, nGainLowestRN, nOffsetHighestDR, nOffsetHCGain, nOffsetUnityGain, nOffsetLowestRN);
+
+        ssTmp<< "Gain at highest dynamic range : " << nGainHighestDR;
+        dx->setText("HDR_value", ssTmp.str().c_str());
+        std::stringstream().swap(ssTmp);
+
         ssTmp<< "Gain at HCG Mode (High Conversion Gain) : " << nHCGain;
         dx->setText("HCG_value", ssTmp.str().c_str());
+        std::stringstream().swap(ssTmp);
+
+        ssTmp<< "Unity Gain : " << nUnityGain;
+        dx->setText("UnityGain", ssTmp.str().c_str());
         std::stringstream().swap(ssTmp);
 
         ssTmp<< "Gain at lowest read noise : " << nGainLowestRN;
@@ -349,6 +365,10 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
 
         ssTmp<< "Offset at highest dynamic range : " << nOffsetHighestDR;
         dx->setText("offsetHDR", ssTmp.str().c_str());
+        std::stringstream().swap(ssTmp);
+
+        ssTmp<< "Offset at HCG Mode : " << nOffsetHCGain;
+        dx->setText("offsetHCG", ssTmp.str().c_str());
         std::stringstream().swap(ssTmp);
 
         ssTmp<< "Offset at unity gain : " << nOffsetUnityGain;
@@ -465,9 +485,6 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
         nErr = m_Camera.setUSBBandwidth((long)nCtrlVal);
         if(!nErr)
             m_pIniUtil->writeInt(m_sCameraSerial.c_str(), LENS_POWER, nCtrlVal);
-
-
-
     }
 
     return nErr;
@@ -492,17 +509,17 @@ int X2Camera::loadCameraSettings(std::string sSerial)
         m_Camera.setOffset((long)nValue);
 
     nValue = m_pIniUtil->readInt(sSerial.c_str(), KEY_WHITE_BALANCE_R, VAL_NOT_AVAILABLE);
-    bIsAuto =  (m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_R_AUTO, 0) == 0?false:true);
+    bIsAuto =  (m_pIniUtil->readInt(sSerial.c_str(), KEY_WHITE_BALANCE_R_AUTO, 0) == 0?false:true);
     if(nValue!=VAL_NOT_AVAILABLE)
         m_Camera.setWB_R((long)nValue, bIsAuto);
 
     nValue = m_pIniUtil->readInt(sSerial.c_str(), KEY_WHITE_BALANCE_G, VAL_NOT_AVAILABLE);
-    bIsAuto =  (m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_G_AUTO, 0) == 0?false:true);
+    bIsAuto =  (m_pIniUtil->readInt(sSerial.c_str(), KEY_WHITE_BALANCE_G_AUTO, 0) == 0?false:true);
     if(nValue!=VAL_NOT_AVAILABLE)
         m_Camera.setWB_G((long)nValue, bIsAuto);
 
     nValue = m_pIniUtil->readInt(sSerial.c_str(), KEY_WHITE_BALANCE_B, VAL_NOT_AVAILABLE);
-    bIsAuto =  (m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_B_AUTO, 0) == 0?false:true);
+    bIsAuto =  (m_pIniUtil->readInt(sSerial.c_str(), KEY_WHITE_BALANCE_B_AUTO, 0) == 0?false:true);
     if(nValue!=VAL_NOT_AVAILABLE)
         m_Camera.setWB_B((long)nValue, bIsAuto);
 

@@ -33,7 +33,7 @@
 
 // #define PLUGIN_DEBUG    3
 
-#define PLUGIN_VERSION      1.9
+#define PLUGIN_VERSION      1.13
 #define BUFFER_LEN 128
 #define PLUGIN_OK   0
 #define MAX_NB_BIN  8
@@ -129,7 +129,11 @@ public:
     int         getPixelBinMode(bool &bSumMode);
     int         setPixelBinMode(bool bSumMode);
 
-    void        getUserfulValues(int &nOffsetHighestDR, int &nOffsetUnityGain, int &nGainLowestRN, int &nOffsetLowestRN, int &nHCGain);
+    void        getAllUsefulValues(int &nGainHighestDR, int &nHCGain, int &nUnityGain, int &nGainLowestRN,
+                                 int &nOffsetHighestDR, int &nOffsetHCGain, int &nOffsetUnityGain, int &nOffsetLowestRN);
+
+    // POAGetGainsAndOffsets(int nCameraID, int*pGainHighestDR, int *pHCGain, int *pUnityGain, int *pGainLowestRN,
+    // int *pOffsetHighestDR, int *pOffsetHCGain, int *pOffsetUnityGain, int *pOffsetLowestRN);
 
 #ifdef PLUGIN_DEBUG
     void log(std::string sLogEntry);
@@ -139,7 +143,7 @@ protected:
     
     POAErrors               getConfigValue(POAConfig confID , POAConfigValue &confValue, POAConfigValue &minValue, POAConfigValue &maxValue,  POABool &bAuto);
     POAErrors               setConfigValue(POAConfig confID , POAConfigValue confValue,  POABool bAuto = POA_FALSE);
-    void                    buildGainList(long nMin, long nMax, long nValue);
+    void                    buildGainList();
 
     bool                    m_bSetUserConf;
     int                     m_nCameraNum;
@@ -208,13 +212,17 @@ protected:
     int                     m_nReqROIHeight;
 
     // special gain and offset data
-    int                     m_nOffsetHighestDR;
-    int                     m_nOffsetUnityGain;
-    int                     m_nGainLowestRN;
-    int                     m_nOffsetLowestRN;
+    int                     m_nGainHighestDR;
     int                     m_nHCGain;
+    int                     m_nUnityGain;
+    int                     m_nGainLowestRN;
 
-    POAConfig               m_confIDGuideDir;
+    int                     m_nOffsetHighestDR;
+    int                     m_nOffsetHCGain;
+    int                     m_nOffsetUnityGain;
+    int                     m_nOffsetLowestRN;
+
+    POAConfig               m_confGuideDir;
 #ifdef PLUGIN_DEBUG
     // timestamp for logs
     const std::string getTimeStamp();
