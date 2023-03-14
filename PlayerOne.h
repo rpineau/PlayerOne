@@ -33,7 +33,7 @@
 
 // #define PLUGIN_DEBUG    3
 
-#define PLUGIN_VERSION      1.12
+#define PLUGIN_VERSION      1.13
 #define BUFFER_LEN 128
 #define PLUGIN_OK   0
 #define MAX_NB_BIN  8
@@ -143,7 +143,7 @@ protected:
     
     POAErrors               getConfigValue(POAConfig confID , POAConfigValue &confValue, POAConfigValue &minValue, POAConfigValue &maxValue,  POABool &bAuto);
     POAErrors               setConfigValue(POAConfig confID , POAConfigValue confValue,  POABool bAuto = POA_FALSE);
-    void                    buildGainList(long nMin, long nMax, long nValue);
+    void                    buildGainList();
 
     bool                    m_bSetUserConf;
     int                     m_nCameraNum;

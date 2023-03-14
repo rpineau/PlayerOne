@@ -1082,7 +1082,6 @@ void CPlayerOne::getBayerPattern(std::string &sBayerPattern)
     }
 }
 
-
 void CPlayerOne::getFlip(std::string &sFlipMode)
 {
     switch(m_nFlip) {
@@ -2447,7 +2446,7 @@ int CPlayerOne::RelayActivate(const int nXPlus, const int nXMinus, const int nYP
 
 #pragma mark - helper functions
 
-void CPlayerOne::buildGainList(long nMin, long nMax, long nValue)
+void CPlayerOne::buildGainList()
 {
     std::stringstream ssTmp;
 
@@ -2461,13 +2460,25 @@ void CPlayerOne::buildGainList(long nMin, long nMax, long nValue)
     std::stringstream().swap(ssTmp);
     m_nNbGainValue++;
 
-    ssTmp << "Lowest read noise Gain (" << m_nGainLowestRN <<")";
+    ssTmp << "Lowest read noise (" << m_nGainLowestRN <<")";
     m_GainListLabel.push_back(ssTmp.str());
     m_GainList.push_back(m_nGainLowestRN);
     std::stringstream().swap(ssTmp);
     m_nNbGainValue++;
 
-    ssTmp << "User value(" << m_nGain <<")";
+    ssTmp << "Highest dynamic range (" << m_nGainHighestDR <<")";
+    m_GainListLabel.push_back(ssTmp.str());
+    m_GainList.push_back(m_nGainLowestRN);
+    std::stringstream().swap(ssTmp);
+    m_nNbGainValue++;
+
+    ssTmp << "Unity (" << m_nUnityGain <<")";
+    m_GainListLabel.push_back(ssTmp.str());
+    m_GainList.push_back(m_nGainLowestRN);
+    std::stringstream().swap(ssTmp);
+    m_nNbGainValue++;
+
+    ssTmp << "User value (" << m_nGain <<")";
     m_GainListLabel.push_back(ssTmp.str());
     m_GainList.push_back((int)m_nGain);
     std::stringstream().swap(ssTmp);
@@ -2482,8 +2493,8 @@ int CPlayerOne::getNbGainInList()
 void CPlayerOne::rebuildGainList()
 {
     long nMin, nMax, nVal;
-    getGain(nMin, nMax, nVal);
-    buildGainList(nMin, nMax, nVal);
+    getGain(nMin, nMax, m_nGain);
+    buildGainList();
 }
 
 std::string CPlayerOne::getGainLabelFromListAtIndex(int nIndex)
