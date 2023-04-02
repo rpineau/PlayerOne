@@ -1239,7 +1239,6 @@ int X2Camera::CCStartExposureAdditionalArgInterface (const enumCameraIndex &Cam,
     if(nErr) {
         return nErr; // can't set gain !
     }
-
     switch (Type)
     {
         case PT_FLAT:

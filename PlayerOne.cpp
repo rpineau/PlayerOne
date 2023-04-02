@@ -2468,13 +2468,13 @@ void CPlayerOne::buildGainList()
 
     ssTmp << "Highest dynamic range (" << m_nGainHighestDR <<")";
     m_GainListLabel.push_back(ssTmp.str());
-    m_GainList.push_back(m_nGainLowestRN);
+    m_GainList.push_back(m_nGainHighestDR);
     std::stringstream().swap(ssTmp);
     m_nNbGainValue++;
 
     ssTmp << "Unity (" << m_nUnityGain <<")";
     m_GainListLabel.push_back(ssTmp.str());
-    m_GainList.push_back(m_nGainLowestRN);
+    m_GainList.push_back(m_nUnityGain);
     std::stringstream().swap(ssTmp);
     m_nNbGainValue++;
 
