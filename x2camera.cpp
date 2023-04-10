@@ -402,6 +402,9 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
         dx->setEnabled("Flip", false);
         dx->setEnabled("SpeedMode", false);
 
+        dx->invokeMethod("SensorMode","clear");
+        dx->setEnabled("SensorMode", false);
+        
         dx->setEnabled("USBBandwidth", false);
         dx->setText("UsbBandwidthRange","");
 
@@ -482,7 +485,7 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
             m_pIniUtil->writeInt(m_sCameraSerial.c_str(), PIXEL_BIN_MODE, nCtrlVal);
 
         dx->propertyInt("LensHeaterPower", "value", nCtrlVal);
-        nErr = m_Camera.setUSBBandwidth((long)nCtrlVal);
+        nErr = m_Camera.setLensHeaterPowerPerc((long)nCtrlVal);
         if(!nErr)
             m_pIniUtil->writeInt(m_sCameraSerial.c_str(), LENS_POWER, nCtrlVal);
     }
