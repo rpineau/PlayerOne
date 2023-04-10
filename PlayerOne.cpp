@@ -1671,7 +1671,7 @@ int CPlayerOne::setLensHeaterPowerPerc(long nPercent)
     if(!m_bConnected)
         return nErr;
 
-    confValue.intValue = m_nUSBBandwidth;
+    confValue.intValue = m_nLensHeaterPowerPerc;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setLensHeaterPowerPerc] Lens power percentage set to " << m_nLensHeaterPowerPerc << "%" << std::endl;
