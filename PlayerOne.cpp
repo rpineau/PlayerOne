@@ -125,7 +125,7 @@ int CPlayerOne::Connect(int nCameraID)
     POASensorModeInfo sensorMode;
     std::string sTmp;
 
-    long nMin, nMax;
+    long nMin, nMax, nValue;
 
     if(nCameraID>=0 && m_sCameraSerial.size()!=0)
         m_nCameraID = nCameraID;
@@ -340,6 +340,26 @@ int CPlayerOne::Connect(int nCameraID)
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] m_bSetUserConf : " << (m_bSetUserConf?"Yes":"No") << std::endl;
     m_sLogFile.flush();
 #endif
+    m_bHasLensHeater = true;
+    nErr = getLensHeaterPowerPerc(nMin, nMax, nValue);
+    if(nErr == VAL_NOT_AVAILABLE) {
+        m_bHasLensHeater = false;
+        nErr = PLUGIN_OK;
+    }
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] m_bHasLensHeater : " << (m_bHasLensHeater?"Yes":"No") << std::endl;
+    m_sLogFile.flush();
+#endif
+
+    m_bHasSumPixelMode = false;
+    if(hasPixelSumMode())
+       m_bHasSumPixelMode = true;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] m_bHasSumPixelMode : " << (m_bHasSumPixelMode?"Yes":"No") << std::endl;
+    m_sLogFile.flush();
+#endif
 
     if(m_bSetUserConf) {
         // set default values
@@ -350,7 +370,8 @@ int CPlayerOne::Connect(int nCameraID)
         setWB_B(m_nWbB, m_bB_Auto);
         setFlip(m_nFlip);
         setUSBBandwidth(m_nUSBBandwidth);
-        setPixelBinMode(m_bPixelBinMode);
+        if(m_bHasSumPixelMode)
+            setPixelBinMode(m_bPixelBinMode);
         setLensHeaterPowerPerc(m_nLensHeaterPowerPerc);
     }
     else {
@@ -364,7 +385,8 @@ int CPlayerOne::Connect(int nCameraID)
         getWB_B(nMin, nMax, m_nWbB, m_bB_Auto);
         getFlip(nMin, nMax, m_nFlip);
         getUSBBandwidth(nMin, nMax, m_nUSBBandwidth);
-        getPixelBinMode(m_bPixelBinMode);
+        if(m_bHasSumPixelMode)
+            getPixelBinMode(m_bPixelBinMode);
         getLensHeaterPowerPerc(nMin, nMax, m_nLensHeaterPowerPerc);
     }
 
@@ -790,6 +812,20 @@ int CPlayerOne::setSensorMode(int nModeIndex)
     return nErr;
 }
 
+bool CPlayerOne::hasPixelSumMode()
+{
+    bool bsumMode;
+    bool bTestSumMode;
+
+    getPixelBinMode(bsumMode); // save the current mode
+    setPixelBinMode(true); // set to sum mode
+    getPixelBinMode(bTestSumMode); // save the current mode
+    setPixelBinMode(bsumMode);
+    if(!bTestSumMode) // sum mode doesn't work
+        return false;
+    return true;
+}
+
 int CPlayerOne::getPixelBinMode(bool &bSumMode)
 {
     int nErr = PLUGIN_OK;
@@ -824,7 +860,6 @@ int CPlayerOne::setPixelBinMode(bool bSumMode)
     int nErr = PLUGIN_OK;
     POAErrors ret;
     POAConfigValue confValue;
-
     m_bPixelBinMode = bSumMode;
 
     if(!m_bConnected)
@@ -1056,6 +1091,10 @@ bool CPlayerOne::isCameraColor()
 void CPlayerOne::getBayerPattern(std::string &sBayerPattern)
 {
     if(m_cameraProperty.isColorCamera) {
+        if(m_nCurrentBin>1 && m_bHasSumPixelMode) { // sum mode, return MONO
+            sBayerPattern.assign("MONO");
+            return;
+        }
         switch(m_cameraProperty.bayerPattern) {
             case POA_BAYER_RG:
                 sBayerPattern.assign("RGGB");
@@ -1627,6 +1666,11 @@ int CPlayerOne::setUSBBandwidth(long nBandwidth)
 #endif
     }
     return nErr;
+}
+
+bool CPlayerOne::isLensHeaterAvailable()
+{
+    return m_bHasLensHeater;
 }
 
 int CPlayerOne::getLensHeaterPowerPerc(long &nMin, long &nMax, long &nValue)

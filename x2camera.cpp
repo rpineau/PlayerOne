@@ -325,14 +325,17 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
             dx->setText("UsbBandwidthRange", ssTmp.str().c_str());
             std::stringstream().swap(ssTmp);
         }
-
-        nErr = m_Camera.getPixelBinMode(bBinPixelSumMode);
-        if(nErr == VAL_NOT_AVAILABLE)
-            dx->setEnabled("PixelBinMode", false);
-        else {
-            dx->setCurrentIndex("PixelBinMode", bBinPixelSumMode?0:1);
+        if(m_Camera.hasPixelSumMode()) {
+            nErr = m_Camera.getPixelBinMode(bBinPixelSumMode);
+            if(nErr == VAL_NOT_AVAILABLE)
+                dx->setEnabled("PixelBinMode", false);
+            else {
+                dx->setCurrentIndex("PixelBinMode", bBinPixelSumMode?0:1);
+            }
         }
-
+        else
+            dx->setEnabled("PixelBinMode", false);
+        
         nErr = m_Camera.getLensHeaterPowerPerc(nMin, nMax, nVal);
         if(nErr == VAL_NOT_AVAILABLE)
             dx->setEnabled("LensHeaterPower", false);
@@ -341,6 +344,7 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
             dx->setPropertyInt("LensHeaterPower", "maximum", (int)nMax);
             dx->setPropertyInt("LensHeaterPower", "value", (int)nVal);
         }
+
 
         m_Camera.isUSB3(bIsUSB3);
         dx->setText("USBMode", bIsUSB3?"<html><head/><body><p><span style=\" color:#00FF00;\">USB 3.0</span></p></body></html>" : "<html><head/><body><p><span style=\" color:#FF0000;\">USB 2.0</span></p></body></html>");
@@ -484,10 +488,12 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
         if(!nErr)
             m_pIniUtil->writeInt(m_sCameraSerial.c_str(), PIXEL_BIN_MODE, nCtrlVal);
 
-        dx->propertyInt("LensHeaterPower", "value", nCtrlVal);
-        nErr = m_Camera.setLensHeaterPowerPerc((long)nCtrlVal);
-        if(!nErr)
-            m_pIniUtil->writeInt(m_sCameraSerial.c_str(), LENS_POWER, nCtrlVal);
+        if(m_Camera.isLensHeaterAvailable()) {
+            dx->propertyInt("LensHeaterPower", "value", nCtrlVal);
+            nErr = m_Camera.setLensHeaterPowerPerc((long)nCtrlVal);
+            if(!nErr)
+                m_pIniUtil->writeInt(m_sCameraSerial.c_str(), LENS_POWER, nCtrlVal);
+        }
     }
 
     return nErr;
