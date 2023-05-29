@@ -819,9 +819,9 @@ bool CPlayerOne::hasPixelSumMode()
 
     getPixelBinMode(bsumMode); // save the current mode
     setPixelBinMode(true); // set to sum mode
-    getPixelBinMode(bTestSumMode); // save the current mode
-    setPixelBinMode(bsumMode);
-    if(!bTestSumMode) // sum mode doesn't work
+    getPixelBinMode(bTestSumMode); // get the mode as reported by SDK/Camera
+    setPixelBinMode(bsumMode); //restore the mode
+    if(!bTestSumMode) // sum mode not available
         return false;
     return true;
 }
