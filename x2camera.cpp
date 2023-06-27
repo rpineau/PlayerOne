@@ -178,6 +178,7 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
     std::vector<std::string> svModes;
     int nCurrentSensorMode;
     bool bBinPixelSumMode;
+    bool bPixelBinMono;
     int i = 0;
 
     int nGainHighestDR;
@@ -325,17 +326,25 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
             dx->setText("UsbBandwidthRange", ssTmp.str().c_str());
             std::stringstream().swap(ssTmp);
         }
-        if(m_Camera.hasPixelSumMode()) {
-            nErr = m_Camera.getPixelBinMode(bBinPixelSumMode);
+
+        nErr = m_Camera.getPixelBinMode(bBinPixelSumMode);
+        if(nErr == VAL_NOT_AVAILABLE)
+            dx->setEnabled("PixelBinMode", false);
+        else {
+            dx->setCurrentIndex("PixelBinMode", bBinPixelSumMode?0:1);
+        }
+
+        if(m_Camera.hasMonoBin()) {
+            nErr = m_Camera.getMonoBin(bPixelBinMono);
             if(nErr == VAL_NOT_AVAILABLE)
-                dx->setEnabled("PixelBinMode", false);
+                dx->setEnabled("checkBox_5", false);
             else {
-                dx->setCurrentIndex("PixelBinMode", bBinPixelSumMode?0:1);
+                dx->setChecked("checkBox_5", bPixelBinMono?1:0);
             }
         }
         else
-            dx->setEnabled("PixelBinMode", false);
-        
+            dx->setEnabled("checkBox_5", false);
+
         nErr = m_Camera.getLensHeaterPowerPerc(nMin, nMax, nVal);
         if(nErr == VAL_NOT_AVAILABLE)
             dx->setEnabled("LensHeaterPower", false);
@@ -430,12 +439,16 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
             m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_GAIN, nCtrlVal);
             m_Camera.rebuildGainList();
         }
-
+        else {
+            m_Camera.log("Error setting Gain");
+        }
         dx->propertyInt("Offset", "value", nCtrlVal);
         nErr = m_Camera.setOffset((long)nCtrlVal);
         if(!nErr)
             m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_OFFSET, nCtrlVal);
-
+        else {
+            m_Camera.log("Error setting Offset");
+        }
         if(dx->isEnabled("WB_R") || dx->isEnabled("checkBox_2")) {
             dx->propertyInt("WB_R", "value", nCtrlVal);
             bIsAuto = dx->isChecked("checkBox_2");
@@ -443,6 +456,9 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
             if(!nErr) {
                 m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_WHITE_BALANCE_R, nCtrlVal);
                 m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_WHITE_BALANCE_R_AUTO, bIsAuto?1:0);
+            }
+            else {
+                m_Camera.log("Error setting WB_R");
             }
         }
 
@@ -454,6 +470,9 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
                 m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_WHITE_BALANCE_G, nCtrlVal);
                 m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_WHITE_BALANCE_G_AUTO, bIsAuto?1:0);
             }
+            else {
+                m_Camera.log("Error setting WB_G");
+            }
         }
 
         if(dx->isEnabled("WB_B") || dx->isEnabled("checkBox_4")) {
@@ -464,35 +483,65 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
                 m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_WHITE_BALANCE_B, nCtrlVal);
                 m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_WHITE_BALANCE_B_AUTO, bIsAuto?1:0);
             }
+            else {
+                m_Camera.log("Error setting WB_B");
+            }
         }
 
         nCtrlVal = dx->currentIndex("Flip");
         nErr = m_Camera.setFlip((long)nCtrlVal);
         if(!nErr)
             m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_FLIP, nCtrlVal);
+        else {
+            m_Camera.log("Error setting Flip");
+        }
 
         if(dx->isEnabled("SensorMode")) {
             nCtrlVal = dx->currentIndex("SensorMode");
             nErr = m_Camera.setSensorMode(nCtrlVal);
             if(!nErr)
                 m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_SENSOR_MODE, nCtrlVal);
+            else {
+                m_Camera.log("Error setting SensorMode");
+            }
         }
 
         dx->propertyInt("USBBandwidth", "value", nCtrlVal);
         nErr = m_Camera.setUSBBandwidth((long)nCtrlVal);
         if(!nErr)
             m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_USB_BANDWIDTH, nCtrlVal);
+        else {
+            m_Camera.log("Error setting USBBandwidth");
+        }
 
         nCtrlVal = dx->currentIndex("PixelBinMode");
         nErr = m_Camera.setPixelBinMode((nCtrlVal==0)?true:false); // true = Sum mode, False = Average mode
         if(!nErr)
             m_pIniUtil->writeInt(m_sCameraSerial.c_str(), PIXEL_BIN_MODE, nCtrlVal);
+        else {
+            m_Camera.log("Error setting PixelBinMode");
+        }
+
+        if(m_Camera.hasMonoBin()) {
+            if(dx->isEnabled("checkBox_5")) {
+                bPixelBinMono = dx->isChecked("checkBox_5");
+                nErr = m_Camera.setMonoBin(bPixelBinMono);
+                if(!nErr)
+                    m_pIniUtil->writeInt(m_sCameraSerial.c_str(), PIXEL_MONO_BIN, bPixelBinMono?1:0);
+                else {
+                    m_Camera.log("Error setting MonoBin");
+                }
+            }
+        }
 
         if(m_Camera.isLensHeaterAvailable()) {
             dx->propertyInt("LensHeaterPower", "value", nCtrlVal);
             nErr = m_Camera.setLensHeaterPowerPerc((long)nCtrlVal);
             if(!nErr)
                 m_pIniUtil->writeInt(m_sCameraSerial.c_str(), LENS_POWER, nCtrlVal);
+            else {
+                m_Camera.log("Error setting LensHeaterPower");
+            }
         }
     }
 
@@ -546,6 +595,10 @@ int X2Camera::loadCameraSettings(std::string sSerial)
     nValue = m_pIniUtil->readInt(sSerial.c_str(), PIXEL_BIN_MODE, VAL_NOT_AVAILABLE);
     if(nValue!=VAL_NOT_AVAILABLE)
         m_Camera.setPixelBinMode((nValue==0)?true:false);
+
+    nValue = m_pIniUtil->readInt(sSerial.c_str(), PIXEL_MONO_BIN, VAL_NOT_AVAILABLE);
+    if(nValue!=VAL_NOT_AVAILABLE)
+        m_Camera.setMonoBin((nValue==1)?true:false);
 
     nValue = m_pIniUtil->readInt(sSerial.c_str(), LENS_POWER, VAL_NOT_AVAILABLE);
     if(nValue!=VAL_NOT_AVAILABLE)

@@ -32,6 +32,7 @@ CPlayerOne::CPlayerOne()
     m_nAutoExposureTarget = 0;
     m_nOffset = VAL_NOT_AVAILABLE;
     m_bPixelBinMode = false;
+    m_bPixelMonoBin = false;
     m_nUSBBandwidth = 100;
     m_dPixelSize = 0;
     m_nMaxWidth = -1;
@@ -129,7 +130,9 @@ int CPlayerOne::Connect(int nCameraID)
 
     if(nCameraID>=0 && m_sCameraSerial.size()!=0)
         m_nCameraID = nCameraID;
-    else {
+
+    ret = POAOpenCamera(m_nCameraID);
+    if (ret != POA_OK) { // we had a camera selected but it's not connected,
         // check if there is at least one camera connected to the system
         if(POAGetCameraCount() >= 1) {
             std::vector<camera_info_t> tCameraIdList;
@@ -140,18 +143,18 @@ int CPlayerOne::Connect(int nCameraID)
             }
             else
                 return ERR_NODEVICESELECTED;
+            ret = POAOpenCamera(m_nCameraID);
+            if (ret != POA_OK) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+                m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect]  Error connecting to camera ID " << m_nCameraID << " serial " << m_sCameraSerial << " , Error = " << POAGetErrorString(ret) << std::endl;
+                m_sLogFile.flush();
+#endif
+                return ERR_NORESPONSE;
+            }
         }
         else
             return ERR_NODEVICESELECTED;
     }
-    ret = POAOpenCamera(m_nCameraID);
-    if (ret != POA_OK) {
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect]  Error connecting to camera ID " << m_nCameraID << " serial " << m_sCameraSerial << " , Error = " << POAGetErrorString(ret) << std::endl;
-        m_sLogFile.flush();
-#endif
-        return ERR_NORESPONSE;
-        }
 
     ret = POAInitCamera(m_nCameraID);
     if (ret != POA_OK) {
@@ -352,12 +355,11 @@ int CPlayerOne::Connect(int nCameraID)
     m_sLogFile.flush();
 #endif
 
-    m_bHasSumPixelMode = false;
-    if(hasPixelSumMode())
-       m_bHasSumPixelMode = true;
-
+    m_bHasMonoBinMode = false;
+    if(hasMonoBin())
+        m_bHasMonoBinMode = true;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] m_bHasSumPixelMode : " << (m_bHasSumPixelMode?"Yes":"No") << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] m_bHasMonoBinMode  : " << (m_bHasMonoBinMode?"Yes":"No") << std::endl;
     m_sLogFile.flush();
 #endif
 
@@ -370,8 +372,9 @@ int CPlayerOne::Connect(int nCameraID)
         setWB_B(m_nWbB, m_bB_Auto);
         setFlip(m_nFlip);
         setUSBBandwidth(m_nUSBBandwidth);
-        if(m_bHasSumPixelMode)
-            setPixelBinMode(m_bPixelBinMode);
+        setPixelBinMode(m_bPixelBinMode);
+        if(hasMonoBin())
+            setMonoBin(m_bPixelMonoBin);
         setLensHeaterPowerPerc(m_nLensHeaterPowerPerc);
     }
     else {
@@ -385,8 +388,9 @@ int CPlayerOne::Connect(int nCameraID)
         getWB_B(nMin, nMax, m_nWbB, m_bB_Auto);
         getFlip(nMin, nMax, m_nFlip);
         getUSBBandwidth(nMin, nMax, m_nUSBBandwidth);
-        if(m_bHasSumPixelMode)
-            getPixelBinMode(m_bPixelBinMode);
+        getPixelBinMode(m_bPixelBinMode);
+        if(hasMonoBin())
+            getMonoBin(m_bPixelMonoBin);
         getLensHeaterPowerPerc(nMin, nMax, m_nLensHeaterPowerPerc);
     }
 
@@ -812,16 +816,18 @@ int CPlayerOne::setSensorMode(int nModeIndex)
     return nErr;
 }
 
-bool CPlayerOne::hasPixelSumMode()
+bool CPlayerOne::hasMonoBin()
 {
-    bool bsumMode;
-    bool bTestSumMode;
+    bool bMonoBinMode;
+    int ret;
 
-    getPixelBinMode(bsumMode); // save the current mode
-    setPixelBinMode(true); // set to sum mode
-    getPixelBinMode(bTestSumMode); // get the mode as reported by SDK/Camera
-    setPixelBinMode(bsumMode); //restore the mode
-    if(!bTestSumMode) // sum mode not available
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [hasMonoBin] called." << std::endl;
+    m_sLogFile.flush();
+#endif
+
+    ret = getMonoBin(bMonoBinMode); // save the current mode
+    if(ret == VAL_NOT_AVAILABLE)
         return false;
     return true;
 }
@@ -833,17 +839,22 @@ int CPlayerOne::getPixelBinMode(bool &bSumMode)
     POAConfigValue minValue, maxValue, confValue;
     POABool bAuto;
 
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getPixelBinMode] called." << std::endl;
+    m_sLogFile.flush();
+#endif
+
     ret = getConfigValue(POA_PIXEL_BIN_SUM, confValue, minValue, maxValue, bAuto);
     if(ret) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getPixelBinMode] Error getting camera plixel mode. Error= " << POAGetErrorString(ret) << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getPixelBinMode] Error getting camera pixel mode. Error= " << POAGetErrorString(ret) << std::endl;
         m_sLogFile.flush();
 #endif
         return ERR_CMDFAILED;
     }
 
     // POA_TRUE is sum and POA_FALSE is average,
-    bSumMode = (confValue.boolValue == POA_TRUE)?true:false;
+    bSumMode = (confValue.boolValue == POA_TRUE);
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getPixelBinMode] Pixel bin mode confValue.boolValue =  " << (confValue.boolValue==POA_TRUE?"POA_TRUE":"POA_FALSE") << std::endl;
@@ -862,9 +873,14 @@ int CPlayerOne::setPixelBinMode(bool bSumMode)
     POAConfigValue confValue;
     m_bPixelBinMode = bSumMode;
 
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setPixelBinMode] called." << std::endl;
+    m_sLogFile.flush();
+#endif
+
     if(!m_bConnected)
         return ERR_NOLINK;
-    // POA_TRUE is sum and POA_FLASE is average
+    // POA_TRUE is sum and POA_FLASE is average 
     confValue.boolValue = m_bPixelBinMode?POA_TRUE:POA_FALSE;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -883,6 +899,76 @@ int CPlayerOne::setPixelBinMode(bool bSumMode)
 
     return nErr;
 }
+
+
+int CPlayerOne::getMonoBin(bool &bMonoBin)
+{
+    int nErr = PLUGIN_OK;
+    POAErrors ret;
+    POAConfigValue minValue, maxValue, confValue;
+    POABool bAuto;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getMonoBin] called." << std::endl;
+    m_sLogFile.flush();
+#endif
+    bMonoBin = false;
+    ret = getConfigValue(POA_MONO_BIN, confValue, minValue, maxValue, bAuto);
+    if(ret) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getMonoBin] Error getting camera pixel mode. Error= " << POAGetErrorString(ret) << std::endl;
+        m_sLogFile.flush();
+#endif
+        return VAL_NOT_AVAILABLE;
+    }
+
+    // POA_TRUE is mono bin and POA_FALSE is no mono bin,
+    bMonoBin = (confValue.boolValue == POA_TRUE);
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getMonoBin] Pixel mono bin confValue.boolValue =  " << (confValue.boolValue==POA_TRUE?"POA_TRUE":"POA_FALSE") << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getMonoBin] Pixel mono bin set to " << (bMonoBin?"Mono":"Color") << std::endl;
+    m_sLogFile.flush();
+#endif
+
+    return nErr;
+}
+
+int CPlayerOne::setMonoBin(bool bMonoBin)
+{
+    int nErr = PLUGIN_OK;
+    POAErrors ret;
+    POAConfigValue confValue;
+    m_bPixelMonoBin = bMonoBin;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setMonoBin] called." << std::endl;
+    m_sLogFile.flush();
+#endif
+
+    if(!m_bConnected)
+        return ERR_NOLINK;
+    // POA_TRUE is sum and POA_FLASE is average
+    confValue.boolValue = m_bPixelMonoBin?POA_TRUE:POA_FALSE;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setMonoBin] Pixel mono bin set to " << (bMonoBin?"Mono":"Color") << std::endl;
+    m_sLogFile.flush();
+#endif
+    
+    ret = setConfigValue(POA_MONO_BIN, confValue, POA_FALSE);
+    if(ret != POA_OK) {
+        nErr = ERR_CMDFAILED;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setMonoBin] Error setting Pixel mono bin, Error = " << POAGetErrorString(ret) << std::endl;
+        m_sLogFile.flush();
+#endif
+    }
+
+    return nErr;
+}
+
+
 
 void CPlayerOne::getAllUsefulValues(int &nGainHighestDR, int &nHCGain, int &nUnityGain, int &nGainLowestRN,
                                     int &nOffsetHighestDR, int &nOffsetHCGain, int &nOffsetUnityGain, int &nOffsetLowestRN)
@@ -1091,7 +1177,7 @@ bool CPlayerOne::isCameraColor()
 void CPlayerOne::getBayerPattern(std::string &sBayerPattern)
 {
     if(m_cameraProperty.isColorCamera) {
-        if(m_nCurrentBin>1 && m_bHasSumPixelMode) { // sum mode, return MONO
+        if(m_nCurrentBin>1 && m_bPixelMonoBin) { // mono bin mode, return MONO
             sBayerPattern.assign("MONO");
             return;
         }
@@ -2119,7 +2205,7 @@ int CPlayerOne::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
         m_sLogFile.flush();
 #endif
         exposure_ms = (int)(m_dCaptureLenght * 1000);
-        ret = POAGetImageData(m_nCameraID, imgBuffer, sizeReadFromCam, exposure_ms + 500);
+        ret = POAGetImageData(m_nCameraID, imgBuffer, sizeReadFromCam, exposure_ms + 100);
         if(ret!=POA_OK) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
             m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] POAGetImageData error, retrying :  " << POAGetErrorString(ret) << std::endl;
@@ -2128,7 +2214,7 @@ int CPlayerOne::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
             // wait and retry
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
             std::this_thread::yield();
-            ret = POAGetImageData(m_nCameraID, imgBuffer, sizeReadFromCam, exposure_ms + 500);
+            ret = POAGetImageData(m_nCameraID, imgBuffer, sizeReadFromCam, exposure_ms + 100);
             if(ret!=POA_OK) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
                 m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] POAGetImageData error :  " << POAGetErrorString(ret) << std::endl;

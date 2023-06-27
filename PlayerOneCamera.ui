@@ -669,6 +669,19 @@
        <string>Offset at lowest read noise : </string>
       </property>
      </widget>
+     <widget class="QCheckBox" name="checkBox_5">
+      <property name="geometry">
+       <rect>
+        <x>280</x>
+        <y>360</y>
+        <width>129</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Pixel mono bin</string>
+      </property>
+     </widget>
     </widget>
    </item>
   </layout>

@@ -31,9 +31,9 @@
 #include "PlayerOneCamera.h"
 #include "StopWatch.h"
 
-//#define PLUGIN_DEBUG    3
+#define PLUGIN_DEBUG    3
 
-#define PLUGIN_VERSION      1.18
+#define PLUGIN_VERSION      1.19
 #define BUFFER_LEN 128
 #define PLUGIN_OK   0
 #define MAX_NB_BIN  8
@@ -127,15 +127,14 @@ public:
     int         getSensorModeList(std::vector<std::string> &sModes, int &curentModeIndex);
     int         setSensorMode(int nModeIndex);
 
-    bool        hasPixelSumMode();
+    bool        hasMonoBin();
     int         getPixelBinMode(bool &bSumMode);
     int         setPixelBinMode(bool bSumMode);
+    int         getMonoBin(bool &bMonoBin);
+    int         setMonoBin(bool bMonoBin);
 
     void        getAllUsefulValues(int &nGainHighestDR, int &nHCGain, int &nUnityGain, int &nGainLowestRN,
                                  int &nOffsetHighestDR, int &nOffsetHCGain, int &nOffsetUnityGain, int &nOffsetLowestRN);
-
-    // POAGetGainsAndOffsets(int nCameraID, int*pGainHighestDR, int *pHCGain, int *pUnityGain, int *pGainLowestRN,
-    // int *pOffsetHighestDR, int *pOffsetHCGain, int *pOffsetUnityGain, int *pOffsetLowestRN);
 
 #ifdef PLUGIN_DEBUG
     void log(std::string sLogEntry);
@@ -175,7 +174,8 @@ protected:
     long                    m_nOffset;
 
     bool                    m_bPixelBinMode;
-    bool                    m_bHasSumPixelMode;
+    bool                    m_bPixelMonoBin;
+    bool                    m_bHasMonoBinMode;
     long                    m_nUSBBandwidth;
     long                    m_nLensHeaterPowerPerc;
     
