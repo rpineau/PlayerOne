@@ -473,7 +473,7 @@ int CPlayerOne::Connect(int nCameraID)
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Connected, nErr = " << nErr << std::endl;
     m_sLogFile.flush();
 #endif
-
+    POAStopExposure(m_nCameraID); // make sure nothing is running
     return nErr;
 }
 
@@ -991,7 +991,7 @@ int CPlayerOne::startCaputure(double dTime)
     POAErrors ret;
     int nTimeout;
     m_bAbort = false;
-    // POACameraState cameraState;
+    POACameraState cameraState;
     POAConfigValue exposure_value;
 
     nTimeout = 0;
@@ -1000,8 +1000,8 @@ int CPlayerOne::startCaputure(double dTime)
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [startCaputure] Waiting for camera to be idle." << std::endl;
     m_sLogFile.flush();
 #endif
-    POAStopExposure(m_nCameraID);
-/*
+    // POAStopExposure(m_nCameraID);
+
     ret = POAGetCameraState(m_nCameraID, &cameraState);
     if(ret) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -1014,7 +1014,7 @@ int CPlayerOne::startCaputure(double dTime)
     if(cameraState != STATE_OPENED) {
         return ERR_COMMANDINPROGRESS;
     }
-*/
+
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [startCaputure] Starting Capture." << std::endl;
@@ -1027,8 +1027,8 @@ int CPlayerOne::startCaputure(double dTime)
     if(ret!=POA_OK)
         return ERR_CMDFAILED;
 
-    //ret = POAStartExposure(m_nCameraID, POA_TRUE); // single frame(Snap mode)
-    ret = POAStartExposure(m_nCameraID, POA_FALSE); // continuous exposure mode
+    ret = POAStartExposure(m_nCameraID, POA_TRUE); // single frame(Snap mode)
+    // ret = POAStartExposure(m_nCameraID, POA_FALSE); // continuous exposure mode
     if(ret!=POA_OK)
         nErr =ERR_CMDFAILED;
 
@@ -2226,7 +2226,7 @@ int CPlayerOne::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
                 return ERR_RXTIMEOUT;
             }
         }
-        POAStopExposure(m_nCameraID);
+        // POAStopExposure(m_nCameraID);
 
         // shift data
         if(m_nNbBitToShift) {
