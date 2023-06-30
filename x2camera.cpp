@@ -97,7 +97,7 @@ int X2Camera::execModalSettingsDialog()
     int i;
     std::stringstream ssTmp;
     int nCamIndex;
-    bool bCameraFoud = false;
+    bool bCameraFound = false;
 
 
     if(m_bLinked) {
@@ -126,7 +126,7 @@ int X2Camera::execModalSettingsDialog()
         dx->setCurrentIndex("comboBox",0);
     }
     else {
-        bCameraFoud = true;
+        bCameraFound = true;
         nCamIndex = 0;
         for(i = 0; i < m_tCameraIdList.size(); i++) {
             //Populate the camera combo box and set the current index (selection)
@@ -148,7 +148,7 @@ int X2Camera::execModalSettingsDialog()
     //Retreive values from the user interface
     if (bPressedOK)
     {
-        if(bCameraFoud) {
+        if(bCameraFound) {
             int nCamera;
             std::string sCameraSerial;
             //Camera
