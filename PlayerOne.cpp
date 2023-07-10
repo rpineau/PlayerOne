@@ -1869,7 +1869,9 @@ POAErrors CPlayerOne::setConfigValue(POAConfig confID , POAConfigValue confValue
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setConfigValue] confID = " << confID << std::endl;
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setConfigValue] confValue = " << confValue.intValue << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setConfigValue] confValue.intValue = " << confValue.intValue << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setConfigValue] confValue.floatValue = " << confValue.floatValue << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setConfigValue] confValue.boolValue = " << (confValue.boolValue?"True":"False") << std::endl;
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setConfigValue] bAuto = " << (bAuto == POA_TRUE? "Yes":"No") << std::endl;
     m_sLogFile.flush();
 #endif
@@ -1994,45 +1996,43 @@ int CPlayerOne::setROI(int nLeft, int nTop, int nWidth, int nHeight)
     m_nReqROIWidth = nWidth;
     m_nReqROIHeight = nHeight;
 
-    // X
-    if( m_nReqROILeft % 4 != 0)
-        nNewLeft = (m_nReqROILeft/4) * 4;  // round to lower 4 pixel. boundary
-    else
-        nNewLeft = m_nReqROILeft;
 
-    // W
-    if( (m_nReqROIWidth % 4 != 0) || (nLeft!=nNewLeft)) {// Adjust width to upper 4 boundary or if the left border changed we need to adjust the width
-        nNewWidth = (( (m_nReqROIWidth + (nNewLeft%4)) /4) + 1) * 4;
-        if ((nNewLeft + nNewWidth) > int(m_cameraProperty.maxWidth/m_nCurrentBin)) {
-            nNewLeft -=4;
-            if(nNewLeft<0) {
-                nNewLeft = 0;
-                nNewWidth = nNewWidth - 4;
-            }
-        }
+    ret = POASetImageSize(m_nCameraID,m_nReqROIWidth,m_nReqROIHeight);
+    if(ret != POA_OK) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] Error setting new Width and Height, Error = " << POAGetErrorString(ret) << std::endl;
+        m_sLogFile.flush();
+#endif
+        return ERR_CMDFAILED;
     }
-    else
-        nNewWidth = m_nReqROIWidth;
 
-    // Y
-    if( m_nReqROITop % 2 != 0)
-        nNewTop = (m_nReqROITop/2) * 2;  // round to lower even pixel.
-    else
-        nNewTop = m_nReqROITop;
-
-    // H
-    if( (m_nReqROIHeight % 2 != 0) || (nTop!=nNewTop)) {// Adjust height to lower 2 boundary or if the top changed we need to adjust the height
-        nNewHeight = (((m_nReqROIHeight + (nNewTop%2))/2) + 1) * 2;
-        if((nNewTop + nNewHeight) > int(m_cameraProperty.maxHeight/m_nCurrentBin)) {
-            nNewTop -=2;
-            if(nNewTop <0) {
-                nNewTop = 0;
-                nNewHeight = nNewHeight - 2;
-            }
-        }
+    ret = POAGetImageSize(m_nCameraID, &nNewWidth, &nNewHeight);
+    if(ret != POA_OK) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] Error getting new Width and Height, Error = " << POAGetErrorString(ret) << std::endl;
+        m_sLogFile.flush();
+#endif
+        return ERR_CMDFAILED;
     }
-    else
-        nNewHeight = m_nReqROIHeight;
+
+    ret = POASetImageStartPos(m_nCameraID, m_nReqROILeft, m_nReqROITop);
+    if(ret != POA_OK) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] Error setting new Left and top, Error = " << POAGetErrorString(ret) << std::endl;
+        m_sLogFile.flush();
+#endif
+        return ERR_CMDFAILED;
+    }
+
+    ret = POAGetImageStartPos(m_nCameraID, &nNewLeft, &nNewTop);
+    if(ret != POA_OK) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] Error getting new Left and top, Error = " << POAGetErrorString(ret) << std::endl;
+        m_sLogFile.flush();
+#endif
+        return ERR_CMDFAILED;
+    }
+
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] m_cameraProperty.maxWidth  = " << m_cameraProperty.maxWidth << std::endl;
@@ -2049,49 +2049,6 @@ int CPlayerOne::setROI(int nLeft, int nTop, int nWidth, int nHeight)
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] nNewHeight   = " << nNewHeight << std::endl;
     m_sLogFile.flush();
 #endif
-
-
-    if( m_nROILeft == nNewLeft && m_nROITop == nNewTop && m_nROIWidth == nNewWidth && m_nROIHeight == nNewHeight) {
-        return nErr; // no change since last ROI change request
-    }
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] Requested x, y, w, h : " << nLeft << ", " << nTop << ", " << nWidth << ", " << nHeight <<  std::endl;
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] Set to    x, y, w, h : " << nNewLeft << ", " << nNewTop << ", " << nNewWidth << ", " << nNewHeight <<  std::endl;
-    m_sLogFile.flush();
-#endif
-
-    ret = POASetImageSize(m_nCameraID,nNewWidth,nNewHeight);
-    if(ret != POA_OK) {
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] Error setting new Width and Height, Error = " << POAGetErrorString(ret) << std::endl;
-        m_sLogFile.flush();
-#endif
-        return ERR_CMDFAILED;
-    }
-
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    POAGetImageSize(m_nCameraID, &tmp1, &tmp2);
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] POAGetImageSize w  : " << tmp1 << std::endl;
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] POAGetImageSize h  : " << tmp2 << std::endl;
-    m_sLogFile.flush();
-#endif
-
-    ret = POASetImageStartPos(m_nCameraID, nNewLeft, nNewTop);
-    if(ret != POA_OK) {
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] Error setting new Left and top, Error = " << POAGetErrorString(ret) << std::endl;
-        m_sLogFile.flush();
-#endif
-        return ERR_CMDFAILED;
-    }
-
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    POAGetImageStartPos(m_nCameraID, &tmp1, &tmp2);
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] POAGetImageStartPos x  : " << tmp1 << std::endl;
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] POAGetImageStartPos y  : " << tmp2 << std::endl;
-    m_sLogFile.flush();
-#endif
-
 
     m_nROILeft = nNewLeft;
     m_nROITop = nNewTop;
