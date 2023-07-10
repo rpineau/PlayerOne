@@ -42,6 +42,7 @@ CPlayerOne::CPlayerOne()
     m_nMaxBitDepth = 16;
     m_nNbBin = 1;
     m_nCurrentBin  = 1;
+    m_bHasHardwareBin = false;
     m_bHasRelayOutput = false;
     m_bConnected = false;
     m_pframeBuffer = nullptr;
@@ -213,6 +214,7 @@ int CPlayerOne::Connect(int nCameraID)
     if(!m_nCurrentBin)
         m_nCurrentBin = m_SupportedBins[0]; // if bin 1 was not availble .. use first bin in the array
 
+    m_bHasHardwareBin = m_cameraProperty.isSupportHardBin;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Camera properties:" << std::endl;
@@ -229,6 +231,7 @@ int CPlayerOne::Connect(int nCameraID)
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] m_cameraProperty.sensorModelName : " << m_cameraProperty.sensorModelName << std::endl;
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] m_nNbBitToShift                  : " << m_nNbBitToShift << std::endl;
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] m_nNbBin                         : " << m_nNbBin << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] m_cameraProperty.isSupportHardBin: " << (m_cameraProperty.isSupportHardBin?"Yes":"No") << std::endl;
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] m_dPixelSize                     : " << m_dPixelSize << std::endl;
     m_sLogFile.flush();
 #endif
@@ -1157,6 +1160,10 @@ int CPlayerOne::setBinSize(int nBin)
 #endif
 
     m_nCurrentBin = nBin;
+    if(m_bHasHardwareBin) {
+        setHardwareBinOn(true);
+    }
+
     ret = POASetImageBin(m_nCameraID, m_nCurrentBin);
     if(ret != POA_OK) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -1819,6 +1826,39 @@ int CPlayerOne::setLensHeaterPowerPerc(long nPercent)
     return nErr;
 }
 
+int CPlayerOne::setHardwareBinOn(bool bOn)
+{
+    int nErr = PLUGIN_OK;
+    POAErrors ret;
+    POAConfigValue confValue;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setHardwareBinOn] called." << std::endl;
+    m_sLogFile.flush();
+#endif
+
+    if(!m_bConnected)
+        return ERR_NOLINK;
+    // POA_TRUE is sum and POA_FLASE is average
+    confValue.boolValue = bOn?POA_TRUE:POA_FALSE;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setHardwareBinOn] Hardware bin set to " << (bOn?"On":"Off") << std::endl;
+    m_sLogFile.flush();
+#endif
+
+    ret = setConfigValue(POA_HARDWARE_BIN, confValue, POA_FALSE);
+    if(ret != POA_OK) {
+        nErr = ERR_CMDFAILED;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setHardwareBinOn] Error setting Hardware bin, Error = " << POAGetErrorString(ret) << std::endl;
+        m_sLogFile.flush();
+#endif
+    }
+
+    return nErr;
+
+}
 
 POAErrors CPlayerOne::setConfigValue(POAConfig confID , POAConfigValue confValue,  POABool bAuto)
 {

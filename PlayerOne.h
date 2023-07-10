@@ -72,7 +72,6 @@ public:
     
     int         getNumBins();
     int         getBinFromIndex(int nIndex);
-    
     int         startCaputure(double dTime);
     void        abortCapture(void);
 
@@ -128,6 +127,8 @@ public:
     int         setSensorMode(int nModeIndex);
 
     bool        hasMonoBin();
+    int         setHardwareBinOn(bool bOn);
+
     int         getPixelBinMode(bool &bSumMode);
     int         setPixelBinMode(bool bSumMode);
     int         getMonoBin(bool &bMonoBin);
@@ -188,6 +189,7 @@ protected:
     int                     m_nNbBin;
     int                     m_SupportedBins[MAX_NB_BIN];
     int                     m_nCurrentBin;
+    bool                    m_bHasHardwareBin;
     bool                    m_bHasRelayOutput;
 
     bool                    m_bConnected;
