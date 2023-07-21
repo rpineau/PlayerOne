@@ -2124,6 +2124,9 @@ bool CPlayerOne::isFameAvailable()
             m_sLogFile.flush();
 #endif
     // }
+    if(bFrameAvailable)
+        POAStopExposure(m_nCameraID);
+
     return bFrameAvailable;
 }
 
@@ -2217,7 +2220,7 @@ int CPlayerOne::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
                 m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] POAGetImageData error :  " << POAGetErrorString(ret) << std::endl;
                 m_sLogFile.flush();
 #endif
-                POAStopExposure(m_nCameraID);
+                // POAStopExposure(m_nCameraID);
                 if(imgBuffer != frameBuffer)
                     free(imgBuffer);
                 return ERR_RXTIMEOUT;
