@@ -440,14 +440,18 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
             m_Camera.rebuildGainList();
         }
         else {
+#if defined PLUGIN_DEBUG
             m_Camera.log("Error setting Gain");
+#endif
         }
         dx->propertyInt("Offset", "value", nCtrlVal);
         nErr = m_Camera.setOffset((long)nCtrlVal);
         if(!nErr)
             m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_OFFSET, nCtrlVal);
         else {
+#if defined PLUGIN_DEBUG
             m_Camera.log("Error setting Offset");
+#endif
         }
         if(dx->isEnabled("WB_R") || dx->isEnabled("checkBox_2")) {
             dx->propertyInt("WB_R", "value", nCtrlVal);
@@ -458,7 +462,9 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
                 m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_WHITE_BALANCE_R_AUTO, bIsAuto?1:0);
             }
             else {
+#if defined PLUGIN_DEBUG
                 m_Camera.log("Error setting WB_R");
+#endif
             }
         }
 
@@ -471,7 +477,9 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
                 m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_WHITE_BALANCE_G_AUTO, bIsAuto?1:0);
             }
             else {
+#if defined PLUGIN_DEBUG
                 m_Camera.log("Error setting WB_G");
+#endif
             }
         }
 
@@ -484,7 +492,9 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
                 m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_WHITE_BALANCE_B_AUTO, bIsAuto?1:0);
             }
             else {
+#if defined PLUGIN_DEBUG
                 m_Camera.log("Error setting WB_B");
+#endif
             }
         }
 
@@ -493,7 +503,9 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
         if(!nErr)
             m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_FLIP, nCtrlVal);
         else {
+#if defined PLUGIN_DEBUG
             m_Camera.log("Error setting Flip");
+#endif
         }
 
         if(dx->isEnabled("SensorMode")) {
@@ -502,7 +514,9 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
             if(!nErr)
                 m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_SENSOR_MODE, nCtrlVal);
             else {
+#if defined PLUGIN_DEBUG
                 m_Camera.log("Error setting SensorMode");
+#endif
             }
         }
 
@@ -511,7 +525,9 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
         if(!nErr)
             m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_USB_BANDWIDTH, nCtrlVal);
         else {
+#if defined PLUGIN_DEBUG
             m_Camera.log("Error setting USBBandwidth");
+#endif
         }
 
         nCtrlVal = dx->currentIndex("PixelBinMode");
@@ -519,7 +535,9 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
         if(!nErr)
             m_pIniUtil->writeInt(m_sCameraSerial.c_str(), PIXEL_BIN_MODE, nCtrlVal);
         else {
+#if defined PLUGIN_DEBUG
             m_Camera.log("Error setting PixelBinMode");
+#endif
         }
 
         if(m_Camera.hasMonoBin()) {
@@ -529,7 +547,9 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
                 if(!nErr)
                     m_pIniUtil->writeInt(m_sCameraSerial.c_str(), PIXEL_MONO_BIN, bPixelBinMono?1:0);
                 else {
+#if defined PLUGIN_DEBUG
                     m_Camera.log("Error setting MonoBin");
+#endif
                 }
             }
         }
@@ -540,7 +560,9 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
             if(!nErr)
                 m_pIniUtil->writeInt(m_sCameraSerial.c_str(), LENS_POWER, nCtrlVal);
             else {
+#if defined PLUGIN_DEBUG
                 m_Camera.log("Error setting LensHeaterPower");
+#endif
             }
         }
     }
