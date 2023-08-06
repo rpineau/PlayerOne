@@ -97,7 +97,7 @@ int X2Camera::execModalSettingsDialog()
     int i;
     std::stringstream ssTmp;
     int nCamIndex;
-    bool bCameraFoud = false;
+    bool bCameraFound = false;
 
 
     if(m_bLinked) {
@@ -126,7 +126,7 @@ int X2Camera::execModalSettingsDialog()
         dx->setCurrentIndex("comboBox",0);
     }
     else {
-        bCameraFoud = true;
+        bCameraFound = true;
         nCamIndex = 0;
         for(i = 0; i < m_tCameraIdList.size(); i++) {
             //Populate the camera combo box and set the current index (selection)
@@ -148,7 +148,7 @@ int X2Camera::execModalSettingsDialog()
     //Retreive values from the user interface
     if (bPressedOK)
     {
-        if(bCameraFoud) {
+        if(bCameraFound) {
             int nCamera;
             std::string sCameraSerial;
             //Camera
@@ -178,6 +178,7 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
     std::vector<std::string> svModes;
     int nCurrentSensorMode;
     bool bBinPixelSumMode;
+    bool bPixelBinMono;
     int i = 0;
 
     int nGainHighestDR;
@@ -333,6 +334,17 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
             dx->setCurrentIndex("PixelBinMode", bBinPixelSumMode?0:1);
         }
 
+        if(m_Camera.hasMonoBin()) {
+            nErr = m_Camera.getMonoBin(bPixelBinMono);
+            if(nErr == VAL_NOT_AVAILABLE)
+                dx->setEnabled("checkBox_5", false);
+            else {
+                dx->setChecked("checkBox_5", bPixelBinMono?1:0);
+            }
+        }
+        else
+            dx->setEnabled("checkBox_5", false);
+
         nErr = m_Camera.getLensHeaterPowerPerc(nMin, nMax, nVal);
         if(nErr == VAL_NOT_AVAILABLE)
             dx->setEnabled("LensHeaterPower", false);
@@ -341,6 +353,7 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
             dx->setPropertyInt("LensHeaterPower", "maximum", (int)nMax);
             dx->setPropertyInt("LensHeaterPower", "value", (int)nVal);
         }
+
 
         m_Camera.isUSB3(bIsUSB3);
         dx->setText("USBMode", bIsUSB3?"<html><head/><body><p><span style=\" color:#00FF00;\">USB 3.0</span></p></body></html>" : "<html><head/><body><p><span style=\" color:#FF0000;\">USB 2.0</span></p></body></html>");
@@ -426,12 +439,20 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
             m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_GAIN, nCtrlVal);
             m_Camera.rebuildGainList();
         }
-
+        else {
+#if defined PLUGIN_DEBUG
+            m_Camera.log("Error setting Gain");
+#endif
+        }
         dx->propertyInt("Offset", "value", nCtrlVal);
         nErr = m_Camera.setOffset((long)nCtrlVal);
         if(!nErr)
             m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_OFFSET, nCtrlVal);
-
+        else {
+#if defined PLUGIN_DEBUG
+            m_Camera.log("Error setting Offset");
+#endif
+        }
         if(dx->isEnabled("WB_R") || dx->isEnabled("checkBox_2")) {
             dx->propertyInt("WB_R", "value", nCtrlVal);
             bIsAuto = dx->isChecked("checkBox_2");
@@ -439,6 +460,11 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
             if(!nErr) {
                 m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_WHITE_BALANCE_R, nCtrlVal);
                 m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_WHITE_BALANCE_R_AUTO, bIsAuto?1:0);
+            }
+            else {
+#if defined PLUGIN_DEBUG
+                m_Camera.log("Error setting WB_R");
+#endif
             }
         }
 
@@ -450,6 +476,11 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
                 m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_WHITE_BALANCE_G, nCtrlVal);
                 m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_WHITE_BALANCE_G_AUTO, bIsAuto?1:0);
             }
+            else {
+#if defined PLUGIN_DEBUG
+                m_Camera.log("Error setting WB_G");
+#endif
+            }
         }
 
         if(dx->isEnabled("WB_B") || dx->isEnabled("checkBox_4")) {
@@ -460,34 +491,80 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
                 m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_WHITE_BALANCE_B, nCtrlVal);
                 m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_WHITE_BALANCE_B_AUTO, bIsAuto?1:0);
             }
+            else {
+#if defined PLUGIN_DEBUG
+                m_Camera.log("Error setting WB_B");
+#endif
+            }
         }
 
         nCtrlVal = dx->currentIndex("Flip");
         nErr = m_Camera.setFlip((long)nCtrlVal);
         if(!nErr)
             m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_FLIP, nCtrlVal);
+        else {
+#if defined PLUGIN_DEBUG
+            m_Camera.log("Error setting Flip");
+#endif
+        }
 
         if(dx->isEnabled("SensorMode")) {
             nCtrlVal = dx->currentIndex("SensorMode");
             nErr = m_Camera.setSensorMode(nCtrlVal);
             if(!nErr)
                 m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_SENSOR_MODE, nCtrlVal);
+            else {
+#if defined PLUGIN_DEBUG
+                m_Camera.log("Error setting SensorMode");
+#endif
+            }
         }
 
         dx->propertyInt("USBBandwidth", "value", nCtrlVal);
         nErr = m_Camera.setUSBBandwidth((long)nCtrlVal);
         if(!nErr)
             m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_USB_BANDWIDTH, nCtrlVal);
+        else {
+#if defined PLUGIN_DEBUG
+            m_Camera.log("Error setting USBBandwidth");
+#endif
+        }
 
         nCtrlVal = dx->currentIndex("PixelBinMode");
         nErr = m_Camera.setPixelBinMode((nCtrlVal==0)?true:false); // true = Sum mode, False = Average mode
         if(!nErr)
             m_pIniUtil->writeInt(m_sCameraSerial.c_str(), PIXEL_BIN_MODE, nCtrlVal);
+        else {
+#if defined PLUGIN_DEBUG
+            m_Camera.log("Error setting PixelBinMode");
+#endif
+        }
 
-        dx->propertyInt("LensHeaterPower", "value", nCtrlVal);
-        nErr = m_Camera.setLensHeaterPowerPerc((long)nCtrlVal);
-        if(!nErr)
-            m_pIniUtil->writeInt(m_sCameraSerial.c_str(), LENS_POWER, nCtrlVal);
+        if(m_Camera.hasMonoBin()) {
+            if(dx->isEnabled("checkBox_5")) {
+                bPixelBinMono = dx->isChecked("checkBox_5");
+                nErr = m_Camera.setMonoBin(bPixelBinMono);
+                if(!nErr)
+                    m_pIniUtil->writeInt(m_sCameraSerial.c_str(), PIXEL_MONO_BIN, bPixelBinMono?1:0);
+                else {
+#if defined PLUGIN_DEBUG
+                    m_Camera.log("Error setting MonoBin");
+#endif
+                }
+            }
+        }
+
+        if(m_Camera.isLensHeaterAvailable()) {
+            dx->propertyInt("LensHeaterPower", "value", nCtrlVal);
+            nErr = m_Camera.setLensHeaterPowerPerc((long)nCtrlVal);
+            if(!nErr)
+                m_pIniUtil->writeInt(m_sCameraSerial.c_str(), LENS_POWER, nCtrlVal);
+            else {
+#if defined PLUGIN_DEBUG
+                m_Camera.log("Error setting LensHeaterPower");
+#endif
+            }
+        }
     }
 
     return nErr;
@@ -540,6 +617,10 @@ int X2Camera::loadCameraSettings(std::string sSerial)
     nValue = m_pIniUtil->readInt(sSerial.c_str(), PIXEL_BIN_MODE, VAL_NOT_AVAILABLE);
     if(nValue!=VAL_NOT_AVAILABLE)
         m_Camera.setPixelBinMode((nValue==0)?true:false);
+
+    nValue = m_pIniUtil->readInt(sSerial.c_str(), PIXEL_MONO_BIN, VAL_NOT_AVAILABLE);
+    if(nValue!=VAL_NOT_AVAILABLE)
+        m_Camera.setMonoBin((nValue==1)?true:false);
 
     nValue = m_pIniUtil->readInt(sSerial.c_str(), LENS_POWER, VAL_NOT_AVAILABLE);
     if(nValue!=VAL_NOT_AVAILABLE)

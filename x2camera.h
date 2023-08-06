@@ -48,6 +48,7 @@ class AddFITSKeyInterface;
 #define KEY_OFFSET                  "Offset"
 #define KEY_USB_BANDWIDTH           "USBBandwidth"
 #define PIXEL_BIN_MODE              "PixelBinMode"
+#define PIXEL_MONO_BIN              "PixelMonoBin"
 #define LENS_POWER                  "LensPower"
 
 enum DIALOGS {SELECT, SETTINGS };

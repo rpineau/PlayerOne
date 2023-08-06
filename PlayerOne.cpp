@@ -32,6 +32,7 @@ CPlayerOne::CPlayerOne()
     m_nAutoExposureTarget = 0;
     m_nOffset = VAL_NOT_AVAILABLE;
     m_bPixelBinMode = false;
+    m_bPixelMonoBin = false;
     m_nUSBBandwidth = 100;
     m_dPixelSize = 0;
     m_nMaxWidth = -1;
@@ -41,6 +42,7 @@ CPlayerOne::CPlayerOne()
     m_nMaxBitDepth = 16;
     m_nNbBin = 1;
     m_nCurrentBin  = 1;
+    m_bHasHardwareBin = false;
     m_bHasRelayOutput = false;
     m_bConnected = false;
     m_pframeBuffer = nullptr;
@@ -125,11 +127,13 @@ int CPlayerOne::Connect(int nCameraID)
     POASensorModeInfo sensorMode;
     std::string sTmp;
 
-    long nMin, nMax;
+    long nMin, nMax, nValue;
 
     if(nCameraID>=0 && m_sCameraSerial.size()!=0)
         m_nCameraID = nCameraID;
-    else {
+
+    ret = POAOpenCamera(m_nCameraID);
+    if (ret != POA_OK) { // we had a camera selected but it's not connected,
         // check if there is at least one camera connected to the system
         if(POAGetCameraCount() >= 1) {
             std::vector<camera_info_t> tCameraIdList;
@@ -140,18 +144,18 @@ int CPlayerOne::Connect(int nCameraID)
             }
             else
                 return ERR_NODEVICESELECTED;
+            ret = POAOpenCamera(m_nCameraID);
+            if (ret != POA_OK) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+                m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect]  Error connecting to camera ID " << m_nCameraID << " serial " << m_sCameraSerial << " , Error = " << POAGetErrorString(ret) << std::endl;
+                m_sLogFile.flush();
+#endif
+                return ERR_NORESPONSE;
+            }
         }
         else
             return ERR_NODEVICESELECTED;
     }
-    ret = POAOpenCamera(m_nCameraID);
-    if (ret != POA_OK) {
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect]  Error connecting to camera ID " << m_nCameraID << " serial " << m_sCameraSerial << " , Error = " << POAGetErrorString(ret) << std::endl;
-        m_sLogFile.flush();
-#endif
-        return ERR_NORESPONSE;
-        }
 
     ret = POAInitCamera(m_nCameraID);
     if (ret != POA_OK) {
@@ -210,6 +214,7 @@ int CPlayerOne::Connect(int nCameraID)
     if(!m_nCurrentBin)
         m_nCurrentBin = m_SupportedBins[0]; // if bin 1 was not availble .. use first bin in the array
 
+    m_bHasHardwareBin = m_cameraProperty.isSupportHardBin;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Camera properties:" << std::endl;
@@ -226,6 +231,7 @@ int CPlayerOne::Connect(int nCameraID)
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] m_cameraProperty.sensorModelName : " << m_cameraProperty.sensorModelName << std::endl;
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] m_nNbBitToShift                  : " << m_nNbBitToShift << std::endl;
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] m_nNbBin                         : " << m_nNbBin << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] m_cameraProperty.isSupportHardBin: " << (m_cameraProperty.isSupportHardBin?"Yes":"No") << std::endl;
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] m_dPixelSize                     : " << m_dPixelSize << std::endl;
     m_sLogFile.flush();
 #endif
@@ -340,6 +346,25 @@ int CPlayerOne::Connect(int nCameraID)
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] m_bSetUserConf : " << (m_bSetUserConf?"Yes":"No") << std::endl;
     m_sLogFile.flush();
 #endif
+    m_bHasLensHeater = true;
+    nErr = getLensHeaterPowerPerc(nMin, nMax, nValue);
+    if(nErr == VAL_NOT_AVAILABLE) {
+        m_bHasLensHeater = false;
+        nErr = PLUGIN_OK;
+    }
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] m_bHasLensHeater : " << (m_bHasLensHeater?"Yes":"No") << std::endl;
+    m_sLogFile.flush();
+#endif
+
+    m_bHasMonoBinMode = false;
+    if(hasMonoBin())
+        m_bHasMonoBinMode = true;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] m_bHasMonoBinMode  : " << (m_bHasMonoBinMode?"Yes":"No") << std::endl;
+    m_sLogFile.flush();
+#endif
 
     if(m_bSetUserConf) {
         // set default values
@@ -351,6 +376,8 @@ int CPlayerOne::Connect(int nCameraID)
         setFlip(m_nFlip);
         setUSBBandwidth(m_nUSBBandwidth);
         setPixelBinMode(m_bPixelBinMode);
+        if(hasMonoBin())
+            setMonoBin(m_bPixelMonoBin);
         setLensHeaterPowerPerc(m_nLensHeaterPowerPerc);
     }
     else {
@@ -365,6 +392,8 @@ int CPlayerOne::Connect(int nCameraID)
         getFlip(nMin, nMax, m_nFlip);
         getUSBBandwidth(nMin, nMax, m_nUSBBandwidth);
         getPixelBinMode(m_bPixelBinMode);
+        if(hasMonoBin())
+            getMonoBin(m_bPixelMonoBin);
         getLensHeaterPowerPerc(nMin, nMax, m_nLensHeaterPowerPerc);
     }
 
@@ -447,7 +476,7 @@ int CPlayerOne::Connect(int nCameraID)
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Connected, nErr = " << nErr << std::endl;
     m_sLogFile.flush();
 #endif
-
+    POAStopExposure(m_nCameraID); // make sure nothing is running
     return nErr;
 }
 
@@ -790,6 +819,22 @@ int CPlayerOne::setSensorMode(int nModeIndex)
     return nErr;
 }
 
+bool CPlayerOne::hasMonoBin()
+{
+    bool bMonoBinMode;
+    int ret;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [hasMonoBin] called." << std::endl;
+    m_sLogFile.flush();
+#endif
+
+    ret = getMonoBin(bMonoBinMode); // save the current mode
+    if(ret == VAL_NOT_AVAILABLE)
+        return false;
+    return true;
+}
+
 int CPlayerOne::getPixelBinMode(bool &bSumMode)
 {
     int nErr = PLUGIN_OK;
@@ -797,17 +842,22 @@ int CPlayerOne::getPixelBinMode(bool &bSumMode)
     POAConfigValue minValue, maxValue, confValue;
     POABool bAuto;
 
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getPixelBinMode] called." << std::endl;
+    m_sLogFile.flush();
+#endif
+
     ret = getConfigValue(POA_PIXEL_BIN_SUM, confValue, minValue, maxValue, bAuto);
     if(ret) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getPixelBinMode] Error getting camera plixel mode. Error= " << POAGetErrorString(ret) << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getPixelBinMode] Error getting camera pixel mode. Error= " << POAGetErrorString(ret) << std::endl;
         m_sLogFile.flush();
 #endif
         return ERR_CMDFAILED;
     }
 
     // POA_TRUE is sum and POA_FALSE is average,
-    bSumMode = (confValue.boolValue == POA_TRUE)?true:false;
+    bSumMode = (confValue.boolValue == POA_TRUE);
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getPixelBinMode] Pixel bin mode confValue.boolValue =  " << (confValue.boolValue==POA_TRUE?"POA_TRUE":"POA_FALSE") << std::endl;
@@ -824,12 +874,16 @@ int CPlayerOne::setPixelBinMode(bool bSumMode)
     int nErr = PLUGIN_OK;
     POAErrors ret;
     POAConfigValue confValue;
-
     m_bPixelBinMode = bSumMode;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setPixelBinMode] called." << std::endl;
+    m_sLogFile.flush();
+#endif
 
     if(!m_bConnected)
         return ERR_NOLINK;
-    // POA_TRUE is sum and POA_FLASE is average
+    // POA_TRUE is sum and POA_FLASE is average 
     confValue.boolValue = m_bPixelBinMode?POA_TRUE:POA_FALSE;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -848,6 +902,76 @@ int CPlayerOne::setPixelBinMode(bool bSumMode)
 
     return nErr;
 }
+
+
+int CPlayerOne::getMonoBin(bool &bMonoBin)
+{
+    int nErr = PLUGIN_OK;
+    POAErrors ret;
+    POAConfigValue minValue, maxValue, confValue;
+    POABool bAuto;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getMonoBin] called." << std::endl;
+    m_sLogFile.flush();
+#endif
+    bMonoBin = false;
+    ret = getConfigValue(POA_MONO_BIN, confValue, minValue, maxValue, bAuto);
+    if(ret) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getMonoBin] Error getting camera pixel mode. Error= " << POAGetErrorString(ret) << std::endl;
+        m_sLogFile.flush();
+#endif
+        return VAL_NOT_AVAILABLE;
+    }
+
+    // POA_TRUE is mono bin and POA_FALSE is no mono bin,
+    bMonoBin = (confValue.boolValue == POA_TRUE);
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getMonoBin] Pixel mono bin confValue.boolValue =  " << (confValue.boolValue==POA_TRUE?"POA_TRUE":"POA_FALSE") << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getMonoBin] Pixel mono bin set to " << (bMonoBin?"Mono":"Color") << std::endl;
+    m_sLogFile.flush();
+#endif
+
+    return nErr;
+}
+
+int CPlayerOne::setMonoBin(bool bMonoBin)
+{
+    int nErr = PLUGIN_OK;
+    POAErrors ret;
+    POAConfigValue confValue;
+    m_bPixelMonoBin = bMonoBin;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setMonoBin] called." << std::endl;
+    m_sLogFile.flush();
+#endif
+
+    if(!m_bConnected)
+        return ERR_NOLINK;
+    // POA_TRUE is sum and POA_FLASE is average
+    confValue.boolValue = m_bPixelMonoBin?POA_TRUE:POA_FALSE;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setMonoBin] Pixel mono bin set to " << (bMonoBin?"Mono":"Color") << std::endl;
+    m_sLogFile.flush();
+#endif
+    
+    ret = setConfigValue(POA_MONO_BIN, confValue, POA_FALSE);
+    if(ret != POA_OK) {
+        nErr = ERR_CMDFAILED;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setMonoBin] Error setting Pixel mono bin, Error = " << POAGetErrorString(ret) << std::endl;
+        m_sLogFile.flush();
+#endif
+    }
+
+    return nErr;
+}
+
+
 
 void CPlayerOne::getAllUsefulValues(int &nGainHighestDR, int &nHCGain, int &nUnityGain, int &nGainLowestRN,
                                     int &nOffsetHighestDR, int &nOffsetHCGain, int &nOffsetUnityGain, int &nOffsetLowestRN)
@@ -870,7 +994,7 @@ int CPlayerOne::startCaputure(double dTime)
     POAErrors ret;
     int nTimeout;
     m_bAbort = false;
-    // POACameraState cameraState;
+    POACameraState cameraState;
     POAConfigValue exposure_value;
 
     nTimeout = 0;
@@ -879,8 +1003,8 @@ int CPlayerOne::startCaputure(double dTime)
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [startCaputure] Waiting for camera to be idle." << std::endl;
     m_sLogFile.flush();
 #endif
-    POAStopExposure(m_nCameraID);
-/*
+    // POAStopExposure(m_nCameraID);
+
     ret = POAGetCameraState(m_nCameraID, &cameraState);
     if(ret) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -893,7 +1017,7 @@ int CPlayerOne::startCaputure(double dTime)
     if(cameraState != STATE_OPENED) {
         return ERR_COMMANDINPROGRESS;
     }
-*/
+
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [startCaputure] Starting Capture." << std::endl;
@@ -906,8 +1030,8 @@ int CPlayerOne::startCaputure(double dTime)
     if(ret!=POA_OK)
         return ERR_CMDFAILED;
 
-    //ret = POAStartExposure(m_nCameraID, POA_TRUE); // single frame(Snap mode)
-    ret = POAStartExposure(m_nCameraID, POA_FALSE); // continuous exposure mode
+    ret = POAStartExposure(m_nCameraID, POA_TRUE); // single frame(Snap mode)
+    // ret = POAStartExposure(m_nCameraID, POA_FALSE); // continuous exposure mode
     if(ret!=POA_OK)
         nErr =ERR_CMDFAILED;
 
@@ -1036,6 +1160,10 @@ int CPlayerOne::setBinSize(int nBin)
 #endif
 
     m_nCurrentBin = nBin;
+    if(m_bHasHardwareBin) {
+        setHardwareBinOn(true);
+    }
+
     ret = POASetImageBin(m_nCameraID, m_nCurrentBin);
     if(ret != POA_OK) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -1056,6 +1184,10 @@ bool CPlayerOne::isCameraColor()
 void CPlayerOne::getBayerPattern(std::string &sBayerPattern)
 {
     if(m_cameraProperty.isColorCamera) {
+        if(m_nCurrentBin>1 && m_bPixelMonoBin) { // mono bin mode, return MONO
+            sBayerPattern.assign("MONO");
+            return;
+        }
         switch(m_cameraProperty.bayerPattern) {
             case POA_BAYER_RG:
                 sBayerPattern.assign("RGGB");
@@ -1629,6 +1761,11 @@ int CPlayerOne::setUSBBandwidth(long nBandwidth)
     return nErr;
 }
 
+bool CPlayerOne::isLensHeaterAvailable()
+{
+    return m_bHasLensHeater;
+}
+
 int CPlayerOne::getLensHeaterPowerPerc(long &nMin, long &nMax, long &nValue)
 {
     POAErrors ret;
@@ -1689,6 +1826,39 @@ int CPlayerOne::setLensHeaterPowerPerc(long nPercent)
     return nErr;
 }
 
+int CPlayerOne::setHardwareBinOn(bool bOn)
+{
+    int nErr = PLUGIN_OK;
+    POAErrors ret;
+    POAConfigValue confValue;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setHardwareBinOn] called." << std::endl;
+    m_sLogFile.flush();
+#endif
+
+    if(!m_bConnected)
+        return ERR_NOLINK;
+    // POA_TRUE is sum and POA_FLASE is average
+    confValue.boolValue = bOn?POA_TRUE:POA_FALSE;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setHardwareBinOn] Hardware bin set to " << (bOn?"On":"Off") << std::endl;
+    m_sLogFile.flush();
+#endif
+
+    ret = setConfigValue(POA_HARDWARE_BIN, confValue, POA_FALSE);
+    if(ret != POA_OK) {
+        nErr = ERR_CMDFAILED;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setHardwareBinOn] Error setting Hardware bin, Error = " << POAGetErrorString(ret) << std::endl;
+        m_sLogFile.flush();
+#endif
+    }
+
+    return nErr;
+
+}
 
 POAErrors CPlayerOne::setConfigValue(POAConfig confID , POAConfigValue confValue,  POABool bAuto)
 {
@@ -1699,7 +1869,9 @@ POAErrors CPlayerOne::setConfigValue(POAConfig confID , POAConfigValue confValue
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setConfigValue] confID = " << confID << std::endl;
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setConfigValue] confValue = " << confValue.intValue << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setConfigValue] confValue.intValue = " << confValue.intValue << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setConfigValue] confValue.floatValue = " << confValue.floatValue << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setConfigValue] confValue.boolValue = " << (confValue.boolValue?"True":"False") << std::endl;
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setConfigValue] bAuto = " << (bAuto == POA_TRUE? "Yes":"No") << std::endl;
     m_sLogFile.flush();
 #endif
@@ -1824,45 +1996,43 @@ int CPlayerOne::setROI(int nLeft, int nTop, int nWidth, int nHeight)
     m_nReqROIWidth = nWidth;
     m_nReqROIHeight = nHeight;
 
-    // X
-    if( m_nReqROILeft % 4 != 0)
-        nNewLeft = (m_nReqROILeft/4) * 4;  // round to lower 4 pixel. boundary
-    else
-        nNewLeft = m_nReqROILeft;
 
-    // W
-    if( (m_nReqROIWidth % 4 != 0) || (nLeft!=nNewLeft)) {// Adjust width to upper 4 boundary or if the left border changed we need to adjust the width
-        nNewWidth = (( (m_nReqROIWidth + (nNewLeft%4)) /4) + 1) * 4;
-        if ((nNewLeft + nNewWidth) > int(m_cameraProperty.maxWidth/m_nCurrentBin)) {
-            nNewLeft -=4;
-            if(nNewLeft<0) {
-                nNewLeft = 0;
-                nNewWidth = nNewWidth - 4;
-            }
-        }
+    ret = POASetImageSize(m_nCameraID,m_nReqROIWidth,m_nReqROIHeight);
+    if(ret != POA_OK) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] Error setting new Width and Height, Error = " << POAGetErrorString(ret) << std::endl;
+        m_sLogFile.flush();
+#endif
+        return ERR_CMDFAILED;
     }
-    else
-        nNewWidth = m_nReqROIWidth;
 
-    // Y
-    if( m_nReqROITop % 2 != 0)
-        nNewTop = (m_nReqROITop/2) * 2;  // round to lower even pixel.
-    else
-        nNewTop = m_nReqROITop;
-
-    // H
-    if( (m_nReqROIHeight % 2 != 0) || (nTop!=nNewTop)) {// Adjust height to lower 2 boundary or if the top changed we need to adjust the height
-        nNewHeight = (((m_nReqROIHeight + (nNewTop%2))/2) + 1) * 2;
-        if((nNewTop + nNewHeight) > int(m_cameraProperty.maxHeight/m_nCurrentBin)) {
-            nNewTop -=2;
-            if(nNewTop <0) {
-                nNewTop = 0;
-                nNewHeight = nNewHeight - 2;
-            }
-        }
+    ret = POAGetImageSize(m_nCameraID, &nNewWidth, &nNewHeight);
+    if(ret != POA_OK) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] Error getting new Width and Height, Error = " << POAGetErrorString(ret) << std::endl;
+        m_sLogFile.flush();
+#endif
+        return ERR_CMDFAILED;
     }
-    else
-        nNewHeight = m_nReqROIHeight;
+
+    ret = POASetImageStartPos(m_nCameraID, m_nReqROILeft, m_nReqROITop);
+    if(ret != POA_OK) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] Error setting new Left and top, Error = " << POAGetErrorString(ret) << std::endl;
+        m_sLogFile.flush();
+#endif
+        return ERR_CMDFAILED;
+    }
+
+    ret = POAGetImageStartPos(m_nCameraID, &nNewLeft, &nNewTop);
+    if(ret != POA_OK) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] Error getting new Left and top, Error = " << POAGetErrorString(ret) << std::endl;
+        m_sLogFile.flush();
+#endif
+        return ERR_CMDFAILED;
+    }
+
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] m_cameraProperty.maxWidth  = " << m_cameraProperty.maxWidth << std::endl;
@@ -1879,49 +2049,6 @@ int CPlayerOne::setROI(int nLeft, int nTop, int nWidth, int nHeight)
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] nNewHeight   = " << nNewHeight << std::endl;
     m_sLogFile.flush();
 #endif
-
-
-    if( m_nROILeft == nNewLeft && m_nROITop == nNewTop && m_nROIWidth == nNewWidth && m_nROIHeight == nNewHeight) {
-        return nErr; // no change since last ROI change request
-    }
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] Requested x, y, w, h : " << nLeft << ", " << nTop << ", " << nWidth << ", " << nHeight <<  std::endl;
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] Set to    x, y, w, h : " << nNewLeft << ", " << nNewTop << ", " << nNewWidth << ", " << nNewHeight <<  std::endl;
-    m_sLogFile.flush();
-#endif
-
-    ret = POASetImageSize(m_nCameraID,nNewWidth,nNewHeight);
-    if(ret != POA_OK) {
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] Error setting new Width and Height, Error = " << POAGetErrorString(ret) << std::endl;
-        m_sLogFile.flush();
-#endif
-        return ERR_CMDFAILED;
-    }
-
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    POAGetImageSize(m_nCameraID, &tmp1, &tmp2);
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] POAGetImageSize w  : " << tmp1 << std::endl;
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] POAGetImageSize h  : " << tmp2 << std::endl;
-    m_sLogFile.flush();
-#endif
-
-    ret = POASetImageStartPos(m_nCameraID, nNewLeft, nNewTop);
-    if(ret != POA_OK) {
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] Error setting new Left and top, Error = " << POAGetErrorString(ret) << std::endl;
-        m_sLogFile.flush();
-#endif
-        return ERR_CMDFAILED;
-    }
-
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    POAGetImageStartPos(m_nCameraID, &tmp1, &tmp2);
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] POAGetImageStartPos x  : " << tmp1 << std::endl;
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] POAGetImageStartPos y  : " << tmp2 << std::endl;
-    m_sLogFile.flush();
-#endif
-
 
     m_nROILeft = nNewLeft;
     m_nROITop = nNewTop;
@@ -1997,6 +2124,9 @@ bool CPlayerOne::isFameAvailable()
             m_sLogFile.flush();
 #endif
     // }
+    if(bFrameAvailable)
+        POAStopExposure(m_nCameraID);
+
     return bFrameAvailable;
 }
 
@@ -2075,7 +2205,7 @@ int CPlayerOne::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
         m_sLogFile.flush();
 #endif
         exposure_ms = (int)(m_dCaptureLenght * 1000);
-        ret = POAGetImageData(m_nCameraID, imgBuffer, sizeReadFromCam, exposure_ms + 500);
+        ret = POAGetImageData(m_nCameraID, imgBuffer, sizeReadFromCam, exposure_ms + 100);
         if(ret!=POA_OK) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
             m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] POAGetImageData error, retrying :  " << POAGetErrorString(ret) << std::endl;
@@ -2084,19 +2214,19 @@ int CPlayerOne::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
             // wait and retry
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
             std::this_thread::yield();
-            ret = POAGetImageData(m_nCameraID, imgBuffer, sizeReadFromCam, exposure_ms + 500);
+            ret = POAGetImageData(m_nCameraID, imgBuffer, sizeReadFromCam, exposure_ms + 100);
             if(ret!=POA_OK) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
                 m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] POAGetImageData error :  " << POAGetErrorString(ret) << std::endl;
                 m_sLogFile.flush();
 #endif
-                POAStopExposure(m_nCameraID);
+                // POAStopExposure(m_nCameraID);
                 if(imgBuffer != frameBuffer)
                     free(imgBuffer);
                 return ERR_RXTIMEOUT;
             }
         }
-        POAStopExposure(m_nCameraID);
+        // POAStopExposure(m_nCameraID);
 
         // shift data
         if(m_nNbBitToShift) {

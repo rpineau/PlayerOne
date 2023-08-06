@@ -33,7 +33,7 @@
 
 // #define PLUGIN_DEBUG    3
 
-#define PLUGIN_VERSION      1.15
+#define PLUGIN_VERSION      1.21
 #define BUFFER_LEN 128
 #define PLUGIN_OK   0
 #define MAX_NB_BIN  8
@@ -72,7 +72,6 @@ public:
     
     int         getNumBins();
     int         getBinFromIndex(int nIndex);
-    
     int         startCaputure(double dTime);
     void        abortCapture(void);
 
@@ -103,6 +102,7 @@ public:
     int         getUSBBandwidth(long &nMin, long &nMax, long &nValue);
     int         setUSBBandwidth(long nBandwidth);
 
+    bool        isLensHeaterAvailable();
     int         getLensHeaterPowerPerc(long &nMin, long &nMax, long &nValue);
     int         setLensHeaterPowerPerc(long nPercent);
 
@@ -126,14 +126,16 @@ public:
     int         getSensorModeList(std::vector<std::string> &sModes, int &curentModeIndex);
     int         setSensorMode(int nModeIndex);
 
+    bool        hasMonoBin();
+    int         setHardwareBinOn(bool bOn);
+
     int         getPixelBinMode(bool &bSumMode);
     int         setPixelBinMode(bool bSumMode);
+    int         getMonoBin(bool &bMonoBin);
+    int         setMonoBin(bool bMonoBin);
 
     void        getAllUsefulValues(int &nGainHighestDR, int &nHCGain, int &nUnityGain, int &nGainLowestRN,
                                  int &nOffsetHighestDR, int &nOffsetHCGain, int &nOffsetUnityGain, int &nOffsetLowestRN);
-
-    // POAGetGainsAndOffsets(int nCameraID, int*pGainHighestDR, int *pHCGain, int *pUnityGain, int *pGainLowestRN,
-    // int *pOffsetHighestDR, int *pOffsetHCGain, int *pOffsetUnityGain, int *pOffsetLowestRN);
 
 #ifdef PLUGIN_DEBUG
     void log(std::string sLogEntry);
@@ -173,6 +175,8 @@ protected:
     long                    m_nOffset;
 
     bool                    m_bPixelBinMode;
+    bool                    m_bPixelMonoBin;
+    bool                    m_bHasMonoBinMode;
     long                    m_nUSBBandwidth;
     long                    m_nLensHeaterPowerPerc;
     
@@ -185,6 +189,7 @@ protected:
     int                     m_nNbBin;
     int                     m_SupportedBins[MAX_NB_BIN];
     int                     m_nCurrentBin;
+    bool                    m_bHasHardwareBin;
     bool                    m_bHasRelayOutput;
 
     bool                    m_bConnected;
@@ -211,6 +216,8 @@ protected:
     int                     m_nReqROIWidth;
     int                     m_nReqROIHeight;
 
+    bool                    m_bHasLensHeater;
+    
     // special gain and offset data
     int                     m_nGainHighestDR;
     int                     m_nHCGain;
