@@ -2622,7 +2622,7 @@ int CPlayerOne::getNbGainInList()
 
 void CPlayerOne::rebuildGainList()
 {
-    long nMin, nMax, nVal;
+    long nMin, nMax;
     getGain(nMin, nMax, m_nGain);
     buildGainList();
 }
