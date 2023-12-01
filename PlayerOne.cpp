@@ -951,7 +951,7 @@ int CPlayerOne::setMonoBin(bool bMonoBin)
 
     if(!m_bConnected)
         return ERR_NOLINK;
-    // POA_TRUE is sum and POA_FLASE is average
+    // POA_TRUE is mono bin and POA_FALSE is no mono bin,
     confValue.boolValue = m_bPixelMonoBin?POA_TRUE:POA_FALSE;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
