@@ -1036,6 +1036,7 @@ int CPlayerOne::startCaputure(double dTime)
         nErr =ERR_CMDFAILED;
 
     m_dCaptureLenght = dTime;
+    m_ExposureTimer.Reset();
     return nErr;
 }
 
@@ -2096,6 +2097,9 @@ bool CPlayerOne::isFameAvailable()
     POABool pIsReady = POA_FALSE;
     POAErrors ret;
 
+    if(m_ExposureTimer.GetElapsedSeconds()<m_dCaptureLenght)
+        return bFrameAvailable;
+
     POACameraState cameraState;
     POAGetCameraState(m_nCameraID, &cameraState);
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -2150,7 +2154,6 @@ int CPlayerOne::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
     int srcMemWidth;
     int copyWidth = 0;
     int copyHeight = 0;
-    int exposure_ms = 0;
 
     int tmp1, tmp2;
 
@@ -2204,8 +2207,7 @@ int CPlayerOne::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] sizeReadFromCam = " << sizeReadFromCam << std::endl;
         m_sLogFile.flush();
 #endif
-        exposure_ms = (int)(m_dCaptureLenght * 1000);
-        ret = POAGetImageData(m_nCameraID, imgBuffer, sizeReadFromCam, exposure_ms + 100);
+        ret = POAGetImageData(m_nCameraID, imgBuffer, sizeReadFromCam, 500);
         if(ret!=POA_OK) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
             m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] POAGetImageData error, retrying :  " << POAGetErrorString(ret) << std::endl;
@@ -2214,7 +2216,7 @@ int CPlayerOne::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
             // wait and retry
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
             std::this_thread::yield();
-            ret = POAGetImageData(m_nCameraID, imgBuffer, sizeReadFromCam, exposure_ms + 100);
+            ret = POAGetImageData(m_nCameraID, imgBuffer, sizeReadFromCam, 500);
             if(ret!=POA_OK) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
                 m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] POAGetImageData error :  " << POAGetErrorString(ret) << std::endl;

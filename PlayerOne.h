@@ -230,6 +230,9 @@ protected:
     int                     m_nOffsetLowestRN;
 
     POAConfig               m_confGuideDir;
+
+    CStopWatch              m_ExposureTimer;
+
 #ifdef PLUGIN_DEBUG
     // timestamp for logs
     const std::string getTimeStamp();
