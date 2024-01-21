@@ -128,7 +128,7 @@ int CPlayerOne::Connect(int nCameraID)
     std::string sTmp;
 
     long nMin, nMax, nValue;
-
+    POAGetCameraCount(); // this resets the SDK apparently
     if(nCameraID>=0 && m_sCameraSerial.size()!=0)
         m_nCameraID = nCameraID;
 
@@ -1067,12 +1067,20 @@ int CPlayerOne::getTemperture(double &dTemp, double &dPower, double &dSetPoint, 
 
     if(ret == POA_OK) {
         dTemp = confValue.floatValue;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getTemperture] dTemp " << dTemp << std::endl;
+        m_sLogFile.flush();
+#endif
         if(m_cameraProperty.isHasCooler) {
             ret = getConfigValue(POA_TARGET_TEMP, confValue, minValue, maxValue, bAuto);
             if(ret == POA_OK)
                 dSetPoint = double(confValue.intValue);
             else
                 dSetPoint = 0;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getTemperture] dSetPoint " << dSetPoint << std::endl;
+            m_sLogFile.flush();
+#endif
 
             ret = getConfigValue(POA_COOLER_POWER, confValue, minValue, maxValue, bAuto);
             if(ret == POA_OK)
@@ -1080,11 +1088,21 @@ int CPlayerOne::getTemperture(double &dTemp, double &dPower, double &dSetPoint, 
             else
                 dPower = dTemp;
 
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getTemperture] dPower " << dPower << std::endl;
+            m_sLogFile.flush();
+#endif
+
             ret = getConfigValue(POA_COOLER, confValue, minValue, maxValue, bAuto);
             if(ret == POA_OK)
                 bEnabled = bool(confValue.boolValue);
             else
                 bEnabled = false;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getTemperture] bEnabled " << (bEnabled?"Yes":"No") << std::endl;
+            m_sLogFile.flush();
+#endif
+
         }
         else {
             dPower = 0;
