@@ -1086,7 +1086,7 @@ int CPlayerOne::getTemperture(double &dTemp, double &dPower, double &dSetPoint, 
             if(ret == POA_OK)
                 dPower = double(confValue.intValue);
             else
-                dPower = dTemp;
+                dPower = 0;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
             m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getTemperture] dPower " << dPower << std::endl;
