@@ -241,6 +241,7 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
         if(nErr == VAL_NOT_AVAILABLE) {
             dx->setEnabled("WB_R", false);
             dx->setText("RwbRange", "");
+            dx->setEnabled("checkBox_2", false);
         }
         else {
             dx->setPropertyInt("WB_R", "minimum", (int)nMin);
@@ -259,6 +260,7 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
         if(nErr == VAL_NOT_AVAILABLE) {
             dx->setEnabled("WB_G", false);
             dx->setText("GwbRange", "");
+            dx->setEnabled("checkBox_3", false);
         }
         else {
             dx->setPropertyInt("WB_G", "minimum", (int)nMin);
@@ -277,6 +279,7 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
         if(nErr == VAL_NOT_AVAILABLE) {
             dx->setEnabled("WB_B", false);
             dx->setText("BwbRange", "");
+            dx->setEnabled("checkBox_4", false);
         }
         else {
             dx->setPropertyInt("WB_B", "minimum", (int)nMin);

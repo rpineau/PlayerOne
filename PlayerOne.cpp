@@ -128,7 +128,7 @@ int CPlayerOne::Connect(int nCameraID)
     std::string sTmp;
 
     long nMin, nMax, nValue;
-
+    POAGetCameraCount(); // this resets the SDK apparently
     if(nCameraID>=0 && m_sCameraSerial.size()!=0)
         m_nCameraID = nCameraID;
 
@@ -951,7 +951,7 @@ int CPlayerOne::setMonoBin(bool bMonoBin)
 
     if(!m_bConnected)
         return ERR_NOLINK;
-    // POA_TRUE is sum and POA_FLASE is average
+    // POA_TRUE is mono bin and POA_FALSE is no mono bin,
     confValue.boolValue = m_bPixelMonoBin?POA_TRUE:POA_FALSE;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -1036,6 +1036,7 @@ int CPlayerOne::startCaputure(double dTime)
         nErr =ERR_CMDFAILED;
 
     m_dCaptureLenght = dTime;
+    m_ExposureTimer.Reset();
     return nErr;
 }
 
@@ -1066,24 +1067,42 @@ int CPlayerOne::getTemperture(double &dTemp, double &dPower, double &dSetPoint, 
 
     if(ret == POA_OK) {
         dTemp = confValue.floatValue;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getTemperture] dTemp " << dTemp << std::endl;
+        m_sLogFile.flush();
+#endif
         if(m_cameraProperty.isHasCooler) {
             ret = getConfigValue(POA_TARGET_TEMP, confValue, minValue, maxValue, bAuto);
             if(ret == POA_OK)
                 dSetPoint = double(confValue.intValue);
             else
                 dSetPoint = 0;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getTemperture] dSetPoint " << dSetPoint << std::endl;
+            m_sLogFile.flush();
+#endif
 
             ret = getConfigValue(POA_COOLER_POWER, confValue, minValue, maxValue, bAuto);
             if(ret == POA_OK)
                 dPower = double(confValue.intValue);
             else
-                dPower = dTemp;
+                dPower = 0;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getTemperture] dPower " << dPower << std::endl;
+            m_sLogFile.flush();
+#endif
 
             ret = getConfigValue(POA_COOLER, confValue, minValue, maxValue, bAuto);
             if(ret == POA_OK)
                 bEnabled = bool(confValue.boolValue);
             else
                 bEnabled = false;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getTemperture] bEnabled " << (bEnabled?"Yes":"No") << std::endl;
+            m_sLogFile.flush();
+#endif
+
         }
         else {
             dPower = 0;
@@ -2096,6 +2115,9 @@ bool CPlayerOne::isFameAvailable()
     POABool pIsReady = POA_FALSE;
     POAErrors ret;
 
+    if(m_ExposureTimer.GetElapsedSeconds()<m_dCaptureLenght)
+        return bFrameAvailable;
+
     POACameraState cameraState;
     POAGetCameraState(m_nCameraID, &cameraState);
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -2150,7 +2172,6 @@ int CPlayerOne::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
     int srcMemWidth;
     int copyWidth = 0;
     int copyHeight = 0;
-    int exposure_ms = 0;
 
     int tmp1, tmp2;
 
@@ -2204,8 +2225,7 @@ int CPlayerOne::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
         m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] sizeReadFromCam = " << sizeReadFromCam << std::endl;
         m_sLogFile.flush();
 #endif
-        exposure_ms = (int)(m_dCaptureLenght * 1000);
-        ret = POAGetImageData(m_nCameraID, imgBuffer, sizeReadFromCam, exposure_ms + 100);
+        ret = POAGetImageData(m_nCameraID, imgBuffer, sizeReadFromCam, 500);
         if(ret!=POA_OK) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
             m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] POAGetImageData error, retrying :  " << POAGetErrorString(ret) << std::endl;
@@ -2214,7 +2234,7 @@ int CPlayerOne::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
             // wait and retry
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
             std::this_thread::yield();
-            ret = POAGetImageData(m_nCameraID, imgBuffer, sizeReadFromCam, exposure_ms + 100);
+            ret = POAGetImageData(m_nCameraID, imgBuffer, sizeReadFromCam, 500);
             if(ret!=POA_OK) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
                 m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] POAGetImageData error :  " << POAGetErrorString(ret) << std::endl;
@@ -2622,7 +2642,7 @@ int CPlayerOne::getNbGainInList()
 
 void CPlayerOne::rebuildGainList()
 {
-    long nMin, nMax, nVal;
+    long nMin, nMax;
     getGain(nMin, nMax, m_nGain);
     buildGainList();
 }

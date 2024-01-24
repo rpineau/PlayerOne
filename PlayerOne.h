@@ -33,7 +33,7 @@
 
 // #define PLUGIN_DEBUG    3
 
-#define PLUGIN_VERSION      1.21
+#define PLUGIN_VERSION      1.23
 #define BUFFER_LEN 128
 #define PLUGIN_OK   0
 #define MAX_NB_BIN  8
@@ -230,6 +230,9 @@ protected:
     int                     m_nOffsetLowestRN;
 
     POAConfig               m_confGuideDir;
+
+    CStopWatch              m_ExposureTimer;
+
 #ifdef PLUGIN_DEBUG
     // timestamp for logs
     const std::string getTimeStamp();

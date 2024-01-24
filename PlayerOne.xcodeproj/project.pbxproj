@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 46;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -146,6 +146,7 @@
 		931843DB1EEF33FC00AE51F8 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1400;
 				ORGANIZATIONNAME = "RTI-Zone";
 				TargetAttributes = {
