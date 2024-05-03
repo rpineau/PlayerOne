@@ -99,7 +99,8 @@ CPlayerOne::CPlayerOne()
 
 CPlayerOne::~CPlayerOne()
 {
-
+	Disconnect();
+	
     if(m_pframeBuffer)
         free(m_pframeBuffer);
 
@@ -482,15 +483,35 @@ int CPlayerOne::Connect(int nCameraID)
 
 void CPlayerOne::Disconnect()
 {
+	int nErr = PLUGIN_OK;
 
-    POAStopExposure(m_nCameraID);
-    POACloseCamera(m_nCameraID);
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Disconnect."<< std::endl;
+	m_sLogFile.flush();
+#endif
+
+
+    nErr = POAStopExposure(m_nCameraID);
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] POAStopExposure : " << nErr << std::endl;
+	m_sLogFile.flush();
+#endif
+    nErr = POACloseCamera(m_nCameraID);
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] POACloseCamera : " << nErr << std::endl;
+	m_sLogFile.flush();
+#endif
 
     if(m_pframeBuffer) {
         free(m_pframeBuffer);
         m_pframeBuffer = NULL;
     }
     m_bConnected = false;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Disconnect done."<< std::endl;
+	m_sLogFile.flush();
+#endif
 
 }
 
@@ -2109,7 +2130,7 @@ int CPlayerOne::clearROI()
 }
 
 
-bool CPlayerOne::isFameAvailable()
+bool CPlayerOne::isFrameAvailable()
 {
     bool bFrameAvailable = false;
     POABool pIsReady = POA_FALSE;
@@ -2117,6 +2138,9 @@ bool CPlayerOne::isFameAvailable()
 
     if(m_ExposureTimer.GetElapsedSeconds()<m_dCaptureLenght)
         return bFrameAvailable;
+
+	if(m_bAbort)
+		return true;
 
     POACameraState cameraState;
     POAGetCameraState(m_nCameraID, &cameraState);
@@ -2240,13 +2264,18 @@ int CPlayerOne::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
                 m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] POAGetImageData error :  " << POAGetErrorString(ret) << std::endl;
                 m_sLogFile.flush();
 #endif
-                // POAStopExposure(m_nCameraID);
+                POAStopExposure(m_nCameraID);
                 if(imgBuffer != frameBuffer)
                     free(imgBuffer);
                 return ERR_RXTIMEOUT;
             }
         }
         // POAStopExposure(m_nCameraID);
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] Frame downloaded to buffer." << std::endl;
+		m_sLogFile.flush();
+#endif
 
         // shift data
         if(m_nNbBitToShift) {
@@ -2285,6 +2314,7 @@ int CPlayerOne::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
 
     }  catch(const std::exception& e) {
         if(imgBuffer) {
+			POAStopExposure(m_nCameraID);
             try {
                 free(imgBuffer);
                 imgBuffer = nullptr;
@@ -2296,6 +2326,7 @@ int CPlayerOne::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
     }
     catch (...) {
         if(imgBuffer) {
+			POAStopExposure(m_nCameraID);
             try {
                 free(imgBuffer);
                 imgBuffer = nullptr;
@@ -2305,6 +2336,11 @@ int CPlayerOne::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
             }
         }
     }
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] Done." << std::endl;
+	m_sLogFile.flush();
+#endif
 
     return nErr;
 }

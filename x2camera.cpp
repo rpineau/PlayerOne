@@ -50,6 +50,11 @@ X2Camera::X2Camera( const char* pszSelection,
 
 X2Camera::~X2Camera()
 {
+	// if disconnect was not called ...
+	m_Camera.Disconnect();
+	setLinked(false);
+
+
 	//Delete objects used through composition
 	if (m_pTheSkyXForMounts)
 		delete m_pTheSkyXForMounts;
@@ -856,7 +861,7 @@ int X2Camera::CCIsExposureComplete(const enumCameraIndex& Cam, const enumWhichCC
 
     *pbComplete = false;
 
-    if(m_Camera.isFameAvailable())
+    if(m_Camera.isFrameAvailable())
         *pbComplete = true;
 
     return SB_OK;
@@ -983,8 +988,7 @@ int X2Camera::CCDisconnect(const bool bShutDownTemp)
 {
 	X2MutexLocker ml(GetMutex());
 
-	if (m_bLinked)
-	{
+	if (m_bLinked) {
         m_Camera.Disconnect();
 		setLinked(false);
 	}

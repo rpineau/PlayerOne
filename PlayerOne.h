@@ -31,7 +31,7 @@
 #include "PlayerOneCamera.h"
 #include "StopWatch.h"
 
-// #define PLUGIN_DEBUG    3
+#define PLUGIN_DEBUG    3
 
 #define PLUGIN_VERSION      1.24
 #define BUFFER_LEN 128
@@ -109,7 +109,7 @@ public:
     int         setROI(int nLeft, int nTop, int nWidth, int nHeight);
     int         clearROI(void);
 
-    bool        isFameAvailable();
+    bool        isFrameAvailable();
     
     uint32_t    getBitDepth();
     int         getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer);
