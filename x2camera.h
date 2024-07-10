@@ -246,7 +246,6 @@ private:
 
     CPlayerOne      m_Camera;
     enumCameraIndex m_CameraIdx;
-    int             m_nCameraID;
     std::string     m_sCameraSerial;
     std::vector<camera_info_t>           m_tCameraIdList;
 

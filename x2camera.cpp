@@ -16,7 +16,8 @@ X2Camera::X2Camera( const char* pszSelection,
 {
     int  nErr = PLUGIN_OK;
     char szCameraSerial[128];
-    
+	int nCameraID;
+
 	m_nPrivateISIndex				= nISIndex;
 	m_pTheSkyXForMounts				= pTheSkyXForMounts;
 	m_pSleeper						= pSleeper;
@@ -35,15 +36,13 @@ X2Camera::X2Camera( const char* pszSelection,
     if (m_pIniUtil) {
         m_pIniUtil->readString(KEY_X2CAM_ROOT, KEY_GUID, "0", szCameraSerial, 128);
         m_sCameraSerial.assign(szCameraSerial);
-        nErr = m_Camera.getCameraIdFromSerial(m_nCameraID, m_sCameraSerial);
-        if(nErr) { // we don't know that camera, we'll use the default from the camera
-            m_nCameraID = 0;
-            m_Camera.setCameraId(m_nCameraID);
-            m_Camera.setUserConf(false);
+        nErr = m_Camera.getCameraIdFromSerial(nCameraID, m_sCameraSerial);
+        if(nErr) { // we don't know that camera, we'll use the default from the first camera
+			nCameraID = 0;
+			m_Camera.getCameraSerialFromID(nCameraID, m_sCameraSerial);
+			m_Camera.setUserConf(false);
             return;
         }
-        m_Camera.setCameraSerial(m_sCameraSerial);
-        m_Camera.setCameraId(m_nCameraID);
         nErr = loadCameraSettings(m_sCameraSerial);
     }
 }
@@ -137,7 +136,7 @@ int X2Camera::execModalSettingsDialog()
             //Populate the camera combo box and set the current index (selection)
             ssTmp << m_tCameraIdList[i].model << " [" << m_tCameraIdList[i].Sn << "]";
             dx->comboBoxAppendString("comboBox",ssTmp.str().c_str());
-            if(m_tCameraIdList[i].cameraId == m_nCameraID)
+            if(m_tCameraIdList[i].Sn == m_sCameraSerial)
                 nCamIndex = i;
             std::stringstream().swap(ssTmp);
         }
@@ -158,13 +157,9 @@ int X2Camera::execModalSettingsDialog()
             std::string sCameraSerial;
             //Camera
             nCamera = dx->currentIndex("comboBox");
-            m_Camera.setCameraId(m_tCameraIdList[nCamera].cameraId);
-            m_nCameraID = m_tCameraIdList[nCamera].cameraId;
-            m_Camera.getCameraSerialFromID(m_nCameraID, sCameraSerial);
-            m_Camera.setCameraSerial(sCameraSerial);
-            // store camera ID
-            m_pIniUtil->writeString(KEY_X2CAM_ROOT, KEY_GUID, sCameraSerial.c_str());
-            m_sCameraSerial.assign(sCameraSerial);
+			m_sCameraSerial.assign(m_tCameraIdList[nCamera].Sn);
+            // store camera Serial
+            m_pIniUtil->writeString(KEY_X2CAM_ROOT, KEY_GUID, m_sCameraSerial.c_str());
             loadCameraSettings(m_sCameraSerial);
         }
     }
@@ -772,16 +767,16 @@ int X2Camera::CCEstablishLink(const enumLPTPort portLPT, const enumWhichCCD& CCD
     m_bLinked = false;
 
     m_dCurTemp = -100.0;
-    nErr = m_Camera.Connect(m_nCameraID);
+
+	m_Camera.setUserConf(true);
+	nErr = loadCameraSettings(m_sCameraSerial);
+    nErr = m_Camera.Connect(m_sCameraSerial);
     if(nErr) {
         m_bLinked = false;
         return nErr;
     }
     else
         m_bLinked = true;
-
-    m_Camera.getCameraId(m_nCameraID);
-    m_Camera.getCameraSerialFromID(m_nCameraID, m_sCameraSerial);
     // store camera ID
     m_pIniUtil->writeString(KEY_X2CAM_ROOT, KEY_GUID, m_sCameraSerial.c_str());
     return nErr;
