@@ -129,6 +129,12 @@ int CPlayerOne::Connect(std::string sSerial)
 	std::string sTmp;
 
 	long nMin, nMax, nValue;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect]  Tryng to connect to camera with serial : " << m_sCameraSerial << std::endl;
+		m_sLogFile.flush();
+#endif
+
 	if(!sSerial.size())
 		return ERR_NODEVICESELECTED;
 
@@ -2003,9 +2009,6 @@ int CPlayerOne::setROI(int nLeft, int nTop, int nWidth, int nHeight)
 	int nNewTop = 0;
 	int nNewWidth = 0;
 	int nNewHeight = 0;
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-	int tmp1, tmp2;
-#endif
 
 	m_nReqROILeft = nLeft;
 	m_nReqROITop = nTop;
