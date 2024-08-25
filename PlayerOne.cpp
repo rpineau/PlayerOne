@@ -365,14 +365,6 @@ int CPlayerOne::Connect(std::string sSerial)
 	m_sLogFile.flush();
 #endif
 
-	m_bHasMonoBinMode = false;
-	if(hasMonoBin())
-		m_bHasMonoBinMode = true;
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] m_bHasMonoBinMode  : " << (m_bHasMonoBinMode?"Yes":"No") << std::endl;
-	m_sLogFile.flush();
-#endif
-
 	if(m_bSetUserConf) {
 		// set default values
 		setGain(m_nGain);
@@ -383,9 +375,33 @@ int CPlayerOne::Connect(std::string sSerial)
 		setFlip(m_nFlip);
 		setUSBBandwidth(m_nUSBBandwidth);
 		setPixelBinMode(m_bPixelBinMode);
-		if(hasMonoBin())
-			setMonoBin(m_bPixelMonoBin);
+		// color camera
+		if(m_cameraProperty.isColorCamera) {
+			if(m_bHasHardwareBin && m_bHardwareBinEnabled) {
+				setHardwareBinOn(m_bHardwareBinEnabled);
+			}
+			else if(!m_bHasHardwareBin || !m_bHardwareBinEnabled) {
+				if(m_bHasHardwareBin && !m_bHardwareBinEnabled) {
+					setHardwareBinOn(m_bHardwareBinEnabled);
+				}
+				setMonoBin(m_bPixelMonoBin);
+				setPixelBinMode(m_bPixelBinMode);
+			}
+		} // mono camera
+		else {
+			// hardware bin
+			if(m_bHasHardwareBin && m_bHardwareBinEnabled) {
+				setHardwareBinOn(m_bHardwareBinEnabled);
+			}
+			else if(!m_bHasHardwareBin || !m_bHardwareBinEnabled) {
+				if(m_bHasHardwareBin && !m_bHardwareBinEnabled) {
+					setHardwareBinOn(m_bHardwareBinEnabled);
+				}
+				setMonoBin(m_bPixelMonoBin);
+			}
+		}
 		setLensHeaterPowerPerc(m_nLensHeaterPowerPerc);
+
 	}
 	else {
 		setGain(m_nHCGain);
@@ -398,9 +414,12 @@ int CPlayerOne::Connect(std::string sSerial)
 		getWB_B(nMin, nMax, m_nWbB, m_bB_Auto);
 		getFlip(nMin, nMax, m_nFlip);
 		getUSBBandwidth(nMin, nMax, m_nUSBBandwidth);
+		getMonoBin(m_bPixelMonoBin);
 		getPixelBinMode(m_bPixelBinMode);
-		if(hasMonoBin())
-			getMonoBin(m_bPixelMonoBin);
+		if(m_bHasHardwareBin)
+			getHardwareBinOn(m_bHardwareBinEnabled);
+		else
+			m_bHardwareBinEnabled = false;
 		getLensHeaterPowerPerc(nMin, nMax, m_nLensHeaterPowerPerc);
 	}
 
@@ -822,22 +841,6 @@ int CPlayerOne::setSensorMode(int nModeIndex)
 	return nErr;
 }
 
-bool CPlayerOne::hasMonoBin()
-{
-	bool bMonoBinMode;
-	int ret;
-
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [hasMonoBin] called." << std::endl;
-	m_sLogFile.flush();
-#endif
-
-	ret = getMonoBin(bMonoBinMode); // save the current mode
-	if(ret == VAL_NOT_AVAILABLE)
-		return false;
-	return true;
-}
-
 int CPlayerOne::getPixelBinMode(bool &bSumMode)
 {
 	int nErr = PLUGIN_OK;
@@ -922,7 +925,7 @@ int CPlayerOne::getMonoBin(bool &bMonoBin)
 	ret = getConfigValue(POA_MONO_BIN, confValue, minValue, maxValue, bAuto);
 	if(ret) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getMonoBin] Error getting camera pixel mode. Error= " << POAGetErrorString(ret) << std::endl;
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getMonoBin] Error getting camera pixel mono bin. Error= " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
 #endif
 		return VAL_NOT_AVAILABLE;
@@ -1182,10 +1185,6 @@ int CPlayerOne::setBinSize(int nBin)
 #endif
 
 	m_nCurrentBin = nBin;
-	if(m_bHasHardwareBin) {
-		setHardwareBinOn(true);
-	}
-
 	ret = POASetImageBin(m_nCameraID, m_nCurrentBin);
 	if(ret != POA_OK) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -1206,7 +1205,7 @@ bool CPlayerOne::isCameraColor()
 void CPlayerOne::getBayerPattern(std::string &sBayerPattern)
 {
 	if(m_cameraProperty.isColorCamera) {
-		if(m_nCurrentBin>1 && m_bPixelMonoBin) { // mono bin mode, return MONO
+		if(m_nCurrentBin>1 && (m_bPixelMonoBin || m_bHasHardwareBin) ) { // mono bin mode, return MONO
 			sBayerPattern.assign("MONO");
 			return;
 		}
@@ -1848,14 +1847,51 @@ int CPlayerOne::setLensHeaterPowerPerc(long nPercent)
 	return nErr;
 }
 
+bool CPlayerOne::isHardwareBinAvailable()
+{
+	return m_bHasHardwareBin;
+}
+
+int CPlayerOne::getHardwareBinOn(bool &bOn)
+{
+	int nErr = PLUGIN_OK;
+	POAErrors ret;
+	POAConfigValue minValue, maxValue, confValue;
+	POABool bAuto;
+
+	bOn = false;
+
+	ret = getConfigValue(POA_HARDWARE_BIN, confValue, minValue, maxValue, bAuto);
+	if(ret) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getHardwareBinOn] Error getting hardware bin mode, Error = " << POAGetErrorString(ret) << std::endl;
+		m_sLogFile.flush();
+#endif
+		return VAL_NOT_AVAILABLE;
+	}
+	m_bHardwareBinEnabled = bool(confValue.boolValue == POA_TRUE);
+	bOn = m_bHardwareBinEnabled;
+
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getHardwareBinOn] Hardware bin set to " << (bOn?"On":"Off") << std::endl;
+	m_sLogFile.flush();
+#endif
+
+	return nErr;
+}
+
 int CPlayerOne::setHardwareBinOn(bool bOn)
 {
 	int nErr = PLUGIN_OK;
 	POAErrors ret;
 	POAConfigValue confValue;
 
+	m_bHardwareBinEnabled = bOn;
+
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
 	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setHardwareBinOn] called." << std::endl;
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setHardwareBinOn] m_bHardwareBinEnabled : " << (m_bHardwareBinEnabled?"On":"Off") << std::endl;
 	m_sLogFile.flush();
 #endif
 
@@ -1881,6 +1917,7 @@ int CPlayerOne::setHardwareBinOn(bool bOn)
 	return nErr;
 
 }
+
 
 POAErrors CPlayerOne::setConfigValue(POAConfig confID , POAConfigValue confValue,  POABool bAuto)
 {

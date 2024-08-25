@@ -33,7 +33,7 @@
 
 // #define PLUGIN_DEBUG    3
 
-#define PLUGIN_VERSION      1.26
+#define PLUGIN_VERSION      1.27
 #define BUFFER_LEN 128
 #define PLUGIN_OK   0
 #define MAX_NB_BIN  8
@@ -124,8 +124,9 @@ public:
 	int         getSensorModeList(std::vector<std::string> &sModes, int &curentModeIndex);
 	int         setSensorMode(int nModeIndex);
 
-	bool        hasMonoBin();
+	bool		isHardwareBinAvailable();
 	int         setHardwareBinOn(bool bOn);
+	int         getHardwareBinOn(bool &bOn);
 
 	int         getPixelBinMode(bool &bSumMode);
 	int         setPixelBinMode(bool bSumMode);
@@ -192,6 +193,7 @@ protected:
 	int                     m_SupportedBins[MAX_NB_BIN];
 	int                     m_nCurrentBin;
 	bool                    m_bHasHardwareBin;
+	bool					m_bHardwareBinEnabled;
 	bool                    m_bHasRelayOutput;
 
 	bool                    m_bConnected;

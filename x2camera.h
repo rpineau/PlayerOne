@@ -47,6 +47,7 @@ class AddFITSKeyInterface;
 #define KEY_SENSOR_MODE             "SensorMode"
 #define KEY_OFFSET                  "Offset"
 #define KEY_USB_BANDWIDTH           "USBBandwidth"
+#define PIXEL_HARD_BIN              "PixelHardBin"
 #define PIXEL_BIN_MODE              "PixelBinMode"
 #define PIXEL_MONO_BIN              "PixelMonoBin"
 #define LENS_POWER                  "LensPower"

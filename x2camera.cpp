@@ -171,14 +171,16 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
 {
     int nErr = SB_OK;
     long nVal, nMin, nMax;
-    int nCtrlVal;
-    bool bIsAuto;
+    int nCtrlVal=0;
+    bool bIsAuto = false;
     bool bPressedOK = false;
     std::stringstream ssTmp;
     std::vector<std::string> svModes;
     int nCurrentSensorMode;
-    bool bBinPixelSumMode;
-    bool bPixelBinMono;
+	bool bHardwareBinPresent = false;
+	bool bHardwareBinEnable = false;
+    bool bBinPixelSumMode = false;
+    bool bPixelBinMono = false;
     int i = 0;
 
     int nGainHighestDR;
@@ -327,8 +329,26 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
             dx->setPropertyInt("USBBandwidth", "value", (int)nVal);
             ssTmp << nMin << " to " << nMax;
             dx->setText("UsbBandwidthRange", ssTmp.str().c_str());
+            dx->setText("UsbBandwidthRange", ssTmp.str().c_str());
             std::stringstream().swap(ssTmp);
         }
+
+		bHardwareBinPresent = m_Camera.isHardwareBinAvailable();
+		m_Camera.getHardwareBinOn(bHardwareBinEnable);
+
+		if(nErr == VAL_NOT_AVAILABLE)
+			dx->setEnabled("checkBox_6", false);
+		else {
+			dx->setEnabled("checkBox_6", bHardwareBinPresent?true:false);
+			if(bHardwareBinPresent) {
+				// is hardware bin enabled ?
+				m_Camera.getHardwareBinOn(bHardwareBinEnable);
+				dx->setChecked("checkBox_6", bHardwareBinEnable?1:0);
+			}
+			else
+				dx->setEnabled("checkBox_6", false);
+		}
+
 
         nErr = m_Camera.getPixelBinMode(bBinPixelSumMode);
         if(nErr == VAL_NOT_AVAILABLE)
@@ -336,8 +356,12 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
         else {
             dx->setCurrentIndex("PixelBinMode", bBinPixelSumMode?0:1);
         }
+		// pixel bin mode not available with hardware bin
+		if(bHardwareBinPresent && bHardwareBinEnable)
+			dx->setEnabled("PixelBinMode", false);
 
-        if(m_Camera.hasMonoBin()) {
+		// camera without hardware bin
+        if(!bHardwareBinPresent) {
             nErr = m_Camera.getMonoBin(bPixelBinMono);
             if(nErr == VAL_NOT_AVAILABLE)
                 dx->setEnabled("checkBox_5", false);
@@ -345,8 +369,22 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
                 dx->setChecked("checkBox_5", bPixelBinMono?1:0);
             }
         }
-        else
-            dx->setEnabled("checkBox_5", false);
+		// mono camera with hardware bin
+		else if(!m_Camera.isCameraColor()) {
+				dx->setEnabled("checkBox_5", false); // no need for mono bin on mono camera
+		}
+		else { // color camera with hardware bin
+			if(!bHardwareBinEnable) {
+				nErr = m_Camera.getMonoBin(bPixelBinMono);
+				if(nErr == VAL_NOT_AVAILABLE)
+					dx->setEnabled("checkBox_5", false);
+				else {
+					dx->setChecked("checkBox_5", bPixelBinMono?1:0);
+				}
+			}
+			else
+				dx->setEnabled("checkBox_5", false); // no mono bin with hardware bin
+		}
 
         nErr = m_Camera.getLensHeaterPowerPerc(nMin, nMax, nVal);
         if(nErr == VAL_NOT_AVAILABLE)
@@ -424,6 +462,7 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
         dx->setEnabled("USBBandwidth", false);
         dx->setText("UsbBandwidthRange","");
 
+		dx->setEnabled("checkBox_6", false);
         dx->setEnabled("LensHeaterPower",false);
 
         dx->setText("USBMode","");
@@ -543,7 +582,21 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
 #endif
         }
 
-        if(m_Camera.hasMonoBin()) {
+		if(bHardwareBinPresent) {
+			if(dx->isEnabled("checkBox_6")) {
+				bHardwareBinEnable = dx->isChecked("checkBox_6");
+				nErr = m_Camera.setHardwareBinOn(bHardwareBinEnable);
+				if(!nErr)
+					m_pIniUtil->writeInt(m_sCameraSerial.c_str(), PIXEL_HARD_BIN, bHardwareBinEnable?1:0);
+				else {
+#if defined PLUGIN_DEBUG
+					m_Camera.log("Error setting MonoBin");
+#endif
+				}
+			}
+		}
+        
+		if(!bHardwareBinEnable) {
             if(dx->isEnabled("checkBox_5")) {
                 bPixelBinMono = dx->isChecked("checkBox_5");
                 nErr = m_Camera.setMonoBin(bPixelBinMono);
@@ -617,6 +670,10 @@ int X2Camera::loadCameraSettings(std::string sSerial)
     if(nValue!=VAL_NOT_AVAILABLE)
         m_Camera.setUSBBandwidth(long(nValue));
 
+	nValue = m_pIniUtil->readInt(sSerial.c_str(), PIXEL_HARD_BIN, VAL_NOT_AVAILABLE);
+	if(nValue!=VAL_NOT_AVAILABLE)
+		m_Camera.setHardwareBinOn((nValue==0)?false:true);
+
     nValue = m_pIniUtil->readInt(sSerial.c_str(), PIXEL_BIN_MODE, VAL_NOT_AVAILABLE);
     if(nValue!=VAL_NOT_AVAILABLE)
         m_Camera.setPixelBinMode((nValue==0)?true:false);
@@ -654,8 +711,10 @@ void X2Camera::doSelectCamEvent(X2GUIExchangeInterface* uiex, const char* pszEve
 
 void X2Camera::doSettingsCamEvent(X2GUIExchangeInterface* uiex, const char* pszEvent)
 {
-    bool bEnable;
-    
+	int nErr = PLUGIN_OK;
+    bool bEnable = false;
+	bool bTmp = false;
+
     if (!strcmp(pszEvent, "on_checkBox_stateChanged")) {
         bEnable = uiex->isChecked("checkBox");
         uiex->setEnabled("Gain", !bEnable);
@@ -675,7 +734,30 @@ void X2Camera::doSettingsCamEvent(X2GUIExchangeInterface* uiex, const char* pszE
         bEnable = uiex->isChecked("checkBox_4");
         uiex->setEnabled("WB_B", !bEnable);
     }
-
+	if (!strcmp(pszEvent, "on_checkBox_6_stateChanged")) {
+		bEnable = uiex->isChecked("checkBox_6");
+		if(m_Camera.isCameraColor()) {
+			if(bEnable) {
+				uiex->setEnabled("checkBox_5", false);
+				uiex->setEnabled("PixelBinMode", false);
+			}
+			else {
+				nErr = m_Camera.getMonoBin(bTmp);
+				if(nErr == VAL_NOT_AVAILABLE)
+					uiex->setEnabled("checkBox_5", false);
+				else
+					uiex->setEnabled("PixelBinMode", true);
+			}
+		}
+		else {
+			if(bEnable) {
+				uiex->setEnabled("PixelBinMode", false);
+			}
+			else {
+				uiex->setEnabled("PixelBinMode", true);
+			}
+		}
+	}
 }
 
 #pragma mark DriverInfoInterface
@@ -1227,16 +1309,37 @@ int X2Camera::valueForStringField (int nIndex, BasicStringInterface &sFieldName,
     int nErr = SB_OK;
     std::string sTmp;
     int nModeIndex;
-
+	bool bHardwareBinPresent = false;
+	bool bHardwareBinEnable = false;
+	bool bMonoBin = false;
     X2MutexLocker ml(GetMutex());
-    
+
+	bHardwareBinPresent = m_Camera.isHardwareBinAvailable();
+	nErr = m_Camera.getHardwareBinOn(bHardwareBinEnable);
+	nErr = m_Camera.getMonoBin(bMonoBin);
+
     switch(nIndex) {
         case F_BAYER :
             if(m_Camera.isCameraColor()) {
-                m_Camera.getBayerPattern(sTmp);
-                sFieldName = "DEBAYER";
-                sFieldComment = "Bayer pattern to use to decode color image";
-                sFieldValue = sTmp.c_str();
+				if(bHardwareBinPresent && bHardwareBinEnable ) {
+					m_Camera.getBayerPattern(sTmp);
+					sFieldName = "DEBAYER";
+					sFieldComment = "Bayer pattern to use to decode color image";
+					sFieldValue = sTmp.c_str();
+				}
+				else if(!bHardwareBinPresent || !bHardwareBinEnable) {
+					if(bMonoBin) {
+						sFieldName = "DEBAYER";
+						sFieldComment = "Bayer pattern to use to decode color image";
+						sFieldValue = "MONO";
+					}
+					else {
+						m_Camera.getBayerPattern(sTmp);
+						sFieldName = "DEBAYER";
+						sFieldComment = "Bayer pattern to use to decode color image";
+						sFieldValue = sTmp.c_str();
+					}
+				}
             }
             else {
                 sFieldName = "DEBAYER";
@@ -1246,18 +1349,33 @@ int X2Camera::valueForStringField (int nIndex, BasicStringInterface &sFieldName,
             break;
 
         case F_BAYERPAT: // PixInsight
-            if(m_Camera.isCameraColor()) {
-                m_Camera.getBayerPattern(sTmp);
-                sFieldName = "BAYERPAT";
-                sFieldComment = "Bayer pattern to use to decode color image";
-                sFieldValue = sTmp.c_str();
-            }
-            else {
-                sFieldName = "BAYERPAT";
-                sFieldComment = "Bayer pattern to use to decode color image";
-                sFieldValue = "MONO";
-            }
-            break;
+			if(m_Camera.isCameraColor()) {
+				if(bHardwareBinPresent && bHardwareBinEnable ) {
+					m_Camera.getBayerPattern(sTmp);
+					sFieldName = "BAYERPAT";
+					sFieldComment = "Bayer pattern to use to decode color image";
+					sFieldValue = sTmp.c_str();
+				}
+				else if(!bHardwareBinPresent || !bHardwareBinEnable) {
+					if(bMonoBin) {
+						sFieldName = "BAYERPAT";
+						sFieldComment = "Bayer pattern to use to decode color image";
+						sFieldValue = "MONO";
+					}
+					else {
+						m_Camera.getBayerPattern(sTmp);
+						sFieldName = "BAYERPAT";
+						sFieldComment = "Bayer pattern to use to decode color image";
+						sFieldValue = sTmp.c_str();
+					}
+				}
+			}
+			else {
+				sFieldName = "BAYERPAT";
+				sFieldComment = "Bayer pattern to use to decode color image";
+				sFieldValue = "MONO";
+			}
+			break;
 
         case F_FLIP :
             m_Camera.getFlip(sTmp);
