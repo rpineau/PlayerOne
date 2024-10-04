@@ -33,211 +33,212 @@
 
 // #define PLUGIN_DEBUG    3
 
-#define PLUGIN_VERSION      1.23
+#define PLUGIN_VERSION      1.27
 #define BUFFER_LEN 128
 #define PLUGIN_OK   0
 #define MAX_NB_BIN  8
 #define VAL_NOT_AVAILABLE           0xDEADBEEF
 
 typedef struct _camera_info {
-    int     cameraId;
-    std::string    Sn;
-    std::string    model;
+	int     cameraId;
+	std::string    Sn;
+	std::string    model;
 } camera_info_t;
 
 enum Plugin_Flip_Mode { FLIP_NONE, FLIP_HORI, FLIP_VERT, FLIP_BOTH};
 
 class CPlayerOne {
 public:
-    CPlayerOne();
-    ~CPlayerOne();
+	CPlayerOne();
+	~CPlayerOne();
 
-    void        setUserConf(bool bUserConf);
-    int         Connect(int nCameraId);
-    void        Disconnect(void);
-    void        setCameraId(int nCameraId);
-    void        getCameraId(int &nCcameraId);
-    int         getCameraIdFromSerial(int &nCameraId, std::string sSerial);
-    int         getCameraSerialFromID(int nCameraId, std::string &sSerial);
-    void        getCameraNameFromID(int nCameraId, std::string &sName);
-    
-    void        getCameraName(std::string &sName);
-    void        setCameraSerial(std::string sSerial);
-    void        getCameraSerial(std::string &sSerial);
+	void        setUserConf(bool bUserConf);
+	int         Connect(std::string sSerial);
+	void        Disconnect(void);
 
-    int         listCamera(std::vector<camera_info_t>  &cameraIdList);
+	int         getCameraIdFromSerial(int &nCameraId, std::string sSerial);
+	int         getCameraSerialFromID(int nCameraId, std::string &sSerial);
+	void        getCameraNameFromID(int nCameraId, std::string &sName);
 
-    void        getFirmwareVersion(std::string &sVersion);
-    void        isUSB3(bool &bUSB3);
-    
-    int         getNumBins();
-    int         getBinFromIndex(int nIndex);
-    int         startCaputure(double dTime);
-    void        abortCapture(void);
+	void        getCameraName(std::string &sName);
+	void        getCameraSerial(std::string &sSerial);
 
-    int         getTemperture(double &dTemp, double &dPower, double &dSetPoint, bool &bEnabled);
-    int         setCoolerTemperature(bool bOn, double dTemp);
-    int         getWidth();
-    int         getHeight();
-    double      getPixelSize();
-    int         setBinSize(int nBin);
-    
-    bool        isCameraColor();
-    void        getBayerPattern(std::string &sBayerPattern);
-    void        getFlip(std::string &sFlipMode);
+	int         listCamera(std::vector<camera_info_t>  &cameraIdList);
 
-    int         getGain(long &nMin, long &nMax, long &nValue);
-    int         setGain(long nGain);
-    int         getWB_R(long &nMin, long &nMax, long &nValue, bool &bIsAuto);
-    int         setWB_R(long nWB_R, bool bIsAuto = POA_FALSE);
-    int         getWB_G(long &nMin, long &nMax, long &nValue, bool &bIsAuto);
-    int         setWB_G(long nWB_G, bool bIsAuto = POA_FALSE);
-    int         getWB_B(long &nMin, long &nMax, long &nValue, bool &bIsAuto);
-    int         setWB_B(long nWB_B, bool bIsAuto = POA_FALSE);
-    int         getFlip(long &nMin, long &nMax, long &nValue);
-    int         setFlip(long nFlip);
-    int         getOffset(long &nMin, long &nMax, long &nValue);
-    int         setOffset(long nBlackLevel);
+	void        getFirmwareVersion(std::string &sVersion);
+	void        isUSB3(bool &bUSB3);
 
-    int         getUSBBandwidth(long &nMin, long &nMax, long &nValue);
-    int         setUSBBandwidth(long nBandwidth);
+	int         getNumBins();
+	int         getBinFromIndex(int nIndex);
+	int         startCaputure(double dTime);
+	void        abortCapture(void);
 
-    bool        isLensHeaterAvailable();
-    int         getLensHeaterPowerPerc(long &nMin, long &nMax, long &nValue);
-    int         setLensHeaterPowerPerc(long nPercent);
+	int         getTemperture(double &dTemp, double &dPower, double &dSetPoint, bool &bEnabled);
+	int         setCoolerTemperature(bool bOn, double dTemp);
+	int         getWidth();
+	int         getHeight();
+	double      getPixelSize();
+	int         setBinSize(int nBin);
 
-    int         setROI(int nLeft, int nTop, int nWidth, int nHeight);
-    int         clearROI(void);
+	bool        isCameraColor();
+	void        getBayerPattern(std::string &sBayerPattern);
+	void        getFlip(std::string &sFlipMode);
 
-    bool        isFameAvailable();
-    
-    uint32_t    getBitDepth();
-    int         getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer);
+	int         getGain(long &nMin, long &nMax, long &nValue);
+	int         setGain(long nGain);
+	int         getWB_R(long &nMin, long &nMax, long &nValue, bool &bIsAuto);
+	int         setWB_R(long nWB_R, bool bIsAuto = POA_FALSE);
+	int         getWB_G(long &nMin, long &nMax, long &nValue, bool &bIsAuto);
+	int         setWB_G(long nWB_G, bool bIsAuto = POA_FALSE);
+	int         getWB_B(long &nMin, long &nMax, long &nValue, bool &bIsAuto);
+	int         setWB_B(long nWB_B, bool bIsAuto = POA_FALSE);
+	int         getFlip(long &nMin, long &nMax, long &nValue);
+	int         setFlip(long nFlip);
+	int         getOffset(long &nMin, long &nMax, long &nValue);
+	int         setOffset(long nBlackLevel);
 
-    int         RelayActivate(const int nXPlus, const int nXMinus, const int nYPlus, const int nYMinus, const bool bSynchronous, const bool bAbort);
+	int         getUSBBandwidth(long &nMin, long &nMax, long &nValue);
+	int         setUSBBandwidth(long nBandwidth);
 
-    int         getNbGainInList();
-    std::string getGainLabelFromListAtIndex(int nIndex);
-    int         getGainFromListAtIndex(int nIndex);
-    
-    void        rebuildGainList();
+	bool        isLensHeaterAvailable();
+	int         getLensHeaterPowerPerc(long &nMin, long &nMax, long &nValue);
+	int         setLensHeaterPowerPerc(long nPercent);
 
-    int         getCurentSensorMode(std::string &sSensorMode, int &nModeIndex);
-    int         getSensorModeList(std::vector<std::string> &sModes, int &curentModeIndex);
-    int         setSensorMode(int nModeIndex);
+	int         setROI(int nLeft, int nTop, int nWidth, int nHeight);
+	int         clearROI(void);
 
-    bool        hasMonoBin();
-    int         setHardwareBinOn(bool bOn);
+	bool        isFrameAvailable();
 
-    int         getPixelBinMode(bool &bSumMode);
-    int         setPixelBinMode(bool bSumMode);
-    int         getMonoBin(bool &bMonoBin);
-    int         setMonoBin(bool bMonoBin);
+	uint32_t    getBitDepth();
+	int         getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer);
 
-    void        getAllUsefulValues(int &nGainHighestDR, int &nHCGain, int &nUnityGain, int &nGainLowestRN,
-                                 int &nOffsetHighestDR, int &nOffsetHCGain, int &nOffsetUnityGain, int &nOffsetLowestRN);
+	int         RelayActivate(const int nXPlus, const int nXMinus, const int nYPlus, const int nYMinus, const bool bSynchronous, const bool bAbort);
+
+	int         getNbGainInList();
+	std::string getGainLabelFromListAtIndex(int nIndex);
+	int         getGainFromListAtIndex(int nIndex);
+
+	void        rebuildGainList();
+
+	int         getCurentSensorMode(std::string &sSensorMode, int &nModeIndex);
+	int         getSensorModeList(std::vector<std::string> &sModes, int &curentModeIndex);
+	int         setSensorMode(int nModeIndex);
+
+	bool		isHardwareBinAvailable();
+	int         setHardwareBinOn(bool bOn);
+	int         getHardwareBinOn(bool &bOn);
+
+	int         getPixelBinMode(bool &bSumMode);
+	int         setPixelBinMode(bool bSumMode);
+	int         getMonoBin(bool &bMonoBin);
+	int         setMonoBin(bool bMonoBin);
+
+	void        getAllUsefulValues(int &nGainHighestDR, int &nHCGain, int &nUnityGain, int &nGainLowestRN,
+								   int &nOffsetHighestDR, int &nOffsetHCGain, int &nOffsetUnityGain, int &nOffsetLowestRN);
 
 #ifdef PLUGIN_DEBUG
-    void log(std::string sLogEntry);
+	void log(std::string sLogEntry);
 #endif
 
 protected:
-    
-    POAErrors               getConfigValue(POAConfig confID , POAConfigValue &confValue, POAConfigValue &minValue, POAConfigValue &maxValue,  POABool &bAuto);
-    POAErrors               setConfigValue(POAConfig confID , POAConfigValue confValue,  POABool bAuto = POA_FALSE);
-    void                    buildGainList();
 
-    bool                    m_bSetUserConf;
-    int                     m_nCameraNum;
-    
-    POACameraProperties     m_cameraProperty;
-    POAImgFormat            m_nImageFormat;
-    std::vector<POASensorModeInfo>       m_sensorModeInfo;
-    int                     m_nSensorModeIndex;
-    int                     m_nSensorModeCount;
+	POAErrors               getConfigValue(POAConfig confID , POAConfigValue &confValue, POAConfigValue &minValue, POAConfigValue &maxValue,  POABool &bAuto);
+	POAErrors               setConfigValue(POAConfig confID , POAConfigValue confValue,  POABool bAuto = POA_FALSE);
+	void                    buildGainList();
 
-    int                     m_nControlNums;
-    std::vector<POAConfigAttributes> m_ControlList;
+	bool                    m_bSetUserConf;
+	int                     m_nCameraNum;
 
-    std::vector<std::string>    m_GainListLabel;
-    std::vector<int>            m_GainList;
-    int                     m_nNbGainValue;
+	int                     m_nCameraID;
+	std::string             m_sCameraName;
+	std::string             m_sCameraSerial;
 
-    long                    m_nGain;
-    long                    m_nWbR;
-    bool                    m_bR_Auto;
-    long                    m_nWbG;
-    bool                    m_bG_Auto;
-    long                    m_nWbB;
-    bool                    m_bB_Auto;
-    long                    m_nFlip;
-    long                    m_nAutoExposureTarget;
-    long                    m_nOffset;
+	POACameraProperties     m_cameraProperty;
+	POAImgFormat            m_nImageFormat;
+	std::vector<POASensorModeInfo>       m_sensorModeInfo;
+	int                     m_nSensorModeIndex;
+	int                     m_nSensorModeCount;
 
-    bool                    m_bPixelBinMode;
-    bool                    m_bPixelMonoBin;
-    bool                    m_bHasMonoBinMode;
-    long                    m_nUSBBandwidth;
-    long                    m_nLensHeaterPowerPerc;
-    
-    double                  m_dPixelSize;
-    int                     m_nMaxWidth;
-    int                     m_nMaxHeight;
-    bool                    m_bIsColorCam;
-    int                     m_nBayerPattern;
-    int                     m_nMaxBitDepth;
-    int                     m_nNbBin;
-    int                     m_SupportedBins[MAX_NB_BIN];
-    int                     m_nCurrentBin;
-    bool                    m_bHasHardwareBin;
-    bool                    m_bHasRelayOutput;
+	int                     m_nControlNums;
+	std::vector<POAConfigAttributes> m_ControlList;
 
-    bool                    m_bConnected;
- 
-    unsigned char *         m_pframeBuffer;
-    int                     m_nCameraID;
-    std::string             m_sCameraName;
-    std::string             m_sCameraSerial;
-    
-    bool                    m_bDeviceIsUSB;
-    bool                    m_bAbort;
-    std::map<int,bool>      m_mAvailableFrameRate;
-    int                     m_nNbBitToShift;
-    
-    double                  m_dCaptureLenght;
-    
-    int                     m_nROILeft;
-    int                     m_nROITop;
-    int                     m_nROIWidth;
-    int                     m_nROIHeight;
+	std::vector<std::string>    m_GainListLabel;
+	std::vector<int>            m_GainList;
+	int                     m_nNbGainValue;
 
-    int                     m_nReqROILeft;
-    int                     m_nReqROITop;
-    int                     m_nReqROIWidth;
-    int                     m_nReqROIHeight;
+	long                    m_nGain;
+	long                    m_nWbR;
+	bool                    m_bR_Auto;
+	long                    m_nWbG;
+	bool                    m_bG_Auto;
+	long                    m_nWbB;
+	bool                    m_bB_Auto;
+	long                    m_nFlip;
+	long                    m_nAutoExposureTarget;
+	long                    m_nOffset;
 
-    bool                    m_bHasLensHeater;
-    
-    // special gain and offset data
-    int                     m_nGainHighestDR;
-    int                     m_nHCGain;
-    int                     m_nUnityGain;
-    int                     m_nGainLowestRN;
+	bool                    m_bPixelBinMode;
+	bool                    m_bPixelMonoBin;
+	bool                    m_bHasMonoBinMode;
+	long                    m_nUSBBandwidth;
+	long                    m_nLensHeaterPowerPerc;
 
-    int                     m_nOffsetHighestDR;
-    int                     m_nOffsetHCGain;
-    int                     m_nOffsetUnityGain;
-    int                     m_nOffsetLowestRN;
+	double                  m_dPixelSize;
+	int                     m_nMaxWidth;
+	int                     m_nMaxHeight;
+	bool                    m_bIsColorCam;
+	int                     m_nBayerPattern;
+	int                     m_nMaxBitDepth;
+	int                     m_nNbBin;
+	int                     m_SupportedBins[MAX_NB_BIN];
+	int                     m_nCurrentBin;
+	bool                    m_bHasHardwareBin;
+	bool					m_bHardwareBinEnabled;
+	bool                    m_bHasRelayOutput;
 
-    POAConfig               m_confGuideDir;
+	bool                    m_bConnected;
 
-    CStopWatch              m_ExposureTimer;
+	unsigned char *         m_pframeBuffer;
+
+	bool                    m_bDeviceIsUSB;
+	bool                    m_bAbort;
+	std::map<int,bool>      m_mAvailableFrameRate;
+	int                     m_nNbBitToShift;
+
+	double                  m_dCaptureLenght;
+
+	int                     m_nROILeft;
+	int                     m_nROITop;
+	int                     m_nROIWidth;
+	int                     m_nROIHeight;
+
+	int                     m_nReqROILeft;
+	int                     m_nReqROITop;
+	int                     m_nReqROIWidth;
+	int                     m_nReqROIHeight;
+
+	bool                    m_bHasLensHeater;
+
+	// special gain and offset data
+	int                     m_nGainHighestDR;
+	int                     m_nHCGain;
+	int                     m_nUnityGain;
+	int                     m_nGainLowestRN;
+
+	int                     m_nOffsetHighestDR;
+	int                     m_nOffsetHCGain;
+	int                     m_nOffsetUnityGain;
+	int                     m_nOffsetLowestRN;
+
+	POAConfig               m_confGuideDir;
+
+	CStopWatch              m_ExposureTimer;
 
 #ifdef PLUGIN_DEBUG
-    // timestamp for logs
-    const std::string getTimeStamp();
-    std::ofstream m_sLogFile;
-    std::string m_sLogfilePath;
+	// timestamp for logs
+	const std::string getTimeStamp();
+	std::ofstream m_sLogFile;
+	std::string m_sLogfilePath;
 #endif
 
 };

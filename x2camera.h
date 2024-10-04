@@ -47,6 +47,7 @@ class AddFITSKeyInterface;
 #define KEY_SENSOR_MODE             "SensorMode"
 #define KEY_OFFSET                  "Offset"
 #define KEY_USB_BANDWIDTH           "USBBandwidth"
+#define PIXEL_HARD_BIN              "PixelHardBin"
 #define PIXEL_BIN_MODE              "PixelBinMode"
 #define PIXEL_MONO_BIN              "PixelMonoBin"
 #define LENS_POWER                  "LensPower"
@@ -246,7 +247,6 @@ private:
 
     CPlayerOne      m_Camera;
     enumCameraIndex m_CameraIdx;
-    int             m_nCameraID;
     std::string     m_sCameraSerial;
     std::vector<camera_info_t>           m_tCameraIdList;
 
