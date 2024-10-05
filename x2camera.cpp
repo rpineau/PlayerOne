@@ -1,5 +1,8 @@
 // x2camera.cpp  
+//  Created by Rodolphe Pineau on 2022/07/06
+//  Copyright © 2022 Rodolphe Pineau. All rights reserved.
 //
+
 #include "x2camera.h"
 
 
