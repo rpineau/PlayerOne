@@ -238,20 +238,20 @@ private:
 	MutexInterface									*	m_pIOMutex;
 	TickCountInterface								*	m_pTickCount;
 
-    double  mPixelSizeX;
-    double  mPixelSizeY;
+    double  mPixelSizeX = 0;
+    double  mPixelSizeY = 0;
 
 	int     m_nPrivateISIndex;
 
-	double  m_dCurTemp;
-    double  m_dCurSetPoint;
-	double  m_dCurPower;
-    
-    int     m_nCurrentDialog;
+	double  m_dCurTemp = -100;
+    double  m_dCurSetPoint = 0;
+	double  m_dCurPower = 0;
+
+    int     m_nCurrentDialog = SELECT;
 
     CPlayerOne      m_Camera;
     enumCameraIndex m_CameraIdx;
-    std::string     m_sCameraSerial;
+    std::string     m_sCameraSerial = "";
     std::vector<camera_info_t>           m_tCameraIdList;
 
     int loadCameraSettings(std::string sSerial);

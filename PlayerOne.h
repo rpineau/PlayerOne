@@ -146,89 +146,89 @@ protected:
 	POAErrors               setConfigValue(POAConfig confID , POAConfigValue confValue,  POABool bAuto = POA_FALSE);
 	void                    buildGainList();
 
-	bool                    m_bSetUserConf;
-	int                     m_nCameraNum;
+	bool                    m_bSetUserConf = false;
+	int                     m_nCameraNum = 0;
 
-	int                     m_nCameraID;
-	std::string             m_sCameraName;
-	std::string             m_sCameraSerial;
+	int                     m_nCameraID = 0;
+	std::string             m_sCameraName = "";
+	std::string             m_sCameraSerial = "";
 
 	POACameraProperties     m_cameraProperty;
-	POAImgFormat            m_nImageFormat;
+	POAImgFormat            m_nImageFormat = POA_RAW16;
 	std::vector<POASensorModeInfo>       m_sensorModeInfo;
-	int                     m_nSensorModeIndex;
-	int                     m_nSensorModeCount;
+	int                     m_nSensorModeIndex = 0;
+	int                     m_nSensorModeCount = 0;
 
-	int                     m_nControlNums;
+	int                     m_nControlNums = 0;
 	std::vector<POAConfigAttributes> m_ControlList;
 
 	std::vector<std::string>    m_GainListLabel;
-	std::vector<int>            m_GainList;
-	int                     m_nNbGainValue;
+	std::vector<int>        m_GainList;
+	int                     m_nNbGainValue = VAL_NOT_AVAILABLE;
 
-	long                    m_nGain;
-	long                    m_nWbR;
-	bool                    m_bR_Auto;
-	long                    m_nWbG;
-	bool                    m_bG_Auto;
-	long                    m_nWbB;
-	bool                    m_bB_Auto;
-	long                    m_nFlip;
-	long                    m_nAutoExposureTarget;
-	long                    m_nOffset;
+	long                    m_nGain = VAL_NOT_AVAILABLE;
+	long                    m_nWbR = VAL_NOT_AVAILABLE;
+	bool                    m_bR_Auto = false;
+	long                    m_nWbG = VAL_NOT_AVAILABLE;
+	bool                    m_bG_Auto = false;
+	long                    m_nWbB = VAL_NOT_AVAILABLE;
+	bool                    m_bB_Auto = false;
+	long                    m_nFlip = VAL_NOT_AVAILABLE;
+	long                    m_nAutoExposureTarget = 0;
+	long                    m_nOffset = VAL_NOT_AVAILABLE;
 
-	bool                    m_bPixelBinMode;
-	bool                    m_bPixelMonoBin;
-	bool                    m_bHasMonoBinMode;
-	long                    m_nUSBBandwidth;
-	long                    m_nLensHeaterPowerPerc;
+	bool                    m_bPixelBinMode = false;
+	bool                    m_bPixelMonoBin = false;
+	bool                    m_bHasMonoBinMode = false;
+	long                    m_nUSBBandwidth = 100;
+	long                    m_nLensHeaterPowerPerc = VAL_NOT_AVAILABLE;
 
-	double                  m_dPixelSize;
-	int                     m_nMaxWidth;
-	int                     m_nMaxHeight;
-	bool                    m_bIsColorCam;
-	int                     m_nBayerPattern;
-	int                     m_nMaxBitDepth;
-	int                     m_nNbBin;
-	int                     m_SupportedBins[MAX_NB_BIN];
-	int                     m_nCurrentBin;
-	bool                    m_bHasHardwareBin;
-	bool					m_bHardwareBinEnabled;
-	bool                    m_bHasRelayOutput;
+	double                  m_dPixelSize = 0;
+	int                     m_nMaxWidth = -1;
+	int                     m_nMaxHeight = -1;
+	bool                    m_bIsColorCam = false;
+	int                     m_nBayerPattern = POA_BAYER_BG;
+	int                     m_nMaxBitDepth = 16;
+	int                     m_nNbBin = 1;
+	int                     m_SupportedBins[MAX_NB_BIN] = {};
+	int                     m_nCurrentBin = 1;
+	bool                    m_bHasHardwareBin = false;
+	bool					m_bHardwareBinEnabled = false;
+	bool                    m_bHasRelayOutput = false;
 
-	bool                    m_bConnected;
+	bool                    m_bConnected = false;
 
-	unsigned char *         m_pframeBuffer;
+	unsigned char *         m_pframeBuffer = nullptr;
 
-	bool                    m_bDeviceIsUSB;
-	bool                    m_bAbort;
+	bool                    m_bDeviceIsUSB = true;
+	bool                    m_bAbort = false;
 	std::map<int,bool>      m_mAvailableFrameRate;
-	int                     m_nNbBitToShift;
+	int                     m_nNbBitToShift = 0;
 
-	double                  m_dCaptureLenght;
+	double                  m_dCaptureLenght = 0;
 
-	int                     m_nROILeft;
-	int                     m_nROITop;
-	int                     m_nROIWidth;
-	int                     m_nROIHeight;
+	int                     m_nROILeft = -1;
+	int                     m_nROITop = -1;
+	int                     m_nROIWidth = -1;
+	int                     m_nROIHeight = -1;
 
-	int                     m_nReqROILeft;
-	int                     m_nReqROITop;
-	int                     m_nReqROIWidth;
-	int                     m_nReqROIHeight;
+	int                     m_nReqROILeft = -1;
+	int                     m_nReqROITop = -1;
+	int                     m_nReqROIWidth = -1;
+	int                     m_nReqROIHeight = -1;
 
-	bool                    m_bHasLensHeater;
+	bool                    m_bHasLensHeater = false;
 
 	// special gain and offset data
-	int                     m_nGainHighestDR;
-	int                     m_nHCGain;
-	int                     m_nUnityGain;
-	int                     m_nGainLowestRN;
+	int                     m_nGainHighestDR = VAL_NOT_AVAILABLE;
+	int                     m_nHCGain = VAL_NOT_AVAILABLE;
+	int                     m_nUnityGain = VAL_NOT_AVAILABLE;
+	int                     m_nGainLowestRN = VAL_NOT_AVAILABLE;
 
-	int                     m_nOffsetHighestDR;
-	int                     m_nOffsetHCGain;
-	int                     m_nOffsetUnityGain;
-	int                     m_nOffsetLowestRN;
+	int                     m_nOffsetHighestDR = VAL_NOT_AVAILABLE;
+	int                     m_nOffsetHCGain = VAL_NOT_AVAILABLE;
+	int                     m_nOffsetUnityGain = VAL_NOT_AVAILABLE;
+	int                     m_nOffsetLowestRN = VAL_NOT_AVAILABLE;
 
 	POAConfig               m_confGuideDir;
 
