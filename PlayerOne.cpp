@@ -37,7 +37,7 @@ CPlayerOne::CPlayerOne()
 	std::string sSDKVersion;
 	getFirmwareVersion(sSDKVersion);
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [CPlayerOne] Version " << std::fixed << std::setprecision(2) << PLUGIN_VERSION << " build " << __DATE__ << " " << __TIME__ << std::endl;
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [CPlayerOne] Version " << std::fixed << std::setprecision(2) << CODE_VERSION << " build " << __DATE__ << " " << __TIME__ << std::endl;
 	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [CPlayerOne] " << sSDKVersion << std::endl;
 	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [CPlayerOne] Constructor Called." << std::endl;
 	m_sLogFile.flush();

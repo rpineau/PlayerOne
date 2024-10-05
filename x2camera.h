@@ -27,7 +27,8 @@
 
 #include "PlayerOne.h"
 
-class SerXInterface;		
+#define PLUGIN_VERSION CODE_VERSION
+class SerXInterface;
 class TheSkyXFacadeForDriversInterface;
 class SleeperInterface;
 class BasicIniUtilInterface;
