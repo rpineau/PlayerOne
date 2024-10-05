@@ -12,63 +12,12 @@
 CPlayerOne::CPlayerOne()
 {
 
-	m_bSetUserConf = false;
-	m_nCameraNum = 0;
-	m_nImageFormat = POA_RAW16;
 	m_sensorModeInfo.clear();
-	m_nSensorModeIndex = 0;
-	m_nSensorModeCount = 0;
-	m_nControlNums = 0;
 	m_ControlList.clear();
 	m_GainList.clear();
-	m_nNbGainValue = VAL_NOT_AVAILABLE;
-	m_nGain = VAL_NOT_AVAILABLE;
-	m_nWbR = VAL_NOT_AVAILABLE;
-	m_bR_Auto = false;;
-	m_nWbG = VAL_NOT_AVAILABLE;
-	m_bG_Auto = false;;
-	m_nWbB = VAL_NOT_AVAILABLE;
-	m_bB_Auto =false;
-	m_nFlip = POA_FLIP_NONE;
-	m_nAutoExposureTarget = 0;
-	m_nOffset = VAL_NOT_AVAILABLE;
-	m_bPixelBinMode = false;
-	m_bPixelMonoBin = false;
-	m_nUSBBandwidth = 100;
-	m_dPixelSize = 0;
-	m_nMaxWidth = -1;
-	m_nMaxHeight = -1;
-	m_bIsColorCam = false;
-	m_nBayerPattern = POA_BAYER_BG;
-	m_nMaxBitDepth = 16;
-	m_nNbBin = 1;
-	m_nCurrentBin  = 1;
-	m_bHasHardwareBin = false;
-	m_bHasRelayOutput = false;
-	m_bConnected = false;
-	m_pframeBuffer = nullptr;
-	m_nCameraID = 0;
 	m_sCameraName.clear();
 	m_sCameraSerial.clear();
-	m_bDeviceIsUSB = true;
-	m_bAbort = false;
 	m_mAvailableFrameRate.clear();
-	m_nNbBitToShift=0;
-	m_dCaptureLenght = 0;
-	m_nROILeft = -1;
-	m_nROITop = -1;
-	m_nROIWidth = 1;
-	m_nROIHeight = -1;
-	m_nReqROILeft = -1;
-	m_nReqROITop = -1;
-	m_nReqROIWidth = -1;
-	m_nReqROIHeight = -1;
-	m_nOffsetHighestDR = VAL_NOT_AVAILABLE;
-	m_nOffsetUnityGain = VAL_NOT_AVAILABLE;
-	m_nGainLowestRN = VAL_NOT_AVAILABLE;
-	m_nOffsetLowestRN = VAL_NOT_AVAILABLE;
-	m_nHCGain = VAL_NOT_AVAILABLE;
-	m_nLensHeaterPowerPerc = VAL_NOT_AVAILABLE;
 
 #ifdef PLUGIN_DEBUG
 #if defined(SB_WIN_BUILD)

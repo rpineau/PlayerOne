@@ -29,12 +29,6 @@ X2Camera::X2Camera( const char* pszSelection,
 	m_pIOMutex						= pIOMutex;
 	m_pTickCount					= pTickCount;
 
-	m_dCurTemp = -100.0;
-	m_dCurPower = 0;
-
-    mPixelSizeX = 0.0;
-    mPixelSizeY = 0.0;
-
     // Read in settings
     if (m_pIniUtil) {
         m_pIniUtil->readString(KEY_X2CAM_ROOT, KEY_GUID, "0", szCameraSerial, 128);
