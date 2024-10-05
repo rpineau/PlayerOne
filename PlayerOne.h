@@ -22,7 +22,7 @@
 #include <iomanip>
 
 
-#ifndef SB_WIN_BUILD
+#ifndef WIN32
 #include <unistd.h>
 #endif
 
@@ -33,7 +33,7 @@
 
 // #define PLUGIN_DEBUG    3
 
-#define PLUGIN_VERSION      1.27
+#define CODE_VERSION      1.27
 #define BUFFER_LEN 128
 #define PLUGIN_OK   0
 #define MAX_NB_BIN  8
