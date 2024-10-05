@@ -2,8 +2,9 @@
 //  PlayerOne.cpp
 //
 //  Created by Rodolphe Pineau on 2022/07/06
-//  Copyright © 2022 RTI-Zone. All rights reserved.
+//  Copyright © 2022 Rodolphe Pineau. All rights reserved.
 //
+
 
 #include "PlayerOne.h"
 

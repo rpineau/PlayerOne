@@ -1,3 +1,7 @@
+//  Created by Rodolphe Pineau on 2022/07/06
+//  Copyright © 2022 Rodolphe Pineau. All rights reserved.
+//
+
 #pragma once
 #include <math.h>
 #include <stdio.h>
