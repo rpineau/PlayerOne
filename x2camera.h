@@ -260,6 +260,7 @@ private:
     void doSelectCamEvent(X2GUIExchangeInterface* uiex, const char* pszEvent);
     void doSettingsCamEvent(X2GUIExchangeInterface* uiex, const char* pszEvent);
 
+	int	pluginErrorToTsxError(int nErr);
 };
 
 

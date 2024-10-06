@@ -86,7 +86,7 @@ int CPlayerOne::Connect(std::string sSerial)
 #endif
 
 	if(!sSerial.size())
-		return ERR_NODEVICESELECTED;
+		return ERROR_NODEVICESELECTED;
 
 	m_sCameraSerial.assign(sSerial);
 
@@ -100,10 +100,10 @@ int CPlayerOne::Connect(std::string sSerial)
 				m_sCameraSerial.assign(tCameraIdList[0].Sn);
 			}
 			else
-				return ERR_NODEVICESELECTED;
+				return ERROR_NODEVICESELECTED;
 		}
 		else
-			return ERR_NODEVICESELECTED;
+			return ERROR_NODEVICESELECTED;
 	}
 	ret = POAOpenCamera(m_nCameraID);
 	if (ret != POA_OK) { // we had a camera selected but it's not connected,
@@ -111,7 +111,7 @@ int CPlayerOne::Connect(std::string sSerial)
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect]  Error connecting to camera ID " << m_nCameraID << " serial " << m_sCameraSerial << " , Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
 #endif
-		return ERR_NODEVICESELECTED;
+		return ERROR_NODEVICESELECTED;
 	}
 
 	ret = POAInitCamera(m_nCameraID);
@@ -139,7 +139,7 @@ int CPlayerOne::Connect(std::string sSerial)
 #endif
 		POACloseCamera(m_nCameraID);
 		m_bConnected = false;
-		return ERR_CMDFAILED;
+		return ERROR_CMDFAILED;
 	}
 
 	if(m_cameraProperty.bitDepth >8) {
@@ -207,7 +207,7 @@ int CPlayerOne::Connect(std::string sSerial)
 #endif
 		POACloseCamera(m_nCameraID);
 		m_bConnected = false;
-		return ERR_CMDFAILED;
+		return ERROR_CMDFAILED;
 	}
 
 	nErr = setROI(0, 0, m_cameraProperty.maxWidth, m_cameraProperty.maxHeight);
@@ -219,7 +219,7 @@ int CPlayerOne::Connect(std::string sSerial)
 #endif
 		POACloseCamera(m_nCameraID);
 		m_bConnected = false;
-		return ERR_CMDFAILED;
+		return ERROR_CMDFAILED;
 	}
 
 	ret = POAGetConfigsCount(m_nCameraID, &m_nControlNums);
@@ -230,7 +230,7 @@ int CPlayerOne::Connect(std::string sSerial)
 #endif
 		POACloseCamera(m_nCameraID);
 		m_bConnected = false;
-		return ERR_CMDFAILED;
+		return ERROR_CMDFAILED;
 	}
 
 
@@ -528,7 +528,7 @@ int CPlayerOne::getCameraIdFromSerial(int &nCameraId, std::string sSerial)
 	m_sLogFile.flush();
 #endif
 	if(nCameraId<0)
-		nErr = ERR_NODEVICESELECTED;
+		nErr = ERROR_NODEVICESELECTED;
 	return nErr;
 }
 
@@ -543,7 +543,7 @@ int CPlayerOne::getCameraSerialFromID(int nCameraId, std::string &sSerial)
 #endif
 
 	if(nCameraId<0)
-		return ERR_NODEVICESELECTED;
+		return ERROR_NODEVICESELECTED;
 
 	sSerial.clear();
 	int cameraNum = POAGetCameraCount();
@@ -698,7 +698,7 @@ int CPlayerOne::getCurentSensorMode(std::string &sSensorMode, int &nModeIndex)
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getCurentSensorMode] Error getting current sensor mode." << std::endl;
 		m_sLogFile.flush();
 #endif
-		return ERR_CMDFAILED;
+		return ERROR_CMDFAILED;
 	}
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -768,10 +768,10 @@ int CPlayerOne::setSensorMode(int nModeIndex)
 	m_nSensorModeIndex = nModeIndex;
 
 	if(!m_bConnected)
-		return ERR_NOLINK;
+		return ERROR_NOLINK;
 
 	if(!m_nSensorModeCount) // sensor mode no supported by camera
-		return ERR_COMMANDNOTSUPPORTED;
+		return ERROR_COMMANDNOTSUPPORTED;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
 	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setSensorMode] Setting sensor mode to index  = " << nModeIndex << std::endl;
@@ -785,7 +785,7 @@ int CPlayerOne::setSensorMode(int nModeIndex)
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setSensorMode] Error setting sensor mode, Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
 #endif
-		nErr = ERR_CMDFAILED;
+		nErr = ERROR_CMDFAILED;
 	}
 
 	return nErr;
@@ -809,7 +809,7 @@ int CPlayerOne::getPixelBinMode(bool &bSumMode)
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getPixelBinMode] Error getting camera pixel mode. Error= " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
 #endif
-		return ERR_CMDFAILED;
+		return ERROR_CMDFAILED;
 	}
 
 	// POA_TRUE is sum and POA_FALSE is average,
@@ -838,7 +838,7 @@ int CPlayerOne::setPixelBinMode(bool bSumMode)
 #endif
 
 	if(!m_bConnected)
-		return ERR_NOLINK;
+		return ERROR_NOLINK;
 	// POA_TRUE is sum and POA_FLASE is average
 	confValue.boolValue = m_bPixelBinMode?POA_TRUE:POA_FALSE;
 
@@ -849,7 +849,7 @@ int CPlayerOne::setPixelBinMode(bool bSumMode)
 
 	ret = setConfigValue(POA_PIXEL_BIN_SUM, confValue, POA_FALSE);
 	if(ret != POA_OK) {
-		nErr = ERR_CMDFAILED;
+		nErr = ERROR_CMDFAILED;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setPixelBinMode] Error setting Pixel bin mode, Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
@@ -906,7 +906,7 @@ int CPlayerOne::setMonoBin(bool bMonoBin)
 #endif
 
 	if(!m_bConnected)
-		return ERR_NOLINK;
+		return ERROR_NOLINK;
 	// POA_TRUE is mono bin and POA_FALSE is no mono bin,
 	confValue.boolValue = m_bPixelMonoBin?POA_TRUE:POA_FALSE;
 
@@ -917,7 +917,7 @@ int CPlayerOne::setMonoBin(bool bMonoBin)
 
 	ret = setConfigValue(POA_MONO_BIN, confValue, POA_FALSE);
 	if(ret != POA_OK) {
-		nErr = ERR_CMDFAILED;
+		nErr = ERROR_CMDFAILED;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setMonoBin] Error setting Pixel mono bin, Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
@@ -967,11 +967,11 @@ int CPlayerOne::startCaputure(double dTime)
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [startCaputure] Error getting camera state. Error= " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
 #endif
-		return ERR_CMDFAILED;
+		return ERROR_CMDFAILED;
 	}
 
 	if(cameraState != STATE_OPENED) {
-		return ERR_COMMANDINPROGRESS;
+		return ERROR_COMMANDINPROGRESS;
 	}
 
 
@@ -984,12 +984,12 @@ int CPlayerOne::startCaputure(double dTime)
 	exposure_value.intValue = (int)(dTime * 1000000);
 	ret = POASetConfig(m_nCameraID, POA_EXPOSURE, exposure_value, POA_FALSE); //set exposure time
 	if(ret!=POA_OK)
-		return ERR_CMDFAILED;
+		return ERROR_CMDFAILED;
 
 	ret = POAStartExposure(m_nCameraID, POA_TRUE); // single frame(Snap mode)
 	// ret = POAStartExposure(m_nCameraID, POA_FALSE); // continuous exposure mode
 	if(ret!=POA_OK)
-		nErr =ERR_CMDFAILED;
+		nErr = ERROR_CMDFAILED;
 
 	m_dCaptureLenght = dTime;
 	m_ExposureTimer.Reset();
@@ -1094,7 +1094,7 @@ int CPlayerOne::setCoolerTemperature(bool bOn, double dTemp)
 			m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setCoolerTemperature] Error setting temperature, Error = " << POAGetErrorString(ret) << std::endl;
 			m_sLogFile.flush();
 #endif
-			nErr = ERR_CMDFAILED;
+			nErr = ERROR_CMDFAILED;
 		}
 
 		confValue.boolValue = (bOn?POA_TRUE:POA_FALSE);
@@ -1104,7 +1104,7 @@ int CPlayerOne::setCoolerTemperature(bool bOn, double dTemp)
 			m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setCoolerTemperature] Error setting cooler, Error = " << POAGetErrorString(ret) << std::endl;
 			m_sLogFile.flush();
 #endif
-			nErr = ERR_CMDFAILED;
+			nErr = ERROR_CMDFAILED;
 		}
 	}
 	return nErr;
@@ -1141,7 +1141,7 @@ int CPlayerOne::setBinSize(int nBin)
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setBinSize] Error setting bin size, Error = " << ret << std::endl;
 		m_sLogFile.flush();
 #endif
-		return ERR_CMDFAILED;
+		return ERROR_CMDFAILED;
 	}
 
 	return PLUGIN_OK;
@@ -1285,7 +1285,7 @@ int CPlayerOne::setGain(long nGain)
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setGain] Error setting gain, Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
 #endif
-		nErr = ERR_CMDFAILED;
+		nErr = ERROR_CMDFAILED;
 	}
 	return nErr;
 }
@@ -1354,7 +1354,7 @@ int CPlayerOne::setWB_R(long nWB_R, bool bIsAuto)
 
 	ret = setConfigValue(POA_WB_R, confValue, bIsAuto?POA_TRUE:POA_FALSE);
 	if(ret != POA_OK) {
-		nErr = ERR_CMDFAILED;
+		nErr = ERROR_CMDFAILED;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setWB_R] Error setting WB_R, Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
@@ -1426,7 +1426,7 @@ int CPlayerOne::setWB_G(long nWB_G, bool bIsAuto)
 
 	ret = setConfigValue(POA_WB_G, confValue, bIsAuto?POA_TRUE:POA_FALSE);
 	if(ret != POA_OK) {
-		nErr = ERR_CMDFAILED;
+		nErr = ERROR_CMDFAILED;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setWB_G] Error setting WB_G, Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
@@ -1498,7 +1498,7 @@ int CPlayerOne::setWB_B(long nWB_B, bool bIsAuto)
 
 	ret = setConfigValue(POA_WB_B, confValue, bIsAuto?POA_TRUE:POA_FALSE);
 	if(ret != POA_OK){
-		nErr = ERR_CMDFAILED;
+		nErr = ERROR_CMDFAILED;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setWB_B] Error setting WB_B, Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
@@ -1626,7 +1626,7 @@ int CPlayerOne::setFlip(long nFlip)
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setFlip] Error setting Flip mode, Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
 #endif
-		nErr = ERR_CMDFAILED;
+		nErr = ERROR_CMDFAILED;
 	}
 	return nErr;
 }
@@ -1686,7 +1686,7 @@ int CPlayerOne::setOffset(long nOffset)
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setOffset] Error setting offset, Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
 #endif
-		nErr = ERR_CMDFAILED;
+		nErr = ERROR_CMDFAILED;
 	}
 	return nErr;
 }
@@ -1743,7 +1743,7 @@ int CPlayerOne::setUSBBandwidth(long nBandwidth)
 
 	ret = setConfigValue(POA_USB_BANDWIDTH_LIMIT, confValue, POA_FALSE);
 	if(ret != POA_OK) {
-		nErr = ERR_CMDFAILED;
+		nErr = ERROR_CMDFAILED;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setUSBBandwidth] Error setting USB Bandwidth, Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
@@ -1808,7 +1808,7 @@ int CPlayerOne::setLensHeaterPowerPerc(long nPercent)
 
 	ret = setConfigValue(POA_HEATER_POWER, confValue, POA_FALSE);
 	if(ret != POA_OK) {
-		nErr = ERR_CMDFAILED;
+		nErr = ERROR_CMDFAILED;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setLensHeaterPowerPerc] Error setting Lens power percentage, Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
@@ -1866,7 +1866,7 @@ int CPlayerOne::setHardwareBinOn(bool bOn)
 #endif
 
 	if(!m_bConnected)
-		return ERR_NOLINK;
+		return ERROR_NOLINK;
 	// POA_TRUE is sum and POA_FLASE is average
 	confValue.boolValue = bOn?POA_TRUE:POA_FALSE;
 
@@ -1877,7 +1877,7 @@ int CPlayerOne::setHardwareBinOn(bool bOn)
 
 	ret = setConfigValue(POA_HARDWARE_BIN, confValue, POA_FALSE);
 	if(ret != POA_OK) {
-		nErr = ERR_CMDFAILED;
+		nErr = ERROR_CMDFAILED;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setHardwareBinOn] Error setting Hardware bin, Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
@@ -2029,7 +2029,7 @@ int CPlayerOne::setROI(int nLeft, int nTop, int nWidth, int nHeight)
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] Error setting new Width and Height, Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
 #endif
-		return ERR_CMDFAILED;
+		return ERROR_CMDFAILED;
 	}
 
 	ret = POAGetImageSize(m_nCameraID, &nNewWidth, &nNewHeight);
@@ -2038,7 +2038,7 @@ int CPlayerOne::setROI(int nLeft, int nTop, int nWidth, int nHeight)
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] Error getting new Width and Height, Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
 #endif
-		return ERR_CMDFAILED;
+		return ERROR_CMDFAILED;
 	}
 
 	ret = POASetImageStartPos(m_nCameraID, m_nReqROILeft, m_nReqROITop);
@@ -2047,7 +2047,7 @@ int CPlayerOne::setROI(int nLeft, int nTop, int nWidth, int nHeight)
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] Error setting new Left and top, Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
 #endif
-		return ERR_CMDFAILED;
+		return ERROR_CMDFAILED;
 	}
 
 	ret = POAGetImageStartPos(m_nCameraID, &nNewLeft, &nNewTop);
@@ -2056,7 +2056,7 @@ int CPlayerOne::setROI(int nLeft, int nTop, int nWidth, int nHeight)
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] Error getting new Left and top, Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
 #endif
-		return ERR_CMDFAILED;
+		return ERROR_CMDFAILED;
 	}
 
 
@@ -2100,7 +2100,7 @@ int CPlayerOne::clearROI()
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [clearROI] Error setting new Width and Height, Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
 #endif
-		return ERR_CMDFAILED;
+		return ERROR_CMDFAILED;
 	}
 
 	ret = POASetImageStartPos(m_nCameraID, 0, 0);
@@ -2109,7 +2109,7 @@ int CPlayerOne::clearROI()
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [clearROI] Error setting new Left and top, Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
 #endif
-		return ERR_CMDFAILED;
+		return ERROR_CMDFAILED;
 	}
 
 	return nErr;
@@ -2186,7 +2186,7 @@ int CPlayerOne::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
 	int tmp1, tmp2;
 
 	if(!frameBuffer)
-		return ERR_POINTER;
+		return ERROR_POINTER;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
 	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] nHeight         = " << nHeight << std::endl;
@@ -2253,7 +2253,7 @@ int CPlayerOne::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
 				POAStopExposure(m_nCameraID);
 				if(imgBuffer != frameBuffer)
 					free(imgBuffer);
-				return ERR_RXTIMEOUT;
+				return ERROR_RXTIMEOUT;
 			}
 		}
 		// POAStopExposure(m_nCameraID);
@@ -2304,7 +2304,7 @@ int CPlayerOne::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
 			try {
 				free(imgBuffer);
 				imgBuffer = nullptr;
-				nErr = ERR_RXTIMEOUT;
+				nErr = ERROR_RXTIMEOUT;
 			}  catch(const std::exception& e) {
 
 			}
@@ -2316,7 +2316,7 @@ int CPlayerOne::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
 			try {
 				free(imgBuffer);
 				imgBuffer = nullptr;
-				nErr = ERR_RXTIMEOUT;
+				nErr = ERROR_RXTIMEOUT;
 			}  catch(const std::exception& e) {
 
 			}
@@ -2349,7 +2349,7 @@ int CPlayerOne::RelayActivate(const int nXPlus, const int nXMinus, const int nYP
 	CStopWatch pulseTimer;
 
 	if(!m_cameraProperty.isHasST4Port)
-		return ERR_COMMANDNOTSUPPORTED;
+		return ERROR_COMMANDNOTSUPPORTED;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
 	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] nXPlus       : " << nXPlus << std::endl;
@@ -2385,7 +2385,7 @@ int CPlayerOne::RelayActivate(const int nXPlus, const int nXMinus, const int nYP
 			else if(nYPlus == 0 && nYMinus !=0)
 				m_confGuideDir = POA_GUIDE_SOUTH;
 			else { // dual direction, can't be done from the GUI
-				return ERR_COMMANDNOTSUPPORTED;
+				return ERROR_COMMANDNOTSUPPORTED;
 			}
 		}
 
@@ -2401,7 +2401,7 @@ int CPlayerOne::RelayActivate(const int nXPlus, const int nXMinus, const int nYP
 			m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] GUI move POASetConfig error :  " << POAGetErrorString(ret) << std::endl;
 			m_sLogFile.flush();
 #endif
-			nErr = ERR_CMDFAILED;
+			nErr = ERROR_CMDFAILED;
 		}
 		return nErr;
 	}
@@ -2421,7 +2421,7 @@ int CPlayerOne::RelayActivate(const int nXPlus, const int nXMinus, const int nYP
 			m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] AutoGuide move POASetConfig error :  " << POAGetErrorString(ret) << std::endl;
 			m_sLogFile.flush();
 #endif
-			nErr = ERR_CMDFAILED;
+			nErr = ERROR_CMDFAILED;
 		}
 		bEast = true;
 	}
@@ -2432,7 +2432,7 @@ int CPlayerOne::RelayActivate(const int nXPlus, const int nXMinus, const int nYP
 			m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] AutoGuide move POASetConfig error :  " << POAGetErrorString(ret) << std::endl;
 			m_sLogFile.flush();
 #endif
-			nErr = ERR_CMDFAILED;
+			nErr = ERROR_CMDFAILED;
 		}
 		bWest = true;
 	}
@@ -2444,7 +2444,7 @@ int CPlayerOne::RelayActivate(const int nXPlus, const int nXMinus, const int nYP
 			m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] AutoGuide move POASetConfig error :  " << POAGetErrorString(ret) << std::endl;
 			m_sLogFile.flush();
 #endif
-			nErr = ERR_CMDFAILED;
+			nErr = ERROR_CMDFAILED;
 		}
 		bNorth = true;
 	}
@@ -2456,7 +2456,7 @@ int CPlayerOne::RelayActivate(const int nXPlus, const int nXMinus, const int nYP
 			m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] AutoGuide move POASetConfig error :  " << POAGetErrorString(ret) << std::endl;
 			m_sLogFile.flush();
 #endif
-			nErr = ERR_CMDFAILED;
+			nErr = ERROR_CMDFAILED;
 		}
 		bSouth = true;
 	}
@@ -2481,7 +2481,7 @@ int CPlayerOne::RelayActivate(const int nXPlus, const int nXMinus, const int nYP
 			m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] POASetConfig error :  " << POAGetErrorString(ret) << std::endl;
 			m_sLogFile.flush();
 #endif
-			nErr = ERR_CMDFAILED;
+			nErr = ERROR_CMDFAILED;
 		}
 		return nErr;
 	}
@@ -2502,7 +2502,7 @@ int CPlayerOne::RelayActivate(const int nXPlus, const int nXMinus, const int nYP
 			m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] POASetConfig error :  " << POAGetErrorString(ret) << std::endl;
 			m_sLogFile.flush();
 #endif
-			nErr = ERR_CMDFAILED;
+			nErr = ERROR_CMDFAILED;
 		}
 		return nErr;
 	}
@@ -2532,7 +2532,7 @@ int CPlayerOne::RelayActivate(const int nXPlus, const int nXMinus, const int nYP
 			m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] POASetConfig error :  " << POAGetErrorString(ret) << std::endl;
 			m_sLogFile.flush();
 #endif
-			nErr = ERR_CMDFAILED;
+			nErr = ERROR_CMDFAILED;
 		}
 		return nErr;
 	}
@@ -2554,7 +2554,7 @@ int CPlayerOne::RelayActivate(const int nXPlus, const int nXMinus, const int nYP
 			m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] POASetConfig error :  " << POAGetErrorString(ret) << std::endl;
 			m_sLogFile.flush();
 #endif
-			nErr = ERR_CMDFAILED;
+			nErr = ERROR_CMDFAILED;
 		}
 		// Longer time
 		timeToWait = float(nXPlus + nXMinus)/100.0f;
@@ -2571,7 +2571,7 @@ int CPlayerOne::RelayActivate(const int nXPlus, const int nXMinus, const int nYP
 			m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] POASetConfig error :  " << POAGetErrorString(ret) << std::endl;
 			m_sLogFile.flush();
 #endif
-			nErr = ERR_CMDFAILED;
+			nErr = ERROR_CMDFAILED;
 		}
 
 		return nErr;
@@ -2591,7 +2591,7 @@ int CPlayerOne::RelayActivate(const int nXPlus, const int nXMinus, const int nYP
 			m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] POASetConfig error :  " << POAGetErrorString(ret) << std::endl;
 			m_sLogFile.flush();
 #endif
-			nErr = ERR_CMDFAILED;
+			nErr = ERROR_CMDFAILED;
 		}
 
 		// Longer time
@@ -2608,7 +2608,7 @@ int CPlayerOne::RelayActivate(const int nXPlus, const int nXMinus, const int nYP
 			m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] POASetConfig error :  " << POAGetErrorString(ret) << std::endl;
 			m_sLogFile.flush();
 #endif
-			nErr = ERR_CMDFAILED;
+			nErr = ERROR_CMDFAILED;
 		}
 
 		return nErr;

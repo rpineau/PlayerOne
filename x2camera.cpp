@@ -103,6 +103,11 @@ int X2Camera::execModalSettingsDialog()
 
     if(m_bLinked) {
         nErr = doPlayerOneCAmFeatureConfig();
+		if(nErr) {
+			m_bLinked = false;
+			nErr = pluginErrorToTsxError(nErr);
+			return nErr;
+		}
         return nErr;
     }
 
@@ -114,9 +119,9 @@ int X2Camera::execModalSettingsDialog()
         return ERR_POINTER;
 
     nErr = ui->loadUserInterface("PlayerOneCamSelect.ui", deviceType(), m_nPrivateISIndex);
-    if (nErr)
-        return nErr;
-
+	if (nErr) {
+		return nErr;
+	}
     if (NULL == (dx = uiutil.X2DX()))
         return ERR_POINTER;
 
@@ -849,10 +854,16 @@ int X2Camera::CCEstablishLink(const enumLPTPort portLPT, const enumWhichCCD& CCD
 
 	m_Camera.setUserConf(true);
 	nErr = loadCameraSettings(m_sCameraSerial);
+	if(nErr) {
+		m_bLinked = false;
+		nErr = pluginErrorToTsxError(nErr);
+		return nErr;
+	}
     nErr = m_Camera.Connect(m_sCameraSerial);
     if(nErr) {
         m_bLinked = false;
-        return nErr;
+		nErr = pluginErrorToTsxError(nErr);
+		return nErr;
     }
     else
         m_bLinked = true;
@@ -871,6 +882,11 @@ int X2Camera::CCQueryTemperature(double& dCurTemp, double& dCurPower, char* lpsz
 		return ERR_NOLINK;
 
     nErr = m_Camera.getTemperture(m_dCurTemp, m_dCurPower, m_dCurSetPoint, bCurEnabled);
+	if(nErr) {
+		m_bLinked = false;
+		nErr = pluginErrorToTsxError(nErr);
+		return nErr;
+	}
     dCurTemp = m_dCurTemp;
 	dCurPower = m_dCurPower;
     dCurSetPoint = m_dCurSetPoint;
@@ -887,7 +903,12 @@ int X2Camera::CCRegulateTemp(const bool& bOn, const double& dTemp)
 		return ERR_NOLINK;
 
     nErr = m_Camera.setCoolerTemperature(bOn, dTemp);
-    
+	if(nErr) {
+		m_bLinked = false;
+		nErr = pluginErrorToTsxError(nErr);
+		return nErr;
+	}
+
 	return nErr;
 }
 
@@ -921,6 +942,11 @@ int X2Camera::CCStartExposure(const enumCameraIndex& Cam, const enumWhichCCD CCD
 	}
 
     nErr = m_Camera.startCaputure(dTime);
+	if(nErr) {
+		m_bLinked = false;
+		nErr = pluginErrorToTsxError(nErr);
+		return nErr;
+	}
 	return nErr;
 }   
 
@@ -1054,6 +1080,11 @@ int X2Camera::CCReadoutImage(const enumCameraIndex& Cam, const enumWhichCCD& CCD
 		return ERR_NOLINK;
 
     nErr = m_Camera.getFrame(nHeight, nMemWidth, pMem);
+	if(nErr) {
+		m_bLinked = false;
+		nErr = pluginErrorToTsxError(nErr);
+		return nErr;
+	}
 
     return nErr;
 }
@@ -1107,6 +1138,11 @@ int X2Camera::CCSetBinnedSubFrame(const enumCameraIndex& Camera, const enumWhich
     m_Camera.log(ssTmp.str());
 #endif
     nErr = m_Camera.setROI(nLeft, nTop, (nRight-nLeft)+1, (nBottom-nTop)+1);
+	if(nErr) {
+		m_bLinked = false;
+		nErr = pluginErrorToTsxError(nErr);
+		return nErr;
+	}
     return nErr;
 }
 
@@ -1123,7 +1159,12 @@ int X2Camera::CCSetBinnedSubFrame3(const enumCameraIndex &Camera, const enumWhic
 #endif
 
     nErr = m_Camera.setROI(nLeft, nTop, nWidth, nHeight);
-    
+	if(nErr) {
+		m_bLinked = false;
+		nErr = pluginErrorToTsxError(nErr);
+		return nErr;
+	}
+
     return nErr;
 }
 
@@ -1313,7 +1354,17 @@ int X2Camera::valueForStringField (int nIndex, BasicStringInterface &sFieldName,
 
 	bHardwareBinPresent = m_Camera.isHardwareBinAvailable();
 	nErr = m_Camera.getHardwareBinOn(bHardwareBinEnable);
+	if(nErr) {
+		m_bLinked = false;
+		nErr = pluginErrorToTsxError(nErr);
+		return nErr;
+	}
 	nErr = m_Camera.getMonoBin(bMonoBin);
+	if(nErr) {
+		m_bLinked = false;
+		nErr = pluginErrorToTsxError(nErr);
+		return nErr;
+	}
 
     switch(nIndex) {
         case F_BAYER :
@@ -1438,7 +1489,8 @@ int X2Camera::CCStartExposureAdditionalArgInterface (const enumCameraIndex &Cam,
 
     nErr = m_Camera.setGain(m_Camera.getGainFromListAtIndex(nIndex));
     if(nErr) {
-        return nErr; // can't set gain !
+		nErr = pluginErrorToTsxError(nErr);
+		return nErr;
     }
     switch (Type)
     {
@@ -1451,8 +1503,10 @@ int X2Camera::CCStartExposureAdditionalArgInterface (const enumCameraIndex &Cam,
     }
 
     nErr = m_Camera.startCaputure(dTime);
+	if(nErr) {
+		m_bLinked = false;
+	}
     return nErr;
-
 }
 
 int X2Camera::CCHasShutter (const enumCameraIndex &Camera, const enumWhichCCD &CCDOrig, bool &bHasShutter)
@@ -1467,4 +1521,31 @@ int X2Camera::CCHasShutter (const enumCameraIndex &Camera, const enumWhichCCD &C
     bHasShutter = false;
 
     return nErr;
+}
+
+
+int	X2Camera::pluginErrorToTsxError(int nErr)
+{
+	int nSbError = SB_OK;
+
+	switch(nErr) {
+		case ERROR_CMDFAILED:
+			nSbError = ERR_CMDFAILED;
+		case ERROR_NODEVICESELECTED:
+			nSbError = ERR_NODEVICESELECTED;
+		case ERROR_NOLINK:
+			nSbError = ERR_NOLINK;
+		case ERROR_COMMANDNOTSUPPORTED:
+			nSbError = ERR_COMMANDNOTSUPPORTED;
+		case ERROR_POINTER:
+			nSbError = ERR_POINTER;
+		case ERROR_COMMANDINPROGRESS:
+			nSbError = ERR_COMMANDINPROGRESS;
+		case ERROR_RXTIMEOUT:
+			nSbError = ERR_RXTIMEOUT;
+		default :
+			nSbError = nErr;
+	}
+	return nSbError;
+
 }
