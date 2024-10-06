@@ -26,7 +26,13 @@
 #include <unistd.h>
 #endif
 
-#include "../../licensedinterfaces/sberrorx.h"
+#define ERROR_CMDFAILED				-1
+#define ERROR_NODEVICESELECTED 		-2
+#define ERROR_NOLINK				-3
+#define ERROR_COMMANDNOTSUPPORTED	-4
+#define ERROR_POINTER				-5
+#define ERROR_COMMANDINPROGRESS		-6
+#define ERROR_RXTIMEOUT				-7
 
 #include "PlayerOneCamera.h"
 #include "StopWatch.h"
