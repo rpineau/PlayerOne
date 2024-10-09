@@ -1147,6 +1147,26 @@ int CPlayerOne::setBinSize(int nBin)
 	return PLUGIN_OK;
 }
 
+int CPlayerOne::getBinSize(int &nBin)
+{
+	POAErrors ret;
+
+	ret = POAGetImageBin(m_nCameraID, &nBin);
+	if(ret != POA_OK) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setBinSize] Error setting bin size, Error = " << ret << std::endl;
+		m_sLogFile.flush();
+#endif
+		return ERR_CMDFAILED;
+	}
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getBinSize] nBin = " << nBin << std::endl;
+	m_sLogFile.flush();
+#endif
+
+	return PLUGIN_OK;
+}
+
 bool CPlayerOne::isCameraColor()
 {
 	return m_cameraProperty.isColorCamera;
