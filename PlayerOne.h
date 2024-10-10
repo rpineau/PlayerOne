@@ -85,7 +85,6 @@ public:
 	int         getHeight();
 	double      getPixelSize();
 	int         setBinSize(int nBin);
-	int			getBinSize(int &nBin);
 
 	bool        isCameraColor();
 	void        getBayerPattern(std::string &sBayerPattern);
