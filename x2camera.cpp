@@ -336,8 +336,10 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
         }
 
 		bHardwareBinPresent = m_Camera.isHardwareBinAvailable();
-		m_Camera.getHardwareBinOn(bHardwareBinEnable);
-
+		if(bHardwareBinPresent)
+			m_Camera.getHardwareBinOn(bHardwareBinEnable);
+		else
+			bHardwareBinEnable = false;
 		if(nErr == VAL_NOT_AVAILABLE)
 			dx->setEnabled("checkBox_6", false);
 		else {
@@ -860,8 +862,7 @@ int X2Camera::CCEstablishLink(const enumLPTPort portLPT, const enumWhichCCD& CCD
 		nErr = pluginErrorToTsxError(nErr);
 		return nErr;
     }
-    else
-        m_bLinked = true;
+	m_bLinked = true;
     // store camera ID
     m_pIniUtil->writeString(KEY_X2CAM_ROOT, KEY_GUID, m_sCameraSerial.c_str());
     return nErr;
@@ -878,7 +879,6 @@ int X2Camera::CCQueryTemperature(double& dCurTemp, double& dCurPower, char* lpsz
 
     nErr = m_Camera.getTemperture(m_dCurTemp, m_dCurPower, m_dCurSetPoint, bCurEnabled);
 	if(nErr) {
-		m_bLinked = false;
 		nErr = pluginErrorToTsxError(nErr);
 		return nErr;
 	}
@@ -899,7 +899,6 @@ int X2Camera::CCRegulateTemp(const bool& bOn, const double& dTemp)
 
     nErr = m_Camera.setCoolerTemperature(bOn, dTemp);
 	if(nErr) {
-		m_bLinked = false;
 		nErr = pluginErrorToTsxError(nErr);
 		return nErr;
 	}
@@ -938,7 +937,6 @@ int X2Camera::CCStartExposure(const enumCameraIndex& Cam, const enumWhichCCD CCD
 
     nErr = m_Camera.startCaputure(dTime);
 	if(nErr) {
-		m_bLinked = false;
 		nErr = pluginErrorToTsxError(nErr);
 		return nErr;
 	}
@@ -1076,7 +1074,6 @@ int X2Camera::CCReadoutImage(const enumCameraIndex& Cam, const enumWhichCCD& CCD
 
     nErr = m_Camera.getFrame(nHeight, nMemWidth, pMem);
 	if(nErr) {
-		m_bLinked = false;
 		nErr = pluginErrorToTsxError(nErr);
 		return nErr;
 	}
@@ -1134,7 +1131,6 @@ int X2Camera::CCSetBinnedSubFrame(const enumCameraIndex& Camera, const enumWhich
 #endif
     nErr = m_Camera.setROI(nLeft, nTop, (nRight-nLeft)+1, (nBottom-nTop)+1);
 	if(nErr) {
-		m_bLinked = false;
 		nErr = pluginErrorToTsxError(nErr);
 		return nErr;
 	}
@@ -1155,7 +1151,6 @@ int X2Camera::CCSetBinnedSubFrame3(const enumCameraIndex &Camera, const enumWhic
 
     nErr = m_Camera.setROI(nLeft, nTop, nWidth, nHeight);
 	if(nErr) {
-		m_bLinked = false;
 		nErr = pluginErrorToTsxError(nErr);
 		return nErr;
 	}
@@ -1348,17 +1343,19 @@ int X2Camera::valueForStringField (int nIndex, BasicStringInterface &sFieldName,
     X2MutexLocker ml(GetMutex());
 
 	bHardwareBinPresent = m_Camera.isHardwareBinAvailable();
-	nErr = m_Camera.getHardwareBinOn(bHardwareBinEnable);
-	if(nErr) {
-		m_bLinked = false;
-		nErr = pluginErrorToTsxError(nErr);
-		return nErr;
+	if(bHardwareBinPresent) {
+		nErr = m_Camera.getHardwareBinOn(bHardwareBinEnable);
+		if(nErr) {
+			bHardwareBinEnable = false;
+		}
 	}
+	else {
+		bHardwareBinEnable = false;
+	}
+
 	nErr = m_Camera.getMonoBin(bMonoBin);
 	if(nErr) {
-		m_bLinked = false;
-		nErr = pluginErrorToTsxError(nErr);
-		return nErr;
+		bMonoBin = false;
 	}
 
     switch(nIndex) {
@@ -1498,9 +1495,6 @@ int X2Camera::CCStartExposureAdditionalArgInterface (const enumCameraIndex &Cam,
     }
 
     nErr = m_Camera.startCaputure(dTime);
-	if(nErr) {
-		m_bLinked = false;
-	}
     return nErr;
 }
 
@@ -1538,6 +1532,8 @@ int	X2Camera::pluginErrorToTsxError(int nErr)
 			nSbError = ERR_COMMANDINPROGRESS;
 		case ERROR_RXTIMEOUT:
 			nSbError = ERR_RXTIMEOUT;
+		case VAL_NOT_AVAILABLE:
+			nSbError = ERR_CMDFAILED;
 		default :
 			nSbError = nErr;
 	}
