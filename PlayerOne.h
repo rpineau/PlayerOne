@@ -37,10 +37,10 @@
 #include "PlayerOneCamera.h"
 #include "StopWatch.h"
 
-#define PLUGIN_DEBUG    3
+// #define PLUGIN_DEBUG    3
 
 
-#define CODE_VERSION      1.29
+#define CODE_VERSION      1.31
 #define BUFFER_LEN 128
 #define PLUGIN_OK   0
 #define MAX_NB_BIN  8
