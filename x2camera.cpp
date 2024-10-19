@@ -1542,7 +1542,7 @@ int	X2Camera::pluginErrorToTsxError(int nErr)
 		case ERROR_RXTIMEOUT:
 			nSbError = ERR_RXTIMEOUT;
 			break;
-		default :
+		default:
 			nSbError = ERR_CMDFAILED;
 	}
 	return nSbError;
