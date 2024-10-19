@@ -1,4 +1,4 @@
-﻿/****************************************************************************
+/****************************************************************************
 **
 ** Copyright (C) 2023 The Player One Astronomy Co., Ltd.
 ** This software is the secondary software development kit (SDK) for
