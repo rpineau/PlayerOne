@@ -1518,24 +1518,32 @@ int	X2Camera::pluginErrorToTsxError(int nErr)
 	int nSbError = SB_OK;
 
 	switch(nErr) {
+		case PLUGIN_OK:
+			nSbError = SB_OK;
+			break;
 		case ERROR_CMDFAILED:
 			nSbError = ERR_CMDFAILED;
+			break;
 		case ERROR_NODEVICESELECTED:
 			nSbError = ERR_NODEVICESELECTED;
+			break;
 		case ERROR_NOLINK:
 			nSbError = ERR_NOLINK;
+			break;
 		case ERROR_COMMANDNOTSUPPORTED:
 			nSbError = ERR_COMMANDNOTSUPPORTED;
+			break;
 		case ERROR_POINTER:
 			nSbError = ERR_POINTER;
+			break;
 		case ERROR_COMMANDINPROGRESS:
 			nSbError = ERR_COMMANDINPROGRESS;
+			break;
 		case ERROR_RXTIMEOUT:
 			nSbError = ERR_RXTIMEOUT;
-		case VAL_NOT_AVAILABLE:
-			nSbError = ERR_CMDFAILED;
+			break;
 		default :
-			nSbError = nErr;
+			nSbError = ERR_CMDFAILED;
 	}
 	return nSbError;
 
