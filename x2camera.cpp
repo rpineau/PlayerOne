@@ -853,12 +853,7 @@ int X2Camera::CCEstablishLink(const enumLPTPort portLPT, const enumWhichCCD& CCD
     m_dCurTemp = -100.0;
 
 	m_Camera.setUserConf(true);
-	nErr = loadCameraSettings(m_sCameraSerial);
-	if(nErr) {
-		m_bLinked = false;
-		nErr = pluginErrorToTsxError(nErr);
-		return nErr;
-	}
+	loadCameraSettings(m_sCameraSerial);
     nErr = m_Camera.Connect(m_sCameraSerial);
     if(nErr) {
         m_bLinked = false;

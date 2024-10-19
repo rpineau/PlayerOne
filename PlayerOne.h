@@ -37,7 +37,8 @@
 #include "PlayerOneCamera.h"
 #include "StopWatch.h"
 
-// #define PLUGIN_DEBUG    3
+#define PLUGIN_DEBUG    3
+
 
 #define CODE_VERSION      1.29
 #define BUFFER_LEN 128
@@ -52,6 +53,7 @@ typedef struct _camera_info {
 } camera_info_t;
 
 enum Plugin_Flip_Mode { FLIP_NONE, FLIP_HORI, FLIP_VERT, FLIP_BOTH};
+enum cameraState {C_IDLE, C_EXPOSING};
 
 class CPlayerOne {
 public:
@@ -81,6 +83,9 @@ public:
 
 	int         getTemperture(double &dTemp, double &dPower, double &dSetPoint, bool &bEnabled);
 	int         setCoolerTemperature(bool bOn, double dTemp);
+	int			setCoolerState(bool bOn);
+
+	bool		isCoolerAvailable();
 	int         getWidth();
 	int         getHeight();
 	double      getPixelSize();
@@ -114,10 +119,12 @@ public:
 	int         clearROI(void);
 
 	bool        isFrameAvailable();
+	void        getCameraState(int &nState);
 
 	uint32_t    getBitDepth();
 	int         getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer);
 
+	bool		isST4Available();
 	int         RelayActivate(const int nXPlus, const int nXMinus, const int nYPlus, const int nYMinus, const bool bSynchronous, const bool bAbort);
 
 	int         getNbGainInList();
@@ -142,6 +149,12 @@ public:
 	void        getAllUsefulValues(int &nGainHighestDR, int &nHCGain, int &nUnityGain, int &nGainLowestRN,
 								   int &nOffsetHighestDR, int &nOffsetHCGain, int &nOffsetUnityGain, int &nOffsetLowestRN);
 
+	int			getGainAdu(double &dMin, double &nMax, double &dValue);
+	int			getExposureMinMax(long &nMin, long &nMax);
+	long		getExposureMin();
+	long		getExposureMax();
+
+	bool		getFastReadoutAvailable();
 #ifdef PLUGIN_DEBUG
 	void log(std::string sLogEntry);
 #endif
@@ -212,6 +225,9 @@ protected:
 	int                     m_nNbBitToShift = 0;
 
 	double                  m_dCaptureLenght = 0;
+
+	long					m_nEposureMax;
+	long					m_nEposureMin;
 
 	int                     m_nROILeft = -1;
 	int                     m_nROITop = -1;
