@@ -1024,9 +1024,20 @@ bool CPlayerOne::getFastReadoutAvailable()
 	return true;
 }
 
+int CPlayerOne::getMaxBin()
+{
+	return m_nNbBin;
+}
+
+std::string	CPlayerOne::getSensorName()
+{
+	return std::string(m_cameraProperty.sensorModelName);
+}
+
+
 #pragma mark - Camera capture
 
-int CPlayerOne::startCaputure(double dTime)
+int CPlayerOne::startCapture(double dTime)
 {
 	int nErr = PLUGIN_OK;
 	POAErrors ret;
@@ -1163,6 +1174,8 @@ int CPlayerOne::setCoolerTemperature(bool bOn, double dTemp)
 	POAErrors ret;
 	POAConfigValue confValue;
 
+	m_dCoolerSetTemp = dTemp;
+
 	if(m_cameraProperty.isHasCooler) {
 		confValue.intValue = int(dTemp);
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -1190,6 +1203,11 @@ int CPlayerOne::setCoolerTemperature(bool bOn, double dTemp)
 		}
 	}
 	return nErr;
+}
+
+double CPlayerOne::getCoolerSetTemp()
+{
+	return m_dCoolerSetTemp;
 }
 
 int CPlayerOne::setCoolerState(bool bOn)
@@ -2094,6 +2112,32 @@ POAErrors CPlayerOne::getConfigValue(POAConfig confID , POAConfigValue &confValu
 }
 
 #pragma mark - Camera frame
+int CPlayerOne::getROI(int &nLeft, int &nTop, int &nWidth, int &nHeight)
+{
+	int nErr = PLUGIN_OK;
+	POAErrors ret;
+
+	ret = POAGetImageSize(m_nCameraID, &nWidth, &nHeight);
+	if(ret != POA_OK) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error getting Width and Height, Error = " << POAGetErrorString(ret) << std::endl;
+		m_sLogFile.flush();
+#endif
+		return ERROR_CMDFAILED;
+	}
+
+	ret = POAGetImageStartPos(m_nCameraID, &nLeft, &nTop);
+	if(ret != POA_OK) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error getting Left and top, Error = " << POAGetErrorString(ret) << std::endl;
+		m_sLogFile.flush();
+#endif
+		return ERROR_CMDFAILED;
+	}
+
+	return nErr;
+
+}
 
 int CPlayerOne::setROI(int nLeft, int nTop, int nWidth, int nHeight)
 {
@@ -2574,13 +2618,13 @@ int CPlayerOne::RelayActivate(const int nXPlus, const int nXMinus, const int nYP
 	}
 
 	confValue.boolValue = POA_FALSE; // to stop move
-	// One of these will always be zero, so this gives me the net
+	// One of these will always be zero, so this gives the net
 	// plus or minus movement
 	netX = nXPlus - nXMinus;
 	netY = nYPlus - nYMinus;
 	if(netX == 0) {   // netY will not be zero
 		// One of nYPLus and nYMinus will be zero, so this expression will work
-		timeToWait = float(nYPlus + nYMinus)/100.0f;
+		timeToWait = float(nYPlus + nYMinus)/1000.0f; // ms -> s
 		// Just wait for time to expire and stop relay
 		while(pulseTimer.GetElapsedSeconds() < timeToWait);
 		// need to know which one to stop
@@ -2600,7 +2644,7 @@ int CPlayerOne::RelayActivate(const int nXPlus, const int nXMinus, const int nYP
 
 	if(netY == 0)  {  // netX will not be zero
 		// Again, one of these will be zero
-		timeToWait = float(nXPlus + nXMinus)/100.0f;
+		timeToWait = float(nXPlus + nXMinus)/1000.0f; // ms -> s
 		// Just wait for time to expire and stop relay
 		while(pulseTimer.GetElapsedSeconds() < timeToWait);
 		// need to know which one to stop
@@ -2623,7 +2667,7 @@ int CPlayerOne::RelayActivate(const int nXPlus, const int nXMinus, const int nYP
 	//
 	if(abs(netY) == abs(netX)) {
 		// Pick one, doesn't matter which
-		timeToWait = float(nXPlus + nXMinus)/100.0f;
+		timeToWait = float(nXPlus + nXMinus)/1000.0f; // ms -> s
 		// Just wait for time to expire and stop relay
 		while(pulseTimer.GetElapsedSeconds() < timeToWait);
 
@@ -2653,7 +2697,7 @@ int CPlayerOne::RelayActivate(const int nXPlus, const int nXMinus, const int nYP
 	//
 	if(abs(netY) < abs(netX)) { // East-West movement was greater
 		// Wait for shorter time
-		timeToWait = float(nYPlus + nYMinus)/100.0f;
+		timeToWait = float(nYPlus + nYMinus)/1000.0f; // ms -> s
 		while(pulseTimer.GetElapsedSeconds() < timeToWait);
 		// need to know which one to stop
 		if(bNorth)
@@ -2669,7 +2713,7 @@ int CPlayerOne::RelayActivate(const int nXPlus, const int nXMinus, const int nYP
 			nErr = ERROR_CMDFAILED;
 		}
 		// Longer time
-		timeToWait = float(nXPlus + nXMinus)/100.0f;
+		timeToWait = float(nXPlus + nXMinus)/1000.0f; // ms -> s
 		while(pulseTimer.GetElapsedSeconds() < timeToWait);
 
 		// need to know which one to stop
@@ -2690,7 +2734,7 @@ int CPlayerOne::RelayActivate(const int nXPlus, const int nXMinus, const int nYP
 	}
 	else { // North-South movement was greater
 		// Wait for shorter time
-		timeToWait = float(nXPlus + nXMinus)/100.0f;
+		timeToWait = float(nXPlus + nXMinus)/1000.0f; // ms -> s
 		while(pulseTimer.GetElapsedSeconds() < timeToWait);
 		// need to know which one to stop
 		if(bEast)
@@ -2707,7 +2751,7 @@ int CPlayerOne::RelayActivate(const int nXPlus, const int nXMinus, const int nYP
 		}
 
 		// Longer time
-		timeToWait = float(nYPlus + nYMinus)/100.0f;
+		timeToWait = float(nYPlus + nYMinus)/1000.0f; // ms -> s
 		while(pulseTimer.GetElapsedSeconds() < timeToWait);
 
 		if(bNorth)
