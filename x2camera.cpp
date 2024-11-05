@@ -311,8 +311,8 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
             dx->setEnabled("SensorMode", false);
         else {
             if(svModes.size()) {
-                for(i = 0; i < svModes.size(); i++){
-                    dx->comboBoxAppendString("SensorMode", svModes.at(i).c_str());
+				for(auto &mode: svModes) {
+                    dx->comboBoxAppendString("SensorMode", mode.c_str());
                 }
                 dx->setCurrentIndex("SensorMode",nCurrentSensorMode);
             }

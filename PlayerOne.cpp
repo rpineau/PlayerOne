@@ -751,7 +751,7 @@ int CPlayerOne::getSensorModeList(std::vector<std::string> &svModes, int &curent
 #endif
 
 	svModes.clear();
-	for (POASensorModeInfo mode : m_sensorModeInfo) {
+	for (POASensorModeInfo &mode : m_sensorModeInfo) {
 		svModes.push_back(mode.name);
 	}
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -1024,6 +1024,24 @@ bool CPlayerOne::getFastReadoutAvailable()
 	return true;
 }
 
+bool CPlayerOne::isFastReadoutEnabled()
+{
+	int nErr = 0;
+	std::string sSensorModeName;
+
+	if(m_nSensorModeCount == 1) // only 1 mode then it's fast readount by default
+		return true;
+
+	nErr = getCurentSensorMode(sSensorModeName, m_nSensorModeIndex);
+	if(nErr)
+		return true; // if we can get the mode we assume it's fast readout
+
+	if(sSensorModeName.find("low noise") != std::string::npos) // if we're in low noise mode, we're not in fast readout.
+		return false;
+
+	return true;
+}
+
 int CPlayerOne::getMaxBin()
 {
 	return m_nNbBin;
@@ -1270,6 +1288,11 @@ int CPlayerOne::setBinSize(int nBin)
 	}
 
 	return PLUGIN_OK;
+}
+
+int CPlayerOne::getCurrentBin()
+{
+	return m_nCurrentBin;
 }
 
 bool CPlayerOne::isCameraColor()
@@ -2027,7 +2050,6 @@ POAErrors CPlayerOne::getConfigValue(POAConfig confID , POAConfigValue &confValu
 {
 	POAErrors ret;
 	POAConfigAttributes confAttr;
-	int nControlID;
 	bool bControlAvailable  = false;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -2036,8 +2058,8 @@ POAErrors CPlayerOne::getConfigValue(POAConfig confID , POAConfigValue &confValu
 #endif
 
 	// look for the control
-	for(nControlID = 0; nControlID< m_nControlNums; nControlID++) {
-		if(m_ControlList.at(nControlID).configID == confID) {
+	for(auto &listEntry: m_ControlList) {
+		if(listEntry.configID == confID) {
 			bControlAvailable = true;
 			break;
 		}

@@ -92,6 +92,7 @@ public:
 	int         getHeight();
 	double      getPixelSize();
 	int         setBinSize(int nBin);
+	int			getCurrentBin();
 
 	bool        isCameraColor();
 	void        getBayerPattern(std::string &sBayerPattern);
@@ -158,6 +159,8 @@ public:
 	long		getExposureMax();
 
 	bool		getFastReadoutAvailable();
+	bool		isFastReadoutEnabled();
+
 	int			getMaxBin();
 	std::string	getSensorName();
 #ifdef PLUGIN_DEBUG
