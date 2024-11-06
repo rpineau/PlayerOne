@@ -47,9 +47,9 @@
 #define VAL_NOT_AVAILABLE           0xDEADBEEF
 
 typedef struct _camera_info {
-	int     cameraId;
-	std::string    Sn;
-	std::string    model;
+	int			cameraId;
+	std::string	Sn;
+	std::string	model;
 } camera_info_t;
 
 enum Plugin_Flip_Mode { FLIP_NONE, FLIP_HORI, FLIP_VERT, FLIP_BOTH};
@@ -78,11 +78,13 @@ public:
 
 	int         getNumBins();
 	int         getBinFromIndex(int nIndex);
-	int         startCaputure(double dTime);
+	int         startCapture(double dTime);
 	void        abortCapture(void);
 
 	int         getTemperture(double &dTemp, double &dPower, double &dSetPoint, bool &bEnabled);
 	int         setCoolerTemperature(bool bOn, double dTemp);
+	double		getCoolerSetTemp();
+
 	int			setCoolerState(bool bOn);
 
 	bool		isCoolerAvailable();
@@ -90,6 +92,7 @@ public:
 	int         getHeight();
 	double      getPixelSize();
 	int         setBinSize(int nBin);
+	int			getCurrentBin();
 
 	bool        isCameraColor();
 	void        getBayerPattern(std::string &sBayerPattern);
@@ -115,6 +118,7 @@ public:
 	int         getLensHeaterPowerPerc(long &nMin, long &nMax, long &nValue);
 	int         setLensHeaterPowerPerc(long nPercent);
 
+	int         getROI(int &nLeft, int &nTop, int &nWidth, int &nHeight);
 	int         setROI(int nLeft, int nTop, int nWidth, int nHeight);
 	int         clearROI(void);
 
@@ -155,6 +159,10 @@ public:
 	long		getExposureMax();
 
 	bool		getFastReadoutAvailable();
+	bool		isFastReadoutEnabled();
+
+	int			getMaxBin();
+	std::string	getSensorName();
 #ifdef PLUGIN_DEBUG
 	void log(std::string sLogEntry);
 #endif
@@ -171,6 +179,7 @@ protected:
 	int                     m_nCameraID = 0;
 	std::string             m_sCameraName = "";
 	std::string             m_sCameraSerial = "";
+	std::string				m_sSensorModelName;
 
 	POACameraProperties     m_cameraProperty;
 	POAImgFormat            m_nImageFormat = POA_RAW16;
@@ -226,8 +235,8 @@ protected:
 
 	double                  m_dCaptureLenght = 0;
 
-	long					m_nEposureMax;
-	long					m_nEposureMin;
+	long					m_nEposureMax = 0;
+	long					m_nEposureMin = 0;
 
 	int                     m_nROILeft = -1;
 	int                     m_nROITop = -1;
@@ -240,6 +249,7 @@ protected:
 	int                     m_nReqROIHeight = -1;
 
 	bool                    m_bHasLensHeater = false;
+	double					m_dCoolerSetTemp = 0;
 
 	// special gain and offset data
 	int                     m_nGainHighestDR = VAL_NOT_AVAILABLE;

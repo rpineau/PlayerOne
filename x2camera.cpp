@@ -311,8 +311,8 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
             dx->setEnabled("SensorMode", false);
         else {
             if(svModes.size()) {
-                for(i = 0; i < svModes.size(); i++){
-                    dx->comboBoxAppendString("SensorMode", svModes.at(i).c_str());
+				for(auto &mode: svModes) {
+                    dx->comboBoxAppendString("SensorMode", mode.c_str());
                 }
                 dx->setCurrentIndex("SensorMode",nCurrentSensorMode);
             }
@@ -935,7 +935,7 @@ int X2Camera::CCStartExposure(const enumCameraIndex& Cam, const enumWhichCCD CCD
 		default:				return ERR_CMDFAILED;
 	}
 
-    nErr = m_Camera.startCaputure(dTime);
+    nErr = m_Camera.startCapture(dTime);
 	if(nErr) {
 		nErr = pluginErrorToTsxError(nErr);
 		return nErr;
@@ -1028,8 +1028,8 @@ int X2Camera::CCSetShutter(bool bOpen)
 int X2Camera::CCActivateRelays(const int& nXPlus, const int& nXMinus, const int& nYPlus, const int& nYMinus, const bool& bSynchronous, const bool& bAbort, const bool& bEndThread)
 {   
 	X2MutexLocker ml(GetMutex());
-    
-    m_Camera.RelayActivate(nXPlus, nXMinus, nYPlus, nYMinus, bSynchronous, bAbort);
+    // RelayActivate expect ms , not 100s of a second
+    m_Camera.RelayActivate(nXPlus/10, nXMinus/10, nYPlus/10, nYMinus/10, bSynchronous, bAbort);
 	return SB_OK;
 }
 
@@ -1494,7 +1494,7 @@ int X2Camera::CCStartExposureAdditionalArgInterface (const enumCameraIndex &Cam,
         default:                return ERR_CMDFAILED;
     }
 
-    nErr = m_Camera.startCaputure(dTime);
+    nErr = m_Camera.startCapture(dTime);
     return nErr;
 }
 
