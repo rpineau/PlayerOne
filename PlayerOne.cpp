@@ -2523,7 +2523,7 @@ int CPlayerOne::RelayActivate(const int nXPlus, const int nXMinus, const int nYP
 	int netX;
 	int netY;
 	bool bNorth, bSouth, bEast, bWest;
-	float timeToWait =0.0;
+	float timeToWait = 0.0;
 	CStopWatch pulseTimer;
 
 	if(!m_cameraProperty.isHasST4Port)
@@ -2847,7 +2847,7 @@ void CPlayerOne::rebuildGainList()
 	buildGainList();
 }
 
-std::string CPlayerOne::getGainLabelFromListAtIndex(int nIndex)
+std::string CPlayerOne::getGainLabelFromListAtIndex(unsigned int nIndex)
 {
 	if(nIndex<m_GainListLabel.size())
 		return m_GainListLabel.at(nIndex);
@@ -2856,7 +2856,7 @@ std::string CPlayerOne::getGainLabelFromListAtIndex(int nIndex)
 }
 
 
-int CPlayerOne::getGainFromListAtIndex(int nIndex)
+int CPlayerOne::getGainFromListAtIndex(unsigned int nIndex)
 {
 	if(nIndex<m_GainList.size())
 		return m_GainList.at(nIndex);

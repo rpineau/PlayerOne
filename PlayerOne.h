@@ -132,8 +132,8 @@ public:
 	int         RelayActivate(const int nXPlus, const int nXMinus, const int nYPlus, const int nYMinus, const bool bSynchronous, const bool bAbort);
 
 	int         getNbGainInList();
-	std::string getGainLabelFromListAtIndex(int nIndex);
-	int         getGainFromListAtIndex(int nIndex);
+	std::string getGainLabelFromListAtIndex(unsigned int nIndex);
+	int         getGainFromListAtIndex(unsigned int nIndex);
 
 	void        rebuildGainList();
 
