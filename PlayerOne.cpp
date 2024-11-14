@@ -20,14 +20,11 @@ CPlayerOne::CPlayerOne()
 	m_mAvailableFrameRate.clear();
 
 #ifdef PLUGIN_DEBUG
-#if defined(SB_WIN_BUILD)
+#if defined(WIN32)
 	m_sLogfilePath = getenv("HOMEDRIVE");
 	m_sLogfilePath += getenv("HOMEPATH");
 	m_sLogfilePath += "\\PlayerOneLog.txt";
-#elif defined(SB_LINUX_BUILD)
-	m_sLogfilePath = getenv("HOME");
-	m_sLogfilePath += "/PlayerOneLog.txt";
-#elif defined(SB_MAC_BUILD)
+#else
 	m_sLogfilePath = getenv("HOME");
 	m_sLogfilePath += "/PlayerOneLog.txt";
 #endif
@@ -81,15 +78,13 @@ int CPlayerOne::Connect(std::string sSerial)
 	long nMin, nMax, nValue;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "]  Tryng to connect to camera with serial : " << m_sCameraSerial << std::endl;
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "]  Trying to connect to camera with serial : " << m_sCameraSerial << std::endl;
 		m_sLogFile.flush();
 #endif
 
-	if(!sSerial.size())
-		return ERROR_NODEVICESELECTED;
-
-	m_sCameraSerial.assign(sSerial);
-
+	if(sSerial.size())
+		m_sCameraSerial.assign(sSerial);
+	
 	nErr = getCameraIdFromSerial(m_nCameraID, m_sCameraSerial);
 	if(nErr) {
 		if(POAGetCameraCount() >= 1) {
