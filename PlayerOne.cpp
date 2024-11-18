@@ -20,14 +20,11 @@ CPlayerOne::CPlayerOne()
 	m_mAvailableFrameRate.clear();
 
 #ifdef PLUGIN_DEBUG
-#if defined(SB_WIN_BUILD)
+#if defined(WIN32)
 	m_sLogfilePath = getenv("HOMEDRIVE");
 	m_sLogfilePath += getenv("HOMEPATH");
 	m_sLogfilePath += "\\PlayerOneLog.txt";
-#elif defined(SB_LINUX_BUILD)
-	m_sLogfilePath = getenv("HOME");
-	m_sLogfilePath += "/PlayerOneLog.txt";
-#elif defined(SB_MAC_BUILD)
+#else
 	m_sLogfilePath = getenv("HOME");
 	m_sLogfilePath += "/PlayerOneLog.txt";
 #endif
