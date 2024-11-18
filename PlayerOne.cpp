@@ -58,7 +58,7 @@ CPlayerOne::~CPlayerOne()
 void CPlayerOne::setUserConf(bool bUserConf)
 {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-	m_sLogFile << "["<<getTimeStamp()<<"]" << " [" << __func__ << "]  Set m_bSetUserConf to : " << (bUserConf?"Yes":"No") << std::endl;
+	m_sLogFile << "["<<getTimeStamp()<<"]" << " [" << __func__ << "] Set m_bSetUserConf to : " << (bUserConf?"Yes":"No") << std::endl;
 	m_sLogFile.flush();
 #endif
 
@@ -78,7 +78,7 @@ int CPlayerOne::Connect(std::string sSerial)
 	long nMin, nMax, nValue;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "]  Tryng to connect to camera with serial : " << m_sCameraSerial << std::endl;
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Trying to connect to camera with serial : " << m_sCameraSerial << std::endl;
 		m_sLogFile.flush();
 #endif
 
@@ -105,7 +105,7 @@ int CPlayerOne::Connect(std::string sSerial)
 	ret = POAOpenCamera(m_nCameraID);
 	if (ret != POA_OK) { // we had a camera selected but it's not connected,
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "]  Error connecting to camera ID " << m_nCameraID << " serial " << m_sCameraSerial << " , Error = " << POAGetErrorString(ret) << std::endl;
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error connecting to camera ID " << m_nCameraID << " serial " << m_sCameraSerial << " , Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
 #endif
 		return ERROR_NODEVICESELECTED;
