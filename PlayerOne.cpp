@@ -207,7 +207,6 @@ int CPlayerOne::Connect(std::string sSerial)
 		return ERROR_CMDFAILED;
 	}
 
-	getExposureMinMax(m_nEposureMin, m_nEposureMax);
 
 	nErr = setROI(0, 0, m_cameraProperty.maxWidth, m_cameraProperty.maxHeight);
 	if (nErr)
@@ -248,6 +247,7 @@ int CPlayerOne::Connect(std::string sSerial)
 			continue;
 		}
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Attribute ID   = " << Attribute.configID << std::endl;
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Attribute Name   = " << Attribute.szConfName << std::endl;
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Attribute Description   = " << Attribute.szDescription << std::endl;
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Attribute type   = " << Attribute.valueType << std::endl;
@@ -289,6 +289,8 @@ int CPlayerOne::Connect(std::string sSerial)
 	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Offset at lowest read noise            : " << m_nOffsetLowestRN << std::endl;
 	m_sLogFile.flush();
 #endif
+
+	getExposureMinMax(m_nExposureMin, m_nExposureMax);
 
 	POAGetSensorModeCount(m_nCameraID, &m_nSensorModeCount);
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -979,7 +981,7 @@ int CPlayerOne::getExposureMinMax(long &nMin, long &nMax)
 	ret = getConfigValue(POA_EXPOSURE, confValue, minValue, maxValue, bAuto);
 	if(ret) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error getting gain, Error = " << POAGetErrorString(ret) << std::endl;
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error getting min and max exposure time, Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
 #endif
 		return VAL_NOT_AVAILABLE;
@@ -997,12 +999,12 @@ int CPlayerOne::getExposureMinMax(long &nMin, long &nMax)
 
 long CPlayerOne::getExposureMin()
 {
-	return m_nEposureMin;
+	return m_nExposureMin;
 }
 
 long CPlayerOne::getExposureMax()
 {
-	return m_nEposureMax;
+	return m_nExposureMax;
 }
 
 bool CPlayerOne::getFastReadoutAvailable()
@@ -1189,9 +1191,9 @@ int CPlayerOne::setCoolerTemperature(bool bOn, double dTemp)
 	POAErrors ret;
 	POAConfigValue confValue;
 
-	m_dCoolerSetTemp = dTemp;
 
 	if(m_cameraProperty.isHasCooler) {
+		m_dCoolerSetTemp = dTemp;
 		confValue.intValue = int(dTemp);
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Setting temperature to " << int(dTemp) << std::endl;
@@ -1216,6 +1218,9 @@ int CPlayerOne::setCoolerTemperature(bool bOn, double dTemp)
 #endif
 			nErr = ERROR_CMDFAILED;
 		}
+	}
+	else {
+		nErr = ERROR_CMDFAILED; // can't set the cooler temp if we don't have one.
 	}
 	return nErr;
 }
@@ -2276,7 +2281,7 @@ bool CPlayerOne::isFrameAvailable()
 		return bFrameAvailable;
 
 	if(m_bAbort)
-		return true;
+		return false;
 
 	POACameraState cameraState;
 	POAGetCameraState(m_nCameraID, &cameraState);
@@ -2319,10 +2324,6 @@ void CPlayerOne::getCameraState(int &nState)
 	POAGetCameraState(m_nCameraID, &cameraState);
 
 	if(cameraState == STATE_EXPOSING) {
-		nState = C_EXPOSING;
-		return;
-	}
-	if(isFrameAvailable()) {
 		nState = C_EXPOSING;
 		return;
 	}

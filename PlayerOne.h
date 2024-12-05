@@ -37,7 +37,7 @@
 #include "PlayerOneCamera.h"
 #include "StopWatch.h"
 
-// #define PLUGIN_DEBUG    3
+#define PLUGIN_DEBUG    3
 
 
 #define CODE_VERSION      1.31
@@ -235,8 +235,8 @@ protected:
 
 	double                  m_dCaptureLenght = 0;
 
-	long					m_nEposureMax = 0;
-	long					m_nEposureMin = 0;
+	long					m_nExposureMax = 0;
+	long					m_nExposureMin = 0;
 
 	int                     m_nROILeft = -1;
 	int                     m_nROITop = -1;
