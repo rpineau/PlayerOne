@@ -897,12 +897,13 @@ int X2Camera::CCRegulateTemp(const bool& bOn, const double& dTemp)
 	if (!m_bLinked)
 		return ERR_NOLINK;
 
-    nErr = m_Camera.setCoolerTemperature(bOn, dTemp);
-	if(nErr) {
-		nErr = pluginErrorToTsxError(nErr);
-		return nErr;
+	if(m_Camera.isCoolerAvailable()) {
+		nErr = m_Camera.setCoolerTemperature(bOn, dTemp);
+		if(nErr) {
+			nErr = pluginErrorToTsxError(nErr);
+			return nErr;
+		}
 	}
-
 	return nErr;
 }
 
