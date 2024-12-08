@@ -530,6 +530,12 @@ int CPlayerOne::getCameraIdFromSerial(int &nCameraId, std::string sSerial)
 #endif
 	if(nCameraId<0)
 		nErr = ERROR_NODEVICESELECTED;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+	m_sLogFile.flush();
+#endif
+
 	return nErr;
 }
 
@@ -571,6 +577,10 @@ int CPlayerOne::getCameraSerialFromID(int nCameraId, std::string &sSerial)
 	else {
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] camera serial  not found for id: "<< nCameraId << std::endl;
 	}
+	m_sLogFile.flush();
+#endif
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
 	m_sLogFile.flush();
 #endif
 	return nErr;
@@ -648,6 +658,10 @@ int CPlayerOne::listCamera(std::vector<camera_info_t>  &cameraIdList)
 			cameraIdList.push_back(tCameraInfo);
 		}
 	}
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+	m_sLogFile.flush();
+#endif
 	return nErr;
 }
 
@@ -717,6 +731,10 @@ int CPlayerOne::getCurentSensorMode(std::string &sSensorMode, int &nModeIndex)
 	}
 	else
 		sSensorMode.assign(m_sensorModeInfo[nModeIndex].name);
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+	m_sLogFile.flush();
+#endif
 	return nErr;
 }
 
@@ -728,19 +746,34 @@ int CPlayerOne::getSensorModeList(std::vector<std::string> &svModes, int &curent
 	svModes.clear();
 	curentModeIndex = -1;
 
-	if(!m_nSensorModeCount) // sensor mode no supported by camera
-		return VAL_NOT_AVAILABLE;
-
-	if(m_sensorModeInfo.size()==0)
-		return VAL_NOT_AVAILABLE;
-
+	if(!m_nSensorModeCount) {// sensor mode no supported by camera
+		nErr = VAL_NOT_AVAILABLE;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
+		return nErr;
+	}
+	if(m_sensorModeInfo.size()==0) {
+		nErr = VAL_NOT_AVAILABLE;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
+		return nErr;
+	}
 	ret = POAGetSensorMode(m_nCameraID, &curentModeIndex);
 	if(ret) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] POAGetSensorMode Error getting current sensor mode." << std::endl;
 		m_sLogFile.flush();
 #endif
-		return VAL_NOT_AVAILABLE;
+		nErr = VAL_NOT_AVAILABLE;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
+		return nErr;
 	}
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -758,6 +791,10 @@ int CPlayerOne::getSensorModeList(std::vector<std::string> &svModes, int &curent
 	m_sLogFile.flush();
 #endif
 
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+	m_sLogFile.flush();
+#endif
 	return nErr;
 }
 
@@ -771,9 +808,14 @@ int CPlayerOne::setSensorMode(int nModeIndex)
 	if(!m_bConnected)
 		return ERROR_NOLINK;
 
-	if(!m_nSensorModeCount) // sensor mode no supported by camera
-		return ERROR_COMMANDNOTSUPPORTED;
-
+	if(!m_nSensorModeCount) {// sensor mode no supported by camera
+		nErr = ERROR_COMMANDNOTSUPPORTED;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
+		return nErr;
+	}
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
 	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Setting sensor mode to index  = " << nModeIndex << std::endl;
 	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Sensor mode name   = " << m_sensorModeInfo[nModeIndex].name << std::endl;
@@ -789,6 +831,10 @@ int CPlayerOne::setSensorMode(int nModeIndex)
 		nErr = ERROR_CMDFAILED;
 	}
 
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+	m_sLogFile.flush();
+#endif
 	return nErr;
 }
 
@@ -810,7 +856,12 @@ int CPlayerOne::getPixelBinMode(bool &bSumMode)
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error getting camera pixel mode. Error= " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
 #endif
-		return ERROR_CMDFAILED;
+		nErr = ERROR_CMDFAILED;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
+		return nErr;
 	}
 
 	// POA_TRUE is sum and POA_FALSE is average,
@@ -822,6 +873,10 @@ int CPlayerOne::getPixelBinMode(bool &bSumMode)
 	m_sLogFile.flush();
 #endif
 
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+	m_sLogFile.flush();
+#endif
 	return nErr;
 }
 
@@ -857,6 +912,10 @@ int CPlayerOne::setPixelBinMode(bool bSumMode)
 #endif
 	}
 
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+	m_sLogFile.flush();
+#endif
 	return nErr;
 }
 
@@ -879,7 +938,12 @@ int CPlayerOne::getMonoBin(bool &bMonoBin)
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error getting camera pixel mono bin. Error= " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
 #endif
-		return VAL_NOT_AVAILABLE;
+		nErr = VAL_NOT_AVAILABLE;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
+		return nErr;
 	}
 
 	// POA_TRUE is mono bin and POA_FALSE is no mono bin,
@@ -891,6 +955,10 @@ int CPlayerOne::getMonoBin(bool &bMonoBin)
 	m_sLogFile.flush();
 #endif
 
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+	m_sLogFile.flush();
+#endif
 	return nErr;
 }
 
@@ -925,6 +993,10 @@ int CPlayerOne::setMonoBin(bool bMonoBin)
 #endif
 	}
 
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+	m_sLogFile.flush();
+#endif
 	return nErr;
 }
 
@@ -957,7 +1029,12 @@ int CPlayerOne::getGainAdu(double &dMin, double &dMax, double &dValue)
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error getting gain ADU, Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
 #endif
-		return VAL_NOT_AVAILABLE;
+		nErr = VAL_NOT_AVAILABLE;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
+		return nErr;
 	}
 
 	dMin = minValue.floatValue;
@@ -966,6 +1043,10 @@ int CPlayerOne::getGainAdu(double &dMin, double &dMax, double &dValue)
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
 	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] GainAUD is " << dValue << std::endl;
+	m_sLogFile.flush();
+#endif
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
 	m_sLogFile.flush();
 #endif
 	return nErr;
@@ -984,7 +1065,12 @@ int CPlayerOne::getExposureMinMax(long &nMin, long &nMax)
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error getting min and max exposure time, Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
 #endif
-		return VAL_NOT_AVAILABLE;
+		nErr = VAL_NOT_AVAILABLE;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
+		return nErr;
 	}
 
 	nMin = minValue.intValue;
@@ -992,6 +1078,10 @@ int CPlayerOne::getExposureMinMax(long &nMin, long &nMax)
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
 	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nMax is " << nMax << std::endl;
+	m_sLogFile.flush();
+#endif
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
 	m_sLogFile.flush();
 #endif
 	return nErr;
@@ -1077,11 +1167,21 @@ int CPlayerOne::startCapture(double dTime)
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error getting camera state. Error= " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
 #endif
-		return ERROR_CMDFAILED;
+		nErr = ERROR_CMDFAILED;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
+		return nErr;
 	}
 
 	if(cameraState != STATE_OPENED) {
-		return ERROR_COMMANDINPROGRESS;
+		nErr = ERROR_COMMANDINPROGRESS;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
+		return nErr;
 	}
 
 
@@ -1103,6 +1203,10 @@ int CPlayerOne::startCapture(double dTime)
 
 	m_dCaptureLenght = dTime;
 	m_ExposureTimer.Reset();
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+	m_sLogFile.flush();
+#endif
 	return nErr;
 }
 
@@ -1182,6 +1286,10 @@ int CPlayerOne::getTemperture(double &dTemp, double &dPower, double &dSetPoint, 
 		dSetPoint = dTemp;
 		bEnabled = false;
 	}
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+	m_sLogFile.flush();
+#endif
 	return nErr;
 }
 
@@ -1222,6 +1330,10 @@ int CPlayerOne::setCoolerTemperature(bool bOn, double dTemp)
 	else {
 		nErr = ERROR_CMDFAILED; // can't set the cooler temp if we don't have one.
 	}
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+	m_sLogFile.flush();
+#endif
 	return nErr;
 }
 
@@ -1247,6 +1359,10 @@ int CPlayerOne::setCoolerState(bool bOn)
 			nErr = ERROR_CMDFAILED;
 		}
 	}
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+	m_sLogFile.flush();
+#endif
 	return nErr;
 }
 
@@ -1273,6 +1389,7 @@ double CPlayerOne::getPixelSize()
 int CPlayerOne::setBinSize(int nBin)
 {
 	POAErrors ret;
+	int nErr = PLUGIN_OK;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
 	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nBin = " << nBin << std::endl;
@@ -1286,10 +1403,14 @@ int CPlayerOne::setBinSize(int nBin)
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error setting bin size, Error = " << ret << std::endl;
 		m_sLogFile.flush();
 #endif
-		return ERROR_CMDFAILED;
+		nErr = ERROR_CMDFAILED;
 	}
 
-	return PLUGIN_OK;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+	m_sLogFile.flush();
+#endif
+	return nErr;
 }
 
 int CPlayerOne::getCurrentBin()
@@ -1362,7 +1483,7 @@ int CPlayerOne::getGain(long &nMin, long &nMax, long &nValue)
 	POAErrors ret;
 	POAConfigValue minValue, maxValue, confValue;
 	POABool bAuto;
-
+	int nErr = PLUGIN_OK;
 	nMin = 0;
 	nMax = 0;
 	nValue = 0;
@@ -1373,7 +1494,12 @@ int CPlayerOne::getGain(long &nMin, long &nMax, long &nValue)
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error getting gain, Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
 #endif
-		return VAL_NOT_AVAILABLE;
+		nErr = VAL_NOT_AVAILABLE;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
+		return nErr;
 	}
 
 	nMin = minValue.intValue;
@@ -1384,7 +1510,11 @@ int CPlayerOne::getGain(long &nMin, long &nMax, long &nValue)
 	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Gain is " << nValue << std::endl;
 	m_sLogFile.flush();
 #endif
-	return 0;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+	m_sLogFile.flush();
+#endif
+	return nErr;
 }
 
 int CPlayerOne::setGain(long nGain)
@@ -1417,6 +1547,10 @@ int CPlayerOne::setGain(long nGain)
 #endif
 		nErr = ERROR_CMDFAILED;
 	}
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+	m_sLogFile.flush();
+#endif
 	return nErr;
 }
 
@@ -1426,13 +1560,18 @@ int CPlayerOne::getWB_R(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
 	POAErrors ret;
 	POAConfigValue minValue, maxValue, confValue;
 	POABool bAuto;
-
+	int nErr = PLUGIN_OK;
 	nMin = 0;
 	nMax = 0;
 	nValue = 0;
 
 	if(!m_cameraProperty.isColorCamera) {
-		return VAL_NOT_AVAILABLE;
+		nErr =  VAL_NOT_AVAILABLE;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
+		return nErr;
 	}
 
 	ret = getConfigValue(POA_WB_R, confValue, minValue, maxValue, bAuto);
@@ -1441,7 +1580,12 @@ int CPlayerOne::getWB_R(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error getting WB_R, Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
 #endif
-		return VAL_NOT_AVAILABLE;
+		nErr =  VAL_NOT_AVAILABLE;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
+		return nErr;
 	}
 	bIsAuto = (bool)bAuto;
 	nMin = minValue.intValue;
@@ -1455,7 +1599,11 @@ int CPlayerOne::getWB_R(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
 	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] bIsAuto is " << (bIsAuto?"True":"False") << std::endl;
 	m_sLogFile.flush();
 #endif
-	return 0;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+	m_sLogFile.flush();
+#endif
+	return nErr;
 }
 
 int CPlayerOne::setWB_R(long nWB_R, bool bIsAuto)
@@ -1471,7 +1619,12 @@ int CPlayerOne::setWB_R(long nWB_R, bool bIsAuto)
 		return nErr;
 
 	if(!m_cameraProperty.isColorCamera) {
-		return VAL_NOT_AVAILABLE;
+		nErr =  VAL_NOT_AVAILABLE;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
+		return nErr;
 	}
 
 	confValue.intValue = nWB_R;
@@ -1490,11 +1643,16 @@ int CPlayerOne::setWB_R(long nWB_R, bool bIsAuto)
 		m_sLogFile.flush();
 #endif
 	}
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+	m_sLogFile.flush();
+#endif
 	return nErr;
 }
 
 int CPlayerOne::getWB_G(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
 {
+	int nErr = PLUGIN_OK;
 	POAErrors ret;
 	POAConfigValue minValue, maxValue, confValue;
 	POABool bAuto;
@@ -1504,7 +1662,12 @@ int CPlayerOne::getWB_G(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
 	nValue = 0;
 
 	if(!m_cameraProperty.isColorCamera) {
-		return VAL_NOT_AVAILABLE;
+		nErr =  VAL_NOT_AVAILABLE;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
+		return nErr;
 	}
 
 	ret = getConfigValue(POA_WB_G, confValue, minValue, maxValue, bAuto);
@@ -1513,7 +1676,12 @@ int CPlayerOne::getWB_G(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error getting WB_G, Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
 #endif
-		return VAL_NOT_AVAILABLE;
+		nErr = VAL_NOT_AVAILABLE;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
+		return nErr;
 	}
 	bIsAuto = (bool)bAuto;
 	nMin = minValue.intValue;
@@ -1527,7 +1695,11 @@ int CPlayerOne::getWB_G(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
 	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] bIsAuto is " << (bIsAuto?"True":"False") << std::endl;
 	m_sLogFile.flush();
 #endif
-	return 0;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+	m_sLogFile.flush();
+#endif
+	return nErr;
 }
 
 int CPlayerOne::setWB_G(long nWB_G, bool bIsAuto)
@@ -1543,7 +1715,12 @@ int CPlayerOne::setWB_G(long nWB_G, bool bIsAuto)
 		return nErr;
 
 	if(!m_cameraProperty.isColorCamera) {
-		return VAL_NOT_AVAILABLE;
+		nErr = VAL_NOT_AVAILABLE;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
+		return nErr;
 	}
 
 	confValue.intValue = m_nWbG;
@@ -1562,11 +1739,16 @@ int CPlayerOne::setWB_G(long nWB_G, bool bIsAuto)
 		m_sLogFile.flush();
 #endif
 	}
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+	m_sLogFile.flush();
+#endif
 	return nErr;
 }
 
 int CPlayerOne::getWB_B(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
 {
+	int nErr = PLUGIN_OK;
 	POAErrors ret;
 	POAConfigValue minValue, maxValue, confValue;
 	POABool bAuto;
@@ -1576,7 +1758,12 @@ int CPlayerOne::getWB_B(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
 	nValue = 0;
 
 	if(!m_cameraProperty.isColorCamera) {
-		return VAL_NOT_AVAILABLE;
+		nErr =  VAL_NOT_AVAILABLE;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
+		return nErr;
 	}
 
 	ret = getConfigValue(POA_WB_B, confValue, minValue, maxValue, bAuto);
@@ -1585,7 +1772,12 @@ int CPlayerOne::getWB_B(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error getting WB_B, Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
 #endif
-		return VAL_NOT_AVAILABLE;
+		nErr = VAL_NOT_AVAILABLE;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
+		return nErr;
 	}
 	bIsAuto = (bool)bAuto;
 	nMin = minValue.intValue;
@@ -1599,7 +1791,11 @@ int CPlayerOne::getWB_B(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
 	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] bIsAuto is " << (bIsAuto?"True":"False") << std::endl;
 	m_sLogFile.flush();
 #endif
-	return 0;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+	m_sLogFile.flush();
+#endif
+	return nErr;
 }
 
 int CPlayerOne::setWB_B(long nWB_B, bool bIsAuto)
@@ -1615,7 +1811,12 @@ int CPlayerOne::setWB_B(long nWB_B, bool bIsAuto)
 		return nErr;
 
 	if(!m_cameraProperty.isColorCamera) {
-		return VAL_NOT_AVAILABLE;
+		nErr =  VAL_NOT_AVAILABLE;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
+		return nErr;
 	}
 
 	confValue.intValue = m_nWbB;
@@ -1635,6 +1836,10 @@ int CPlayerOne::setWB_B(long nWB_B, bool bIsAuto)
 #endif
 	}
 
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+	m_sLogFile.flush();
+#endif
 	return nErr;
 }
 
@@ -1642,6 +1847,7 @@ int CPlayerOne::setWB_B(long nWB_B, bool bIsAuto)
 
 int CPlayerOne::getFlip(long &nMin, long &nMax, long &nValue)
 {
+	int nErr = PLUGIN_OK;
 	POAErrors ret;
 	POAConfigValue minValue, maxValue, confValue;
 	POABool bAuto;
@@ -1657,7 +1863,12 @@ int CPlayerOne::getFlip(long &nMin, long &nMax, long &nValue)
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error getting Flip mode, Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
 #endif
-		return VAL_NOT_AVAILABLE;
+		nErr =  VAL_NOT_AVAILABLE;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
+		return nErr;
 	}
 	if(confValue.boolValue == POA_TRUE) {
 		nMin = minValue.boolValue?1:0;
@@ -1685,7 +1896,12 @@ int CPlayerOne::getFlip(long &nMin, long &nMax, long &nValue)
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error getting Flip mode, Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
 #endif
-		return VAL_NOT_AVAILABLE;
+		nErr = VAL_NOT_AVAILABLE;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
+		return nErr;
 	}
 	if(confValue.boolValue == POA_TRUE) {
 		nMin = minValue.boolValue?1:0;
@@ -1699,7 +1915,12 @@ int CPlayerOne::getFlip(long &nMin, long &nMax, long &nValue)
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error getting Flip mode, Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
 #endif
-		return VAL_NOT_AVAILABLE;
+		nErr =  VAL_NOT_AVAILABLE;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
+		return nErr;
 	}
 	if(confValue.boolValue == POA_TRUE) {
 		nMin = minValue.boolValue?1:0;
@@ -1714,7 +1935,11 @@ int CPlayerOne::getFlip(long &nMin, long &nMax, long &nValue)
 	m_sLogFile.flush();
 #endif
 
-	return 0;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+	m_sLogFile.flush();
+#endif
+	return nErr;
 }
 
 int CPlayerOne::setFlip(long nFlip)
@@ -1758,12 +1983,17 @@ int CPlayerOne::setFlip(long nFlip)
 #endif
 		nErr = ERROR_CMDFAILED;
 	}
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+	m_sLogFile.flush();
+#endif
 	return nErr;
 }
 
 
 int CPlayerOne::getOffset(long &nMin, long &nMax, long &nValue)
 {
+	int nErr = PLUGIN_OK;
 	POAErrors ret;
 	POAConfigValue minValue, maxValue, confValue;
 	POABool bAuto;
@@ -1778,7 +2008,12 @@ int CPlayerOne::getOffset(long &nMin, long &nMax, long &nValue)
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error getting Offset, Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
 #endif
-		return VAL_NOT_AVAILABLE;
+		nErr =  VAL_NOT_AVAILABLE;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
+		return nErr;
 	}
 
 	nMin = minValue.intValue;
@@ -1818,12 +2053,17 @@ int CPlayerOne::setOffset(long nOffset)
 #endif
 		nErr = ERROR_CMDFAILED;
 	}
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+	m_sLogFile.flush();
+#endif
 	return nErr;
 }
 
 
 int CPlayerOne::getUSBBandwidth(long &nMin, long &nMax, long &nValue)
 {
+	int nErr = PLUGIN_OK;
 	POAErrors ret;
 	POAConfigValue minValue, maxValue, confValue;
 	POABool bAuto;
@@ -1838,7 +2078,12 @@ int CPlayerOne::getUSBBandwidth(long &nMin, long &nMax, long &nValue)
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error getting USB Bandwidth, Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
 #endif
-		return VAL_NOT_AVAILABLE;
+		nErr = VAL_NOT_AVAILABLE;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
+		return nErr;
 	}
 	nMin = minValue.intValue;
 	nMax = maxValue.intValue;
@@ -1850,7 +2095,11 @@ int CPlayerOne::getUSBBandwidth(long &nMin, long &nMax, long &nValue)
 	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] max is " << nMax << std::endl;
 	m_sLogFile.flush();
 #endif
-	return 0;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+	m_sLogFile.flush();
+#endif
+	return nErr;
 }
 
 int CPlayerOne::setUSBBandwidth(long nBandwidth)
@@ -1879,6 +2128,10 @@ int CPlayerOne::setUSBBandwidth(long nBandwidth)
 		m_sLogFile.flush();
 #endif
 	}
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+	m_sLogFile.flush();
+#endif
 	return nErr;
 }
 
@@ -1889,6 +2142,7 @@ bool CPlayerOne::isLensHeaterAvailable()
 
 int CPlayerOne::getLensHeaterPowerPerc(long &nMin, long &nMax, long &nValue)
 {
+	int nErr = PLUGIN_OK;
 	POAErrors ret;
 	POAConfigValue minValue, maxValue, confValue;
 	POABool bAuto;
@@ -1903,7 +2157,12 @@ int CPlayerOne::getLensHeaterPowerPerc(long &nMin, long &nMax, long &nValue)
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error getting lens power percentage, Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
 #endif
-		return VAL_NOT_AVAILABLE;
+		nErr = VAL_NOT_AVAILABLE;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
+		return nErr;
 	}
 	nMin = minValue.intValue;
 	nMax = maxValue.intValue;
@@ -1915,7 +2174,11 @@ int CPlayerOne::getLensHeaterPowerPerc(long &nMin, long &nMax, long &nValue)
 	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] max is " << nMax << std::endl;
 	m_sLogFile.flush();
 #endif
-	return 0;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+	m_sLogFile.flush();
+#endif
+	return nErr;
 }
 
 int CPlayerOne::setLensHeaterPowerPerc(long nPercent)
@@ -1944,6 +2207,10 @@ int CPlayerOne::setLensHeaterPowerPerc(long nPercent)
 		m_sLogFile.flush();
 #endif
 	}
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+	m_sLogFile.flush();
+#endif
 	return nErr;
 }
 
@@ -1967,7 +2234,12 @@ int CPlayerOne::getHardwareBinOn(bool &bOn)
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error getting hardware bin mode, Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
 #endif
-		return VAL_NOT_AVAILABLE;
+		nErr = VAL_NOT_AVAILABLE;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
+		return nErr;
 	}
 	m_bHardwareBinEnabled = bool(confValue.boolValue == POA_TRUE);
 	bOn = m_bHardwareBinEnabled;
@@ -1978,6 +2250,10 @@ int CPlayerOne::getHardwareBinOn(bool &bOn)
 	m_sLogFile.flush();
 #endif
 
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+	m_sLogFile.flush();
+#endif
 	return nErr;
 }
 
@@ -2014,8 +2290,11 @@ int CPlayerOne::setHardwareBinOn(bool bOn)
 #endif
 	}
 
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+	m_sLogFile.flush();
+#endif
 	return nErr;
-
 }
 
 
@@ -2147,7 +2426,12 @@ int CPlayerOne::getROI(int &nLeft, int &nTop, int &nWidth, int &nHeight)
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error getting Width and Height, Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
 #endif
-		return ERROR_CMDFAILED;
+		nErr =  ERROR_CMDFAILED;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
+		return nErr;
 	}
 
 	ret = POAGetImageStartPos(m_nCameraID, &nLeft, &nTop);
@@ -2156,11 +2440,14 @@ int CPlayerOne::getROI(int &nLeft, int &nTop, int &nWidth, int &nHeight)
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error getting Left and top, Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
 #endif
-		return ERROR_CMDFAILED;
+		nErr = ERROR_CMDFAILED;
 	}
 
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+	m_sLogFile.flush();
+#endif
 	return nErr;
-
 }
 
 int CPlayerOne::setROI(int nLeft, int nTop, int nWidth, int nHeight)
@@ -2184,7 +2471,12 @@ int CPlayerOne::setROI(int nLeft, int nTop, int nWidth, int nHeight)
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error setting new Width and Height, Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
 #endif
-		return ERROR_CMDFAILED;
+		nErr = ERROR_CMDFAILED;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
+		return nErr;
 	}
 
 	ret = POAGetImageSize(m_nCameraID, &nNewWidth, &nNewHeight);
@@ -2193,7 +2485,12 @@ int CPlayerOne::setROI(int nLeft, int nTop, int nWidth, int nHeight)
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error getting new Width and Height, Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
 #endif
-		return ERROR_CMDFAILED;
+		nErr =  ERROR_CMDFAILED;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
+		return nErr;
 	}
 
 	ret = POASetImageStartPos(m_nCameraID, m_nReqROILeft, m_nReqROITop);
@@ -2202,7 +2499,12 @@ int CPlayerOne::setROI(int nLeft, int nTop, int nWidth, int nHeight)
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error setting new Left and top, Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
 #endif
-		return ERROR_CMDFAILED;
+		nErr =  ERROR_CMDFAILED;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
+		return nErr;
 	}
 
 	ret = POAGetImageStartPos(m_nCameraID, &nNewLeft, &nNewTop);
@@ -2211,7 +2513,12 @@ int CPlayerOne::setROI(int nLeft, int nTop, int nWidth, int nHeight)
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error getting new Left and top, Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
 #endif
-		return ERROR_CMDFAILED;
+		nErr = ERROR_CMDFAILED;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
+		return nErr;
 	}
 
 
@@ -2241,6 +2548,10 @@ int CPlayerOne::setROI(int nLeft, int nTop, int nWidth, int nHeight)
 	m_sLogFile.flush();
 #endif
 
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+	m_sLogFile.flush();
+#endif
 	return nErr;
 }
 
@@ -2255,7 +2566,12 @@ int CPlayerOne::clearROI()
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error setting new Width and Height, Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
 #endif
-		return ERROR_CMDFAILED;
+		nErr = ERROR_CMDFAILED;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
+		return nErr;
 	}
 
 	ret = POASetImageStartPos(m_nCameraID, 0, 0);
@@ -2264,9 +2580,13 @@ int CPlayerOne::clearROI()
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error setting new Left and top, Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile.flush();
 #endif
-		return ERROR_CMDFAILED;
+		nErr = ERROR_CMDFAILED;
 	}
 
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+	m_sLogFile.flush();
+#endif
 	return nErr;
 }
 
@@ -2281,7 +2601,7 @@ bool CPlayerOne::isFrameAvailable()
 		return bFrameAvailable;
 
 	if(m_bAbort)
-		return false;
+		return true;
 
 	POACameraState cameraState;
 	POAGetCameraState(m_nCameraID, &cameraState);
@@ -2356,9 +2676,14 @@ int CPlayerOne::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
 
 	int tmp1, tmp2;
 
-	if(!frameBuffer)
-		return ERROR_POINTER;
-
+	if(!frameBuffer) {
+		nErr = ERROR_POINTER;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
+		return nErr;
+	}
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
 	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nHeight         = " << nHeight << std::endl;
 	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nMemWidth       = " << nMemWidth << std::endl;
@@ -2424,7 +2749,12 @@ int CPlayerOne::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
 				POAStopExposure(m_nCameraID);
 				if(imgBuffer != frameBuffer)
 					free(imgBuffer);
-				return ERROR_RXTIMEOUT;
+				nErr = ERROR_RXTIMEOUT;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+				m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+				m_sLogFile.flush();
+#endif
+				return nErr;
 			}
 		}
 		// POAStopExposure(m_nCameraID);
@@ -2499,6 +2829,10 @@ int CPlayerOne::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
 	m_sLogFile.flush();
 #endif
 
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+	m_sLogFile.flush();
+#endif
 	return nErr;
 }
 
@@ -2524,9 +2858,14 @@ int CPlayerOne::RelayActivate(const int nXPlus, const int nXMinus, const int nYP
 	float timeToWait = 0.0;
 	CStopWatch pulseTimer;
 
-	if(!m_cameraProperty.isHasST4Port)
-		return ERROR_COMMANDNOTSUPPORTED;
-
+	if(!m_cameraProperty.isHasST4Port) {
+		nErr =  ERROR_COMMANDNOTSUPPORTED;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
+		return nErr;
+	}
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
 	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nXPlus       : " << nXPlus << std::endl;
 	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nXMinus      : " << nXMinus << std::endl;
@@ -2543,6 +2882,10 @@ int CPlayerOne::RelayActivate(const int nXPlus, const int nXMinus, const int nYP
 		ret = POASetConfig(m_nCameraID, POA_GUIDE_SOUTH, confValue, bAuto);
 		ret = POASetConfig(m_nCameraID, POA_GUIDE_EAST, confValue, bAuto);
 		ret = POASetConfig(m_nCameraID, POA_GUIDE_WEST, confValue, bAuto);
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
 		return nErr;
 	}
 
@@ -2561,7 +2904,12 @@ int CPlayerOne::RelayActivate(const int nXPlus, const int nXMinus, const int nYP
 			else if(nYPlus == 0 && nYMinus !=0)
 				m_confGuideDir = POA_GUIDE_SOUTH;
 			else { // dual direction, can't be done from the GUI
-				return ERROR_COMMANDNOTSUPPORTED;
+				nErr = ERROR_COMMANDNOTSUPPORTED;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+				m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+				m_sLogFile.flush();
+#endif
+				return nErr;
 			}
 		}
 
@@ -2579,6 +2927,10 @@ int CPlayerOne::RelayActivate(const int nXPlus, const int nXMinus, const int nYP
 #endif
 			nErr = ERROR_CMDFAILED;
 		}
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
 		return nErr;
 	}
 
@@ -2659,6 +3011,10 @@ int CPlayerOne::RelayActivate(const int nXPlus, const int nXMinus, const int nYP
 #endif
 			nErr = ERROR_CMDFAILED;
 		}
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
 		return nErr;
 	}
 
@@ -2680,6 +3036,10 @@ int CPlayerOne::RelayActivate(const int nXPlus, const int nXMinus, const int nYP
 #endif
 			nErr = ERROR_CMDFAILED;
 		}
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
 		return nErr;
 	}
 	//
@@ -2710,6 +3070,10 @@ int CPlayerOne::RelayActivate(const int nXPlus, const int nXMinus, const int nYP
 #endif
 			nErr = ERROR_CMDFAILED;
 		}
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
 		return nErr;
 	}
 	//
@@ -2750,6 +3114,10 @@ int CPlayerOne::RelayActivate(const int nXPlus, const int nXMinus, const int nYP
 			nErr = ERROR_CMDFAILED;
 		}
 
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
 		return nErr;
 	}
 	else { // North-South movement was greater
@@ -2787,8 +3155,16 @@ int CPlayerOne::RelayActivate(const int nXPlus, const int nXMinus, const int nYP
 			nErr = ERROR_CMDFAILED;
 		}
 
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
 		return nErr;
 	}
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+	m_sLogFile.flush();
+#endif
 	return nErr;
 }
 
