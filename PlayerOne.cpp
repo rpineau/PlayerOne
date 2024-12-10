@@ -693,6 +693,15 @@ int CPlayerOne::getBinFromIndex(int nIndex)
 	return m_SupportedBins[nIndex];
 }
 
+bool CPlayerOne::isBinSupported(int nRequestedBin)
+{
+	for( int &nBin : m_SupportedBins) {
+		if(nRequestedBin == nBin)
+			return true;
+	}
+	return false;
+}
+
 int CPlayerOne::getCurentSensorMode(std::string &sSensorMode, int &nModeIndex)
 {
 	int nErr = PLUGIN_OK;

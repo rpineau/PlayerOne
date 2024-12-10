@@ -76,8 +76,9 @@ public:
 	void        getFirmwareVersion(std::string &sVersion);
 	void        isUSB3(bool &bUSB3);
 
-	int         getNumBins();
-	int         getBinFromIndex(int nIndex);
+	int			getNumBins();
+	int			getBinFromIndex(int nIndex);
+	bool		isBinSupported(int nRequestedBin);
 	int         startCapture(double dTime);
 	void        abortCapture(void);
 

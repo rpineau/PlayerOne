@@ -183,7 +183,6 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
 	bool bHardwareBinEnable = false;
     bool bBinPixelSumMode = false;
     bool bPixelBinMono = false;
-    int i = 0;
 
     int nGainHighestDR;
     int nHCGain;
