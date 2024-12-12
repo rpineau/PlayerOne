@@ -3177,6 +3177,98 @@ int CPlayerOne::RelayActivate(const int nXPlus, const int nXMinus, const int nYP
 	return nErr;
 }
 
+bool CPlayerOne::isPulseGuding()
+{
+	int nErr = PLUGIN_OK;
+	POAErrors ret;
+	POAConfigValue minValue, maxValue, confValue;
+	POABool bAuto;
+	bool bIsGuidingOn = false;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] called." << std::endl;
+	m_sLogFile.flush();
+#endif
+
+	ret = getConfigValue(POA_GUIDE_NORTH, confValue, minValue, maxValue, bAuto);
+	if(ret) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error getting relay state. Error= " << POAGetErrorString(ret) << std::endl;
+		m_sLogFile.flush();
+#endif
+		nErr = ERROR_CMDFAILED;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
+		return nErr;
+	}
+
+	bIsGuidingOn = (confValue.boolValue == POA_TRUE);
+
+	ret = getConfigValue(POA_GUIDE_SOUTH, confValue, minValue, maxValue, bAuto);
+	if(ret) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error getting relay state. Error= " << POAGetErrorString(ret) << std::endl;
+		m_sLogFile.flush();
+#endif
+		nErr = ERROR_CMDFAILED;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
+		return nErr;
+	}
+
+	bIsGuidingOn |= (confValue.boolValue == POA_TRUE);
+
+	ret = getConfigValue(POA_GUIDE_EAST, confValue, minValue, maxValue, bAuto);
+	if(ret) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error getting relay state. Error= " << POAGetErrorString(ret) << std::endl;
+		m_sLogFile.flush();
+#endif
+		nErr = ERROR_CMDFAILED;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
+		return nErr;
+	}
+
+	bIsGuidingOn |= (confValue.boolValue == POA_TRUE);
+
+	ret = getConfigValue(POA_GUIDE_WEST, confValue, minValue, maxValue, bAuto);
+	if(ret) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error getting relay state. Error= " << POAGetErrorString(ret) << std::endl;
+		m_sLogFile.flush();
+#endif
+		nErr = ERROR_CMDFAILED;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
+		return nErr;
+	}
+
+
+	bIsGuidingOn |= (confValue.boolValue == POA_TRUE);
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] bIsGuidingOn :  " << (bIsGuidingOn?:"Yes":"No") << std::endl;
+	m_sLogFile.flush();
+#endif
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+	m_sLogFile.flush();
+#endif
+	return nErr;
+
+}
+
+
 #pragma mark - helper functions
 
 void CPlayerOne::buildGainList()

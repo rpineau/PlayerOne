@@ -131,6 +131,7 @@ public:
 
 	bool		isST4Available();
 	int         RelayActivate(const int nXPlus, const int nXMinus, const int nYPlus, const int nYMinus, const bool bSynchronous, const bool bAbort);
+	bool		isPulseGuding();
 
 	int         getNbGainInList();
 	std::string getGainLabelFromListAtIndex(unsigned int nIndex);
