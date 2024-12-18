@@ -861,12 +861,9 @@ int CPlayerOne::getPixelBinMode(bool &bSumMode)
 
 	ret = getConfigValue(POA_PIXEL_BIN_SUM, confValue, minValue, maxValue, bAuto);
 	if(ret) {
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error getting camera pixel mode. Error= " << POAGetErrorString(ret) << std::endl;
-		m_sLogFile.flush();
-#endif
 		nErr = ERROR_CMDFAILED;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error getting camera pixel mode. Error= " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
 		m_sLogFile.flush();
 #endif
@@ -1172,12 +1169,9 @@ int CPlayerOne::startCapture(double dTime)
 
 	ret = POAGetCameraState(m_nCameraID, &cameraState);
 	if(ret) {
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error getting camera state. Error= " << POAGetErrorString(ret) << std::endl;
-		m_sLogFile.flush();
-#endif
 		nErr = ERROR_CMDFAILED;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error getting camera state. Error= " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
 		m_sLogFile.flush();
 #endif
@@ -2476,12 +2470,9 @@ int CPlayerOne::setROI(int nLeft, int nTop, int nWidth, int nHeight)
 
 	ret = POASetImageSize(m_nCameraID,m_nReqROIWidth,m_nReqROIHeight);
 	if(ret != POA_OK) {
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error setting new Width and Height, Error = " << POAGetErrorString(ret) << std::endl;
-		m_sLogFile.flush();
-#endif
 		nErr = ERROR_CMDFAILED;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error setting new Width and Height, Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
 		m_sLogFile.flush();
 #endif
@@ -2518,12 +2509,9 @@ int CPlayerOne::setROI(int nLeft, int nTop, int nWidth, int nHeight)
 
 	ret = POAGetImageStartPos(m_nCameraID, &nNewLeft, &nNewTop);
 	if(ret != POA_OK) {
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error getting new Left and top, Error = " << POAGetErrorString(ret) << std::endl;
-		m_sLogFile.flush();
-#endif
 		nErr = ERROR_CMDFAILED;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error getting new Left and top, Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
 		m_sLogFile.flush();
 #endif
@@ -2571,12 +2559,9 @@ int CPlayerOne::clearROI()
 
 	ret = POASetImageSize(m_nCameraID,  m_cameraProperty.maxWidth/m_nCurrentBin , m_cameraProperty.maxHeight/m_nCurrentBin);
 	if(ret != POA_OK) {
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error setting new Width and Height, Error = " << POAGetErrorString(ret) << std::endl;
-		m_sLogFile.flush();
-#endif
 		nErr = ERROR_CMDFAILED;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error setting new Width and Height, Error = " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
 		m_sLogFile.flush();
 #endif
@@ -3192,12 +3177,9 @@ bool CPlayerOne::isPulseGuding()
 
 	ret = getConfigValue(POA_GUIDE_NORTH, confValue, minValue, maxValue, bAuto);
 	if(ret) {
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error getting relay state. Error= " << POAGetErrorString(ret) << std::endl;
-		m_sLogFile.flush();
-#endif
 		nErr = ERROR_CMDFAILED;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error getting relay state. Error= " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
 		m_sLogFile.flush();
 #endif
@@ -3208,12 +3190,9 @@ bool CPlayerOne::isPulseGuding()
 
 	ret = getConfigValue(POA_GUIDE_SOUTH, confValue, minValue, maxValue, bAuto);
 	if(ret) {
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error getting relay state. Error= " << POAGetErrorString(ret) << std::endl;
-		m_sLogFile.flush();
-#endif
 		nErr = ERROR_CMDFAILED;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error getting relay state. Error= " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
 		m_sLogFile.flush();
 #endif
@@ -3224,12 +3203,9 @@ bool CPlayerOne::isPulseGuding()
 
 	ret = getConfigValue(POA_GUIDE_EAST, confValue, minValue, maxValue, bAuto);
 	if(ret) {
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error getting relay state. Error= " << POAGetErrorString(ret) << std::endl;
-		m_sLogFile.flush();
-#endif
 		nErr = ERROR_CMDFAILED;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error getting relay state. Error= " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
 		m_sLogFile.flush();
 #endif
@@ -3240,12 +3216,9 @@ bool CPlayerOne::isPulseGuding()
 
 	ret = getConfigValue(POA_GUIDE_WEST, confValue, minValue, maxValue, bAuto);
 	if(ret) {
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error getting relay state. Error= " << POAGetErrorString(ret) << std::endl;
-		m_sLogFile.flush();
-#endif
 		nErr = ERROR_CMDFAILED;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error getting relay state. Error= " << POAGetErrorString(ret) << std::endl;
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
 		m_sLogFile.flush();
 #endif
