@@ -3229,7 +3229,7 @@ bool CPlayerOne::isPulseGuding()
 	bIsGuidingOn |= (confValue.boolValue == POA_TRUE);
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] bIsGuidingOn :  " << (bIsGuidingOn?:"Yes":"No") << std::endl;
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] bIsGuidingOn :  " << (bIsGuidingOn?"Yes":"No") << std::endl;
 	m_sLogFile.flush();
 #endif
 
