@@ -782,8 +782,8 @@ double X2Camera::driverInfoVersion(void) const
 void X2Camera::deviceInfoNameShort(BasicStringInterface& str) const										
 {
     X2Camera* pMe = (X2Camera*)this;
-    X2MutexLocker ml(pMe->GetMutex());
-    
+	X2MutexLocker ml(GetMutex());
+
     if(m_bLinked) {
         std::string sCameraSerial;
         std::string sCameraName;
@@ -798,7 +798,7 @@ void X2Camera::deviceInfoNameShort(BasicStringInterface& str) const
 void X2Camera::deviceInfoNameLong(BasicStringInterface& str) const										
 {
     X2Camera* pMe = (X2Camera*)this;
-    X2MutexLocker ml(pMe->GetMutex());
+	X2MutexLocker ml(GetMutex());
 
     if(m_bLinked) {
         std::stringstream cDevName;

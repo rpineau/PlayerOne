@@ -228,7 +228,7 @@ private:
 	SleeperInterface								*	GetSleeper() {return m_pSleeper; }
 	BasicIniUtilInterface							*	GetBasicIniUtil() {return m_pIniUtil; }
 	LoggerInterface									*	GetLogger() {return m_pLogger; }
-	MutexInterface									*	GetMutex() const  {return m_pIOMutex;}
+	MutexInterface									*	GetMutex() const {return m_pIOMutex;}
 	TickCountInterface								*	GetTickCountInterface() {return m_pTickCount;}
     
 	SerXInterface									*	m_pSerX;		
@@ -236,7 +236,7 @@ private:
 	SleeperInterface								*	m_pSleeper;
 	BasicIniUtilInterface							*	m_pIniUtil;
 	LoggerInterface									*	m_pLogger;
-	MutexInterface									*	m_pIOMutex;
+	mutable MutexInterface							*	m_pIOMutex;
 	TickCountInterface								*	m_pTickCount;
 
     double  mPixelSizeX = 0;
