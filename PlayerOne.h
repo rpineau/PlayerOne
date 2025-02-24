@@ -156,9 +156,9 @@ public:
 								   int &nOffsetHighestDR, int &nOffsetHCGain, int &nOffsetUnityGain, int &nOffsetLowestRN);
 
 	int			getGainAdu(double &dMin, double &nMax, double &dValue);
-	int			getExposureMinMax(long &nMin, long &nMax);
-	long		getExposureMin();
-	long		getExposureMax();
+	int			getExposureMinMax(double &dMin, double &dMax);
+	double		getExposureMin();
+	double		getExposureMax();
 
 	bool		getFastReadoutAvailable();
 	bool		isFastReadoutEnabled();
@@ -237,8 +237,8 @@ protected:
 
 	double                  m_dCaptureLenght = 0;
 
-	long					m_nExposureMax = 0;
-	long					m_nExposureMin = 0;
+	double					m_dExposureMax = 0;
+	double					m_dExposureMin = 0;
 
 	int                     m_nROILeft = -1;
 	int                     m_nROITop = -1;

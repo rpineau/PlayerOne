@@ -290,7 +290,7 @@ int CPlayerOne::Connect(std::string sSerial)
 	m_sLogFile.flush();
 #endif
 
-	getExposureMinMax(m_nExposureMin, m_nExposureMax);
+	getExposureMinMax(m_dExposureMin, m_dExposureMax);
 
 	POAGetSensorModeCount(m_nCameraID, &m_nSensorModeCount);
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -1058,14 +1058,14 @@ int CPlayerOne::getGainAdu(double &dMin, double &dMax, double &dValue)
 	return nErr;
 }
 
-int CPlayerOne::getExposureMinMax(long &nMin, long &nMax)
+int CPlayerOne::getExposureMinMax(double &dMin, double &dMax)
 {
 	POAErrors ret;
 	int nErr = PLUGIN_OK;
 	POAConfigValue minValue, maxValue, confValue;
 	POABool bAuto;
 
-	ret = getConfigValue(POA_EXPOSURE, confValue, minValue, maxValue, bAuto);
+	ret = getConfigValue(POA_EXP, confValue, minValue, maxValue, bAuto);
 	if(ret) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error getting min and max exposure time, Error = " << POAGetErrorString(ret) << std::endl;
@@ -1079,8 +1079,8 @@ int CPlayerOne::getExposureMinMax(long &nMin, long &nMax)
 		return nErr;
 	}
 
-	nMin = minValue.intValue;
-	nMax = maxValue.intValue;
+	dMin = minValue.floatValue;
+	dMax = maxValue.floatValue;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
 	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nMax is " << nMax << std::endl;
@@ -1093,14 +1093,14 @@ int CPlayerOne::getExposureMinMax(long &nMin, long &nMax)
 	return nErr;
 }
 
-long CPlayerOne::getExposureMin()
+double CPlayerOne::getExposureMin()
 {
-	return m_nExposureMin;
+	return m_dExposureMin;
 }
 
-long CPlayerOne::getExposureMax()
+double CPlayerOne::getExposureMax()
 {
-	return m_nExposureMax;
+	return m_dExposureMax;
 }
 
 bool CPlayerOne::getFastReadoutAvailable()
@@ -1194,8 +1194,12 @@ int CPlayerOne::startCapture(double dTime)
 #endif
 
 	// set exposure time (s -> us)
-	exposure_value.intValue = (int)(dTime * 1000000);
-	ret = POASetConfig(m_nCameraID, POA_EXPOSURE, exposure_value, POA_FALSE); //set exposure time
+	// exposure_value.intValue = (int)(dTime * 1000000);
+	// CHANGE  POA_EXP is now the new config to use and is in seconds
+	if(dTime < m_dExposureMin)
+		dTime = m_dExposureMin;
+	exposure_value.floatValue = dTime;
+	ret = POASetConfig(m_nCameraID, POA_EXP, exposure_value, POA_FALSE); //set exposure time
 	if(ret!=POA_OK)
 		return ERROR_CMDFAILED;
 
