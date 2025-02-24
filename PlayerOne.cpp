@@ -1198,6 +1198,9 @@ int CPlayerOne::startCapture(double dTime)
 	// CHANGE  POA_EXP is now the new config to use and is in seconds
 	if(dTime < m_dExposureMin)
 		dTime = m_dExposureMin;
+	if(dTime > m_dExposureMax)
+		dTime = m_dExposureMax;
+
 	exposure_value.floatValue = dTime;
 	ret = POASetConfig(m_nCameraID, POA_EXP, exposure_value, POA_FALSE); //set exposure time
 	if(ret!=POA_OK)
