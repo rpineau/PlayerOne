@@ -1083,7 +1083,7 @@ int CPlayerOne::getExposureMinMax(double &dMin, double &dMax)
 	dMax = maxValue.floatValue;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nMax is " << nMax << std::endl;
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] dMax is " << dMax << std::endl;
 	m_sLogFile.flush();
 #endif
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -1430,6 +1430,10 @@ int CPlayerOne::getCurrentBin()
 
 bool CPlayerOne::isCameraColor()
 {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] isColorCamera = " << (m_cameraProperty.isColorCamera?"Yes":"No") << std::endl;
+	m_sLogFile.flush();
+#endif
 	return m_cameraProperty.isColorCamera;
 }
 
@@ -3160,12 +3164,6 @@ int CPlayerOne::RelayActivate(const int nXPlus, const int nXMinus, const int nYP
 #endif
 			nErr = ERROR_CMDFAILED;
 		}
-
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
-		m_sLogFile.flush();
-#endif
-		return nErr;
 	}
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
 	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;

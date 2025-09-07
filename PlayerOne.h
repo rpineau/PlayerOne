@@ -37,7 +37,7 @@
 #include "PlayerOneCamera.h"
 #include "StopWatch.h"
 
-// #define PLUGIN_DEBUG    1
+// #define PLUGIN_DEBUG    3
 
 
 #define CODE_VERSION      1.38

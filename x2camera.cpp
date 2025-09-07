@@ -1335,7 +1335,7 @@ int X2Camera::valueForStringField (int nIndex, BasicStringInterface &sFieldName,
 	bool bHardwareBinEnable = false;
 	bool bMonoBin = false;
     X2MutexLocker ml(GetMutex());
-
+	int nCurrentBin = 1;
 	bHardwareBinPresent = m_Camera.isHardwareBinAvailable();
 	if(bHardwareBinPresent) {
 		nErr = m_Camera.getHardwareBinOn(bHardwareBinEnable);
@@ -1351,64 +1351,92 @@ int X2Camera::valueForStringField (int nIndex, BasicStringInterface &sFieldName,
 	if(nErr) {
 		bMonoBin = false;
 	}
+	nCurrentBin = m_Camera.getCurrentBin();
 
     switch(nIndex) {
         case F_BAYER :
             if(m_Camera.isCameraColor()) { // color camera
-				if(bHardwareBinPresent && bHardwareBinEnable ) { // no mono bin available if harware bin is enabled
-					m_Camera.getBayerPattern(sTmp);
-					sFieldName = "DEBAYER";
-					sFieldComment = "Bayer pattern to use to decode color image";
-					sFieldValue = sTmp.c_str();
-				}
-				else if(!bHardwareBinPresent || !bHardwareBinEnable) {
-					if(bMonoBin) {
-						sFieldName = "DEBAYER";
-						sFieldComment = "Bayer pattern to use to decode color image";
-						sFieldValue = "MONO";
-					}
-					else {
+				if(nCurrentBin > 1) {
+					if(bHardwareBinPresent && bHardwareBinEnable ) { // no mono bin available if harware bin is enabled
 						m_Camera.getBayerPattern(sTmp);
 						sFieldName = "DEBAYER";
 						sFieldComment = "Bayer pattern to use to decode color image";
 						sFieldValue = sTmp.c_str();
 					}
+					else if(!bHardwareBinPresent || !bHardwareBinEnable) {
+						if(bMonoBin) {
+							sFieldName = "DEBAYER";
+							sFieldComment = "Bayer pattern to use to decode color image";
+							sFieldValue = "MONO";
+							sTmp="MONO";
+						}
+						else {
+							m_Camera.getBayerPattern(sTmp);
+							sFieldName = "DEBAYER";
+							sFieldComment = "Bayer pattern to use to decode color image";
+							sFieldValue = sTmp.c_str();
+						}
+					}
+				}
+				else {
+					m_Camera.getBayerPattern(sTmp);
+					sFieldName = "DEBAYER";
+					sFieldComment = "Bayer pattern to use to decode color image";
+					sFieldValue = sTmp.c_str();
 				}
             }
             else { // mono camera
                 sFieldName = "DEBAYER";
                 sFieldComment = "Bayer pattern to use to decode color image";
                 sFieldValue = "MONO";
+				sTmp="MONO";
             }
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+			m_Camera.log("X2Camera::valueForStringField F_BAYER getBayerPattern : "+sTmp);
+#endif
             break;
 
         case F_BAYERPAT: // PixInsight
 			if(m_Camera.isCameraColor()) { // color camera
-				if(bHardwareBinPresent && bHardwareBinEnable ) { // no mono bin available if harware bin is enabled
-					m_Camera.getBayerPattern(sTmp);
-					sFieldName = "BAYERPAT";
-					sFieldComment = "Bayer pattern to use to decode color image";
-					sFieldValue = sTmp.c_str();
-				}
-				else if(!bHardwareBinPresent || !bHardwareBinEnable) {
-					if(bMonoBin) {
-						sFieldName = "BAYERPAT";
-						sFieldComment = "Bayer pattern to use to decode color image";
-						sFieldValue = "MONO";
-					}
-					else {
+				if(nCurrentBin > 1) {
+					if(bHardwareBinPresent && bHardwareBinEnable ) { // no mono bin available if harware bin is enabled
 						m_Camera.getBayerPattern(sTmp);
 						sFieldName = "BAYERPAT";
 						sFieldComment = "Bayer pattern to use to decode color image";
 						sFieldValue = sTmp.c_str();
 					}
+					else if(!bHardwareBinPresent || !bHardwareBinEnable) {
+						if(bMonoBin) {
+							sFieldName = "BAYERPAT";
+							sFieldComment = "Bayer pattern to use to decode color image";
+							sFieldValue = "MONO";
+							sTmp="MONO";
+						}
+						else {
+							m_Camera.getBayerPattern(sTmp);
+							sFieldName = "BAYERPAT";
+							sFieldComment = "Bayer pattern to use to decode color image";
+							sFieldValue = sTmp.c_str();
+						}
+					}
 				}
+				else {
+					m_Camera.getBayerPattern(sTmp);
+					sFieldName = "BAYERPAT";
+					sFieldComment = "Bayer pattern to use to decode color image";
+					sFieldValue = sTmp.c_str();
+				}
+
 			}
 			else { // mono camera
 				sFieldName = "BAYERPAT";
 				sFieldComment = "Bayer pattern to use to decode color image";
 				sFieldValue = "MONO";
+				sTmp="MONO";
 			}
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+			m_Camera.log("X2Camera::valueForStringField F_BAYERPAT getBayerPattern : "+sTmp);
+#endif
 			break;
 
         case F_FLIP :
