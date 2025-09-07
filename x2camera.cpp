@@ -1143,12 +1143,6 @@ int X2Camera::CCSetBinnedSubFrame3(const enumCameraIndex &Camera, const enumWhic
     
     X2MutexLocker ml(GetMutex());
 
-#ifdef PLUGIN_DEBUG
-    std::stringstream ssTmp;
-    ssTmp << "[CCSetBinnedSubFrame3] nLeft = " << nLeft << ", nTop = " << nTop << ", nWidth = " << nWidth << ", nHeight = " << nHeight;
-    m_Camera.log(ssTmp.str());
-#endif
-
     nErr = m_Camera.setROI(nLeft, nTop, nWidth, nHeight);
 	if(nErr) {
 		nErr = pluginErrorToTsxError(nErr);

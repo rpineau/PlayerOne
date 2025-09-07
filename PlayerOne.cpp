@@ -33,7 +33,7 @@ CPlayerOne::CPlayerOne()
 
 	std::string sSDKVersion;
 	getFirmwareVersion(sSDKVersion);
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+#if defined PLUGIN_DEBUG
 	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Version " << std::fixed << std::setprecision(2) << CODE_VERSION << " build " << __DATE__ << " " << __TIME__ << std::endl;
 	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] " << sSDKVersion << std::endl;
 	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Constructor Called." << std::endl;
@@ -1188,7 +1188,7 @@ int CPlayerOne::startCapture(double dTime)
 	}
 
 
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+#if defined PLUGIN_DEBUG
 	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Starting Capture." << std::endl;
 	m_sLogFile.flush();
 #endif
@@ -1415,7 +1415,7 @@ int CPlayerOne::setBinSize(int nBin)
 #endif
 		nErr = ERROR_CMDFAILED;
 	}
-
+	getROI(m_nROILeft, m_nROITop, m_nROIWidth, m_nROIHeight);
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
 	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
 	m_sLogFile.flush();
@@ -2685,6 +2685,11 @@ int CPlayerOne::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
 #endif
 		return nErr;
 	}
+#if defined PLUGIN_DEBUG
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Downloading frame" << std::endl;
+	m_sLogFile.flush();
+#endif
+
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
 	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nHeight         = " << nHeight << std::endl;
 	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nMemWidth       = " << nMemWidth << std::endl;
@@ -2760,7 +2765,7 @@ int CPlayerOne::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
 		}
 		// POAStopExposure(m_nCameraID);
 
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+#if defined PLUGIN_DEBUG
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Frame downloaded to buffer." << std::endl;
 		m_sLogFile.flush();
 #endif
