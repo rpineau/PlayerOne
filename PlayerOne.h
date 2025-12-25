@@ -40,7 +40,7 @@
 // #define PLUGIN_DEBUG    3
 
 
-#define CODE_VERSION      1.38
+#define CODE_VERSION      1.40
 #define BUFFER_LEN 128
 #define PLUGIN_OK   0
 #define MAX_NB_BIN  8
@@ -118,6 +118,9 @@ public:
 	bool        isLensHeaterAvailable();
 	int         getLensHeaterPowerPerc(long &nMin, long &nMax, long &nValue);
 	int         setLensHeaterPowerPerc(long nPercent);
+
+	int         getFanPower(long &nMin, long &nMax, long &nValue);
+	int         setFanPower(long nPercent);
 
 	int         getROI(int &nLeft, int &nTop, int &nWidth, int &nHeight);
 	int         setROI(int nLeft, int nTop, int nWidth, int nHeight);
@@ -212,6 +215,7 @@ protected:
 	bool                    m_bHasMonoBinMode = false;
 	long                    m_nUSBBandwidth = 100;
 	long                    m_nLensHeaterPowerPerc = VAL_NOT_AVAILABLE;
+	long                    m_nFanPowerPerc = VAL_NOT_AVAILABLE;
 
 	double                  m_dPixelSize = 0;
 	int                     m_nMaxWidth = -1;

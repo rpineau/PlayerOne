@@ -2228,6 +2228,83 @@ int CPlayerOne::setLensHeaterPowerPerc(long nPercent)
 	return nErr;
 }
 
+
+int CPlayerOne::getFanPower(long &nMin, long &nMax, long &nValue)
+{
+	int nErr = PLUGIN_OK;
+	POAErrors ret;
+	POAConfigValue minValue, maxValue, confValue;
+	POABool bAuto;
+
+	nMin = 0;
+	nMax = 0;
+	nValue = 0;
+
+	ret = getConfigValue(POA_FAN_POWER, confValue, minValue, maxValue, bAuto);
+	if(ret) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error getting Fan power percentage, Error = " << POAGetErrorString(ret) << std::endl;
+		m_sLogFile.flush();
+#endif
+		nErr = VAL_NOT_AVAILABLE;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+		m_sLogFile.flush();
+#endif
+		return nErr;
+	}
+	nMin = minValue.intValue;
+	nMax = maxValue.intValue;
+	nValue = confValue.intValue;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Fan power is at " << nValue << "%" << std::endl;
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] min is " << nMin << std::endl;
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] max is " << nMax << std::endl;
+	m_sLogFile.flush();
+#endif
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+	m_sLogFile.flush();
+#endif
+	return nErr;
+}
+
+int CPlayerOne::setFanPower(long nPercent)
+{
+	int nErr = PLUGIN_OK;
+	POAErrors ret;
+	POAConfigValue confValue;
+
+	m_nFanPowerPerc = nPercent;
+
+	if(!m_bConnected)
+		return nErr;
+
+	confValue.intValue = m_nFanPowerPerc;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Fan power percentage set to " << m_nFanPowerPerc << "%" << std::endl;
+	m_sLogFile.flush();
+#endif
+
+	ret = setConfigValue(POA_FAN_POWER, confValue, POA_FALSE);
+	if(ret != POA_OK) {
+		nErr = ERROR_CMDFAILED;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] Error setting Fan power percentage, Error = " << POAGetErrorString(ret) << std::endl;
+		m_sLogFile.flush();
+#endif
+	}
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
+	m_sLogFile.flush();
+#endif
+	return nErr;
+}
+
+
+
 bool CPlayerOne::isHardwareBinAvailable()
 {
 	return m_bHasHardwareBin;
