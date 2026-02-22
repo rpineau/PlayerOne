@@ -40,7 +40,7 @@ cp "./PlayerOneCamera.ui" "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlu
 cp "./PlayerOneCamSelect.ui" "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/"
 cp "./libPlayerOne.so" "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/"
 cp "./PlayerOne.png" "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/"
-sudo cp -f "./player_one_astronomy.rules" "/etc/udev/rules.d/99-player_one_astronomy.rules"
+sudo cp -f "./99-player_one_astronomy.rules" "/etc/udev/rules.d/99-player_one_astronomy.rules"
 
 app_owner=`/usr/bin/stat -c "%u" "$TheSkyX_Path" | xargs id -n -u`
 if [ ! -z "$app_owner" ]; then
