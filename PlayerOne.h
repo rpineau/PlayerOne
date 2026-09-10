@@ -40,7 +40,7 @@
 // #define PLUGIN_DEBUG    3
 
 
-#define CODE_VERSION      1.40
+#define CODE_VERSION      1.402
 #define BUFFER_LEN 128
 #define PLUGIN_OK   0
 #define MAX_NB_BIN  8
