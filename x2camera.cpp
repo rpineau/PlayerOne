@@ -399,6 +399,9 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
         }
 
 
+        dx->setCurrentIndex("hotPixelMethod", m_nHotPixelMethod);
+        dx->setPropertyInt("hotPixelThreshold", "value", m_nHotPixelThreshold);
+
         m_Camera.isUSB3(bIsUSB3);
         dx->setText("USBMode", bIsUSB3?"<html><head/><body><p><span style=\" color:#00FF00;\">USB 3.0</span></p></body></html>" : "<html><head/><body><p><span style=\" color:#FF0000;\">USB 2.0</span></p></body></html>");
 
@@ -624,6 +627,11 @@ int X2Camera::doPlayerOneCAmFeatureConfig()
 #endif
             }
         }
+
+        m_nHotPixelMethod = dx->currentIndex("hotPixelMethod");
+        m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_HOT_PIXEL_METHOD, m_nHotPixelMethod);
+        dx->propertyInt("hotPixelThreshold", "value", m_nHotPixelThreshold);
+        m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_HOT_PIXEL_THRESHOLD, m_nHotPixelThreshold);
     }
 
     return nErr;
@@ -689,6 +697,11 @@ int X2Camera::loadCameraSettings(std::string sSerial)
     if(nValue!=VAL_NOT_AVAILABLE)
         m_Camera.setLensHeaterPowerPerc((long)nValue);
 
+    nValue = m_pIniUtil->readInt(sSerial.c_str(), KEY_HOT_PIXEL_METHOD, 0);
+    m_nHotPixelMethod = (nValue >= 0 && nValue <= 2) ? nValue : 0;
+    nValue = m_pIniUtil->readInt(sSerial.c_str(), KEY_HOT_PIXEL_THRESHOLD, 10);
+    m_nHotPixelThreshold = (nValue >= 1 && nValue <= 15) ? nValue : 10;
+
     m_Camera.setUserConf(true);
     return nErr;
 }
@@ -737,6 +750,7 @@ void X2Camera::doSettingsCamEvent(X2GUIExchangeInterface* uiex, const char* pszE
         bEnable = uiex->isChecked("checkBox_4");
         uiex->setEnabled("WB_B", !bEnable);
     }
+
 	if (!strcmp(pszEvent, "on_checkBox_6_stateChanged")) {
 		bEnable = uiex->isChecked("checkBox_6");
 		if(m_Camera.isCameraColor()) {
@@ -1077,6 +1091,11 @@ int X2Camera::CCReadoutImage(const enumCameraIndex& Cam, const enumWhichCCD& CCD
 		nErr = pluginErrorToTsxError(nErr);
 		return nErr;
 	}
+
+    if(m_nHotPixelMethod == 1)
+        m_Camera.applyMedianFilter(pMem, nWidth, nHeight, nMemWidth, (int)m_Camera.getBitDepth(), m_nHotPixelThreshold);
+    else if(m_nHotPixelMethod == 2)
+        m_Camera.applyLaplacianFilter(pMem, nWidth, nHeight, nMemWidth, (int)m_Camera.getBitDepth(), m_nHotPixelThreshold);
 
     return nErr;
 }

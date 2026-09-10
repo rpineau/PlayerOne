@@ -10,8 +10,10 @@
 
 #include <stdio.h>
 #include <math.h>
+#include <cmath>
 #include <string.h>
 #include <stdlib.h>
+#include <algorithm>
 #include <string>
 #include <vector>
 #include <sstream>
@@ -40,7 +42,7 @@
 // #define PLUGIN_DEBUG    3
 
 
-#define CODE_VERSION      1.40
+#define CODE_VERSION      1.402
 #define BUFFER_LEN 128
 #define PLUGIN_OK   0
 #define MAX_NB_BIN  8
@@ -168,6 +170,9 @@ public:
 
 	int			getMaxBin();
 	std::string	getSensorName();
+
+	void        applyMedianFilter(unsigned char* pMem, int nWidth, int nHeight, int nMemWidth, int nBitDepth, int nThreshold);
+	void        applyLaplacianFilter(unsigned char* pMem, int nWidth, int nHeight, int nMemWidth, int nBitDepth, int nThreshold);
 #ifdef PLUGIN_DEBUG
 	void log(std::string sLogEntry);
 #endif

@@ -56,6 +56,8 @@ class AddFITSKeyInterface;
 #define PIXEL_BIN_MODE              "PixelBinMode"
 #define PIXEL_MONO_BIN              "PixelMonoBin"
 #define LENS_POWER                  "LensPower"
+#define KEY_HOT_PIXEL_METHOD        "HotPixelMethod"
+#define KEY_HOT_PIXEL_THRESHOLD     "HotPixelThreshold"
 
 enum DIALOGS {SELECT, SETTINGS };
 
@@ -261,6 +263,9 @@ private:
     void doSettingsCamEvent(X2GUIExchangeInterface* uiex, const char* pszEvent);
 
 	int	pluginErrorToTsxError(int nErr);
+
+    int     m_nHotPixelMethod = 0;
+    int     m_nHotPixelThreshold = 10;
 };
 
 
