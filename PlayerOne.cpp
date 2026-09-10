@@ -7,6 +7,8 @@
 
 
 #include "PlayerOne.h"
+#include <algorithm>
+#include <cmath>
 
 
 CPlayerOne::CPlayerOne()
@@ -3417,6 +3419,7 @@ const std::string CPlayerOne::getTimeStamp()
 
 	return buf;
 }
+#endif
 
 void CPlayerOne::applyMedianFilter(unsigned char* pMem, int nWidth, int nHeight, int nMemWidth, int nBitDepth, int nThreshold)
 {
@@ -3551,4 +3554,3 @@ void CPlayerOne::applyLaplacianFilter(unsigned char* pMem, int nWidth, int nHeig
         }
     }
 }
-#endif
