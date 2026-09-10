@@ -10,8 +10,10 @@
 
 #include <stdio.h>
 #include <math.h>
+#include <cmath>
 #include <string.h>
 #include <stdlib.h>
+#include <algorithm>
 #include <string>
 #include <vector>
 #include <sstream>
