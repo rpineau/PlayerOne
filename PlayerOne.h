@@ -168,6 +168,9 @@ public:
 
 	int			getMaxBin();
 	std::string	getSensorName();
+
+	void        applyMedianFilter(unsigned char* pMem, int nWidth, int nHeight, int nMemWidth, int nBitDepth, int nThreshold);
+	void        applyLaplacianFilter(unsigned char* pMem, int nWidth, int nHeight, int nMemWidth, int nBitDepth, int nThreshold);
 #ifdef PLUGIN_DEBUG
 	void log(std::string sLogEntry);
 #endif

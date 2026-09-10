@@ -4,8 +4,6 @@
 //
 
 #include "x2camera.h"
-#include <algorithm>
-#include <cmath>
 
 
 
@@ -1080,148 +1078,6 @@ int X2Camera::CCDumpLines(const enumCameraIndex& Cam, const enumWhichCCD& CCD, c
 }           
 
 
-void X2Camera::applyMedianFilter(unsigned char* pMem, int nWidth, int nHeight, int nMemWidth, int nBitDepth, int nThreshold)
-{
-    // Flag pixel as hot if: pixel > local_4neighbour_median + nThreshold * sigma
-    // AND local median is within 5 sigma of the global background (star core protection).
-    // sigma = 1.4826 * MAD estimated from a random sample of ~10000 pixels (robust to stars).
-    const bool b16 = (nBitDepth > 8);
-    const int stride = nMemWidth; // nMemWidth is already in bytes (width * bytes_per_pixel)
-
-    auto getPixel = [&](int x, int y) -> uint32_t {
-        if(b16) {
-            const uint16_t* p = reinterpret_cast<const uint16_t*>(pMem + y * stride);
-            return p[x];
-        } else {
-            return pMem[y * stride + x];
-        }
-    };
-    auto setPixel = [&](int x, int y, uint32_t v) {
-        if(b16) {
-            uint16_t* p = reinterpret_cast<uint16_t*>(pMem + y * stride);
-            p[x] = static_cast<uint16_t>(v);
-        } else {
-            pMem[y * stride + x] = static_cast<uint8_t>(v);
-        }
-    };
-
-    // --- Estimate global noise via sample-based MAD ---
-    const int nSamples = 10000;
-    const int nTotal = nWidth * nHeight;
-    const int nStep = std::max(1, nTotal / nSamples);
-    std::vector<uint32_t> samples;
-    samples.reserve(nSamples);
-    for(int i = 0; i < nTotal; i += nStep)
-        samples.push_back(getPixel(i % nWidth, i / nWidth));
-
-    std::sort(samples.begin(), samples.end());
-    uint32_t globalMedian = samples[samples.size() / 2];
-
-    std::vector<uint32_t> absDevs;
-    absDevs.reserve(samples.size());
-    for(uint32_t v : samples)
-        absDevs.push_back(v > globalMedian ? v - globalMedian : globalMedian - v);
-    std::sort(absDevs.begin(), absDevs.end());
-    double mad = absDevs[absDevs.size() / 2];
-    double sigma = 1.4826 * mad;
-
-    // Threshold: 10 sigma above the local neighbour median.
-    // Use a floor of 1 LSB so we never threshold at zero on a dark frame.
-    const double threshold = (double)nThreshold * std::max(sigma, 1.0);
-
-    // --- Replace hot pixels ---
-    for(int y = 1; y < nHeight - 1; y++) {
-        for(int x = 1; x < nWidth - 1; x++) {
-            uint32_t centre = getPixel(x, y);
-            uint32_t n[4] = {
-                getPixel(x,   y-1),
-                getPixel(x,   y+1),
-                getPixel(x-1, y),
-                getPixel(x+1, y)
-            };
-            for(int i = 0; i < 3; i++)
-                for(int j = i+1; j < 4; j++)
-                    if(n[j] < n[i]) { uint32_t t = n[i]; n[i] = n[j]; n[j] = t; }
-            uint32_t med = (n[1] + n[2]) / 2;
-            // Skip if neighbours are already bright — likely a star centre, not a hot pixel
-            if((double)med > (double)globalMedian + 5.0 * sigma)
-                continue;
-            if((double)centre > (double)med + threshold)
-                setPixel(x, y, med);
-        }
-    }
-}
-
-void X2Camera::applyLaplacianFilter(unsigned char* pMem, int nWidth, int nHeight, int nMemWidth, int nBitDepth, int nThreshold)
-{
-    // Laplacian-based hot pixel detection: L = 4*centre - (N+S+E+W)
-    // Hot pixels produce a sharp spike; star cores are smooth so L stays low.
-    // Noise in the Laplacian is sigma_L = sqrt(20) * sigma ~ 4.47 * sigma.
-    // Flag pixel when L > nThreshold * sigma_L and replace with neighbour median.
-    const bool b16 = (nBitDepth > 8);
-    const int stride = nMemWidth;
-
-    auto getPixel = [&](int x, int y) -> uint32_t {
-        if(b16) {
-            const uint16_t* p = reinterpret_cast<const uint16_t*>(pMem + y * stride);
-            return p[x];
-        } else {
-            return pMem[y * stride + x];
-        }
-    };
-    auto setPixel = [&](int x, int y, uint32_t v) {
-        if(b16) {
-            uint16_t* p = reinterpret_cast<uint16_t*>(pMem + y * stride);
-            p[x] = static_cast<uint16_t>(v);
-        } else {
-            pMem[y * stride + x] = static_cast<uint8_t>(v);
-        }
-    };
-
-    // --- Estimate global noise via sample-based MAD ---
-    const int nSamples = 10000;
-    const int nTotal = nWidth * nHeight;
-    const int nStep = std::max(1, nTotal / nSamples);
-    std::vector<uint32_t> samples;
-    samples.reserve(nSamples);
-    for(int i = 0; i < nTotal; i += nStep)
-        samples.push_back(getPixel(i % nWidth, i / nWidth));
-
-    std::sort(samples.begin(), samples.end());
-    uint32_t globalMedian = samples[samples.size() / 2];
-
-    std::vector<uint32_t> absDevs;
-    absDevs.reserve(samples.size());
-    for(uint32_t v : samples)
-        absDevs.push_back(v > globalMedian ? v - globalMedian : globalMedian - v);
-    std::sort(absDevs.begin(), absDevs.end());
-    double sigma = 1.4826 * absDevs[absDevs.size() / 2];
-
-    // sigma_L accounts for the noise amplification of the Laplacian operator
-    const double sigma_L = 4.4721 * std::max(sigma, 1.0); // sqrt(20) * sigma
-    const double threshold = (double)nThreshold * sigma_L;
-
-    // --- Replace hot pixels ---
-    for(int y = 1; y < nHeight - 1; y++) {
-        for(int x = 1; x < nWidth - 1; x++) {
-            uint32_t centre = getPixel(x, y);
-            uint32_t N = getPixel(x,   y-1);
-            uint32_t S = getPixel(x,   y+1);
-            uint32_t W = getPixel(x-1, y);
-            uint32_t E = getPixel(x+1, y);
-            double L = 4.0 * (double)centre - ((double)N + (double)S + (double)W + (double)E);
-            if(L > threshold) {
-                // Replace with median of 4 neighbours
-                uint32_t n[4] = {N, S, W, E};
-                for(int i = 0; i < 3; i++)
-                    for(int j = i+1; j < 4; j++)
-                        if(n[j] < n[i]) { uint32_t t = n[i]; n[i] = n[j]; n[j] = t; }
-                setPixel(x, y, (n[1] + n[2]) / 2);
-            }
-        }
-    }
-}
-
 int X2Camera::CCReadoutImage(const enumCameraIndex& Cam, const enumWhichCCD& CCD, const int& nWidth, const int& nHeight, const int& nMemWidth, unsigned char* pMem)
 {
     int nErr = SB_OK;
@@ -1237,9 +1093,9 @@ int X2Camera::CCReadoutImage(const enumCameraIndex& Cam, const enumWhichCCD& CCD
 	}
 
     if(m_nHotPixelMethod == 1)
-        applyMedianFilter(pMem, nWidth, nHeight, nMemWidth, (int)m_Camera.getBitDepth(), m_nHotPixelThreshold);
+        m_Camera.applyMedianFilter(pMem, nWidth, nHeight, nMemWidth, (int)m_Camera.getBitDepth(), m_nHotPixelThreshold);
     else if(m_nHotPixelMethod == 2)
-        applyLaplacianFilter(pMem, nWidth, nHeight, nMemWidth, (int)m_Camera.getBitDepth(), m_nHotPixelThreshold);
+        m_Camera.applyLaplacianFilter(pMem, nWidth, nHeight, nMemWidth, (int)m_Camera.getBitDepth(), m_nHotPixelThreshold);
 
     return nErr;
 }
