@@ -3251,7 +3251,7 @@ int CPlayerOne::RelayActivate(const int nXPlus, const int nXMinus, const int nYP
 	return nErr;
 }
 
-bool CPlayerOne::isPulseGuding()
+bool CPlayerOne::isPulseGuiding()
 {
 	int nErr = PLUGIN_OK;
 	POAErrors ret;
@@ -3272,7 +3272,7 @@ bool CPlayerOne::isPulseGuding()
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
 		m_sLogFile.flush();
 #endif
-		return nErr;
+		return false;
 	}
 
 	bIsGuidingOn = (confValue.boolValue == POA_TRUE);
@@ -3285,7 +3285,7 @@ bool CPlayerOne::isPulseGuding()
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
 		m_sLogFile.flush();
 #endif
-		return nErr;
+		return false;
 	}
 
 	bIsGuidingOn |= (confValue.boolValue == POA_TRUE);
@@ -3298,7 +3298,7 @@ bool CPlayerOne::isPulseGuding()
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
 		m_sLogFile.flush();
 #endif
-		return nErr;
+		return false;
 	}
 
 	bIsGuidingOn |= (confValue.boolValue == POA_TRUE);
@@ -3311,7 +3311,7 @@ bool CPlayerOne::isPulseGuding()
 		m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
 		m_sLogFile.flush();
 #endif
-		return nErr;
+		return false;
 	}
 
 
@@ -3326,10 +3326,9 @@ bool CPlayerOne::isPulseGuding()
 	m_sLogFile << "["<<getTimeStamp()<<"]"<< " [" << __func__ << "] nErr = " << nErr << std::endl;
 	m_sLogFile.flush();
 #endif
-	return nErr;
+	return bIsGuidingOn;
 
 }
-
 
 #pragma mark - helper functions
 

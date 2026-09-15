@@ -936,18 +936,7 @@ int X2Camera::CCStartExposure(const enumCameraIndex& Cam, const enumWhichCCD CCD
 	if (!m_bLinked)
 		return ERR_NOLINK;
 
-	bool bLight = true;
     int nErr = SB_OK;
-
-	switch (Type)
-	{
-		case PT_FLAT:
-		case PT_LIGHT:			bLight = true;	break;
-		case PT_DARK:	
-		case PT_AUTODARK:	
-		case PT_BIAS:			bLight = false;	break;
-		default:				return ERR_CMDFAILED;
-	}
 
     nErr = m_Camera.startCapture(dTime);
 	if(nErr) {
@@ -1517,7 +1506,6 @@ int X2Camera::CCStartExposureAdditionalArgInterface (const enumCameraIndex &Cam,
     if (!m_bLinked)
         return ERR_NOLINK;
 
-    bool bLight = true;
     int nErr = SB_OK;
 
     nErr = m_Camera.setGain(m_Camera.getGainFromListAtIndex(nIndex));
@@ -1525,17 +1513,8 @@ int X2Camera::CCStartExposureAdditionalArgInterface (const enumCameraIndex &Cam,
 		nErr = pluginErrorToTsxError(nErr);
 		return nErr;
     }
-    switch (Type)
-    {
-        case PT_FLAT:
-        case PT_LIGHT:            bLight = true;    break;
-        case PT_DARK:
-        case PT_AUTODARK:
-        case PT_BIAS:            bLight = false;    break;
-        default:                return ERR_CMDFAILED;
-    }
 
-    nErr = m_Camera.startCapture(dTime);
+	nErr = m_Camera.startCapture(dTime);
     return nErr;
 }
 
