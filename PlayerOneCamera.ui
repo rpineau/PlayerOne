@@ -170,7 +170,7 @@
       <property name="geometry">
        <rect>
         <x>240</x>
-        <y>736</y>
+        <y>752</y>
         <width>81</width>
         <height>24</height>
        </rect>
@@ -183,7 +183,7 @@
       <property name="geometry">
        <rect>
         <x>152</x>
-        <y>736</y>
+        <y>752</y>
         <width>81</width>
         <height>24</height>
        </rect>
@@ -347,7 +347,7 @@
       <property name="geometry">
        <rect>
         <x>160</x>
-        <y>408</y>
+        <y>424</y>
         <width>112</width>
         <height>24</height>
        </rect>
@@ -367,7 +367,7 @@
       <property name="geometry">
        <rect>
         <x>24</x>
-        <y>408</y>
+        <y>424</y>
         <width>128</width>
         <height>24</height>
        </rect>
@@ -490,7 +490,7 @@
       <property name="geometry">
        <rect>
         <x>24</x>
-        <y>504</y>
+        <y>520</y>
         <width>192</width>
         <height>24</height>
        </rect>
@@ -508,7 +508,7 @@
       <property name="geometry">
        <rect>
         <x>168</x>
-        <y>440</y>
+        <y>456</y>
         <width>96</width>
         <height>24</height>
        </rect>
@@ -524,7 +524,7 @@
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>440</y>
+        <y>456</y>
         <width>152</width>
         <height>24</height>
        </rect>
@@ -540,7 +540,7 @@
       <property name="geometry">
        <rect>
         <x>168</x>
-        <y>472</y>
+        <y>488</y>
         <width>129</width>
         <height>24</height>
        </rect>
@@ -553,7 +553,7 @@
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>472</y>
+        <y>488</y>
         <width>152</width>
         <height>24</height>
        </rect>
@@ -569,7 +569,7 @@
       <property name="geometry">
        <rect>
         <x>80</x>
-        <y>648</y>
+        <y>664</y>
         <width>320</width>
         <height>24</height>
        </rect>
@@ -582,7 +582,7 @@
       <property name="geometry">
        <rect>
         <x>80</x>
-        <y>528</y>
+        <y>544</y>
         <width>320</width>
         <height>24</height>
        </rect>
@@ -595,7 +595,7 @@
       <property name="geometry">
        <rect>
         <x>80</x>
-        <y>576</y>
+        <y>592</y>
         <width>320</width>
         <height>24</height>
        </rect>
@@ -608,7 +608,7 @@
       <property name="geometry">
        <rect>
         <x>80</x>
-        <y>552</y>
+        <y>568</y>
         <width>320</width>
         <height>24</height>
        </rect>
@@ -621,7 +621,7 @@
       <property name="geometry">
        <rect>
         <x>80</x>
-        <y>600</y>
+        <y>616</y>
         <width>320</width>
         <height>24</height>
        </rect>
@@ -634,7 +634,7 @@
       <property name="geometry">
        <rect>
         <x>80</x>
-        <y>624</y>
+        <y>640</y>
         <width>320</width>
         <height>24</height>
        </rect>
@@ -647,7 +647,7 @@
       <property name="geometry">
        <rect>
         <x>80</x>
-        <y>672</y>
+        <y>688</y>
         <width>320</width>
         <height>24</height>
        </rect>
@@ -660,7 +660,7 @@
       <property name="geometry">
        <rect>
         <x>80</x>
-        <y>696</y>
+        <y>712</y>
         <width>320</width>
         <height>24</height>
        </rect>
@@ -673,7 +673,7 @@
       <property name="geometry">
        <rect>
         <x>280</x>
-        <y>408</y>
+        <y>424</y>
         <width>129</width>
         <height>20</height>
        </rect>
@@ -693,6 +693,91 @@
       </property>
       <property name="text">
        <string>Hardware binning</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="hotPixelFilterLabel">
+      <property name="geometry">
+       <rect>
+        <x>16</x>
+        <y>392</y>
+        <width>144</width>
+        <height>24</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Hot pixel filter :</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+      </property>
+     </widget>
+     <widget class="QComboBox" name="hotPixelMethod">
+      <property name="geometry">
+       <rect>
+        <x>168</x>
+        <y>390</y>
+        <width>100</width>
+        <height>24</height>
+       </rect>
+      </property>
+      <property name="toolTip">
+       <string>Software binning recommended when hot pixel filter is active</string>
+      </property>
+      <item>
+       <property name="text">
+        <string>None</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Median</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Laplacian</string>
+       </property>
+      </item>
+     </widget>
+     <widget class="QLabel" name="hotPixelThresholdLabel">
+      <property name="geometry">
+       <rect>
+        <x>276</x>
+        <y>392</y>
+        <width>74</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Threshold :</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+      </property>
+     </widget>
+     <widget class="QSpinBox" name="hotPixelThreshold">
+      <property name="geometry">
+       <rect>
+        <x>354</x>
+        <y>390</y>
+        <width>56</width>
+        <height>24</height>
+       </rect>
+      </property>
+      <property name="toolTip">
+       <string>Hot pixel threshold in units of sigma (noise). Lower values remove more pixels.</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+      </property>
+      <property name="minimum">
+       <number>1</number>
+      </property>
+      <property name="maximum">
+       <number>15</number>
+      </property>
+      <property name="value">
+       <number>10</number>
       </property>
      </widget>
     </widget>
