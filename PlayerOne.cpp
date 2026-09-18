@@ -3448,7 +3448,7 @@ void CPlayerOne::applyMedianFilter(unsigned char* pMem, int nWidth, int nHeight,
     // Estimate global noise via sample-based MAD
     const int nSamples = 10000;
     const int nTotal = nWidth * nHeight;
-    const int nStep = std::max(1, nTotal / nSamples);
+	const int nStep = (std::max)(1, nTotal / nSamples);
     std::vector<uint32_t> samples;
     samples.reserve(nSamples);
     for(int i = 0; i < nTotal; i += nStep)
@@ -3463,7 +3463,7 @@ void CPlayerOne::applyMedianFilter(unsigned char* pMem, int nWidth, int nHeight,
         absDevs.push_back(v > globalMedian ? v - globalMedian : globalMedian - v);
     std::sort(absDevs.begin(), absDevs.end());
     double sigma = 1.4826 * absDevs[absDevs.size() / 2];
-    const double threshold = (double)nThreshold * std::max(sigma, 1.0);
+    const double threshold = (double)nThreshold * (std::max)(sigma, 1.0);
 
     for(int y = 1; y < nHeight - 1; y++) {
         for(int x = 1; x < nWidth - 1; x++) {
@@ -3515,7 +3515,7 @@ void CPlayerOne::applyLaplacianFilter(unsigned char* pMem, int nWidth, int nHeig
     // Estimate global noise via sample-based MAD
     const int nSamples = 10000;
     const int nTotal = nWidth * nHeight;
-    const int nStep = std::max(1, nTotal / nSamples);
+    const int nStep = (std::max)(1, nTotal / nSamples);
     std::vector<uint32_t> samples;
     samples.reserve(nSamples);
     for(int i = 0; i < nTotal; i += nStep)
@@ -3532,7 +3532,7 @@ void CPlayerOne::applyLaplacianFilter(unsigned char* pMem, int nWidth, int nHeig
     double sigma = 1.4826 * absDevs[absDevs.size() / 2];
 
     // sigma_L accounts for noise amplification of the Laplacian operator
-    const double sigma_L = 4.4721 * std::max(sigma, 1.0); // sqrt(20) * sigma
+    const double sigma_L = 4.4721 * (std::max)(sigma, 1.0); // sqrt(20) * sigma
     const double threshold = (double)nThreshold * sigma_L;
 
     for(int y = 1; y < nHeight - 1; y++) {
